@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  /* Teks & netral */
+  --color-ink: #0f172a;
+  --color-ink-soft: #64748b;
+
+  /* Background */
+  --color-paper: #ffffff;
+  --color-paper-soft: #f0f7ff;
+
+  /* Brand — biru & hijau */
+  --color-brand-blue: #2563eb;
+  --color-brand-blue-dark: #1e3a8a;
+  --color-brand-green: #16a34a;
+  --color-brand-green-dark: #15803d;
+
+  /* Dashboard mockup */
+  --color-navy: #0b1220;
+
+  --font-display: var(--font-inter);
+  --font-body: var(--font-inter);
+  --font-data: var(--font-plex-mono);
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-paper: var(--color-paper);
+  --color-paper-soft: var(--color-paper-soft);
+  --color-brand-blue: var(--color-brand-blue);
+  --color-brand-blue-dark: var(--color-brand-blue-dark);
+  --color-brand-green: var(--color-brand-green);
+  --color-brand-green-dark: var(--color-brand-green-dark);
+  --color-navy: var(--color-navy);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-data: var(--font-data);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+

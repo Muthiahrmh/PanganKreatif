@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  umkm
+  supplier
+  admin
+}
+
+enum ProcurementStatus {
+  open
+  closed
+  delivered
+}
+
+enum ItemStatus {
+  pending
+  paid
+}
+
+enum TransactionStatus {
+  pending
+  success
+  failed
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  phone        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Foto profil. avatarUrl dipakai untuk ditampilkan,
+  // avatarPath untuk menghapus file lama dari Supabase Storage saat diganti.
+  avatarUrl    String?  @map("avatar_url")
+  avatarPath   String?  @map("avatar_path")
+
+  umkmProfile     UmkmProfile?
+  supplierProfile SupplierProfile?
+
+  @@map("users")
+}
+
+model UmkmProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  businessName String   @map("business_name")
+  businessType String   @map("business_type")
+  city         String
+  address      String
+
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salesRecords      SalesRecord[]
+  forecastResults   ForecastResult[]
+  procurementItems  ProcurementOrderItem[]
+
+  @@map("umkm_profiles")
+}
+
+model SupplierProfile {
+  id        String @id @default(uuid())
+  userId    String @unique @map("user_id")
+  groupName String @map("group_name")
+  city      String
+  address   String
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("supplier_profiles")
+}
+
+model Product {
+  id         String  @id @default(uuid())
+  supplierId String  @map("supplier_id")
+  name       String
+  category   String
+  unit       String
+  price      Decimal @db.Decimal(12, 2)
+  stock      Int
+
+  // Harga grosir: berlaku otomatis kalau total pesanan kolektif
+  // sudah mencapai bulkMinQty. Inti dari Collective Procurement.
+  bulkPrice  Decimal? @db.Decimal(12, 2) @map("bulk_price")
+  bulkMinQty Int?     @map("bulk_min_qty")
+
+  supplier           SupplierProfile     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  procurementOrders   ProcurementOrder[]
+
+  @@map("products")
+}
+
+model SalesRecord {
+  id          String   @id @default(uuid())
+  umkmId      String   @map("umkm_id")
+  productName String   @map("product_name")
+  quantity    Decimal  @db.Decimal(12, 2)
+  date        DateTime @db.Date
+
+  umkm UmkmProfile @relation(fields: [umkmId], references: [id], onDelete: Cascade)
+
+  @@map("sales_records")
+}
+
+model ForecastResult {
+  id                String   @id @default(uuid())
+  umkmId            String   @map("umkm_id")
+  productName       String   @map("product_name")
+  predictedQuantity Decimal  @db.Decimal(12, 2) @map("predicted_quantity")
+  period            DateTime @db.Date
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  umkm UmkmProfile @relation(fields: [umkmId], references: [id], onDelete: Cascade)
+
+  @@map("forecast_results")
+}
+
+model ProcurementOrder {
+  id             String             @id @default(uuid())
+  productId      String             @map("product_id")
+  totalQuantity  Decimal            @default(0) @db.Decimal(12, 2) @map("total_quantity")
+  status         ProcurementStatus  @default(open)
+  deadline       DateTime           @db.Date
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  product Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  items   ProcurementOrderItem[]
+
+  @@map("procurement_orders")
+}
+
+model ProcurementOrderItem {
+  id       String     @id @default(uuid())
+  orderId  String     @map("order_id")
+  umkmId   String     @map("umkm_id")
+  quantity Decimal    @db.Decimal(12, 2)
+  status   ItemStatus @default(pending)
+
+  order        ProcurementOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  umkm         UmkmProfile      @relation(fields: [umkmId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("procurement_order_items")
+}
+
+model Transaction {
+  id               String             @id @default(uuid())
+  orderItemId      String             @map("order_item_id")
+  amount           Decimal            @db.Decimal(12, 2)
+  paymentProofUrl  String?            @map("payment_proof_url")
+  status           TransactionStatus  @default(pending)
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  // Pendapatan PanganKreatif dari transaksi ini. Disimpan per baris
+  // supaya riwayat tetap akurat walau tarif komisi berubah nanti.
+  platformFee     Decimal @default(0) @db.Decimal(12, 2) @map("platform_fee")
+  commissionRate  Decimal @default(0) @db.Decimal(5, 4)  @map("commission_rate")
+  supplierPayout  Decimal @default(0) @db.Decimal(12, 2) @map("supplier_payout")
+
+  orderItem ProcurementOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
