@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { Users, Store, TrendingUp, Wallet } from "lucide-react";
 import { StatCard } from "./StatCard";
-import { PaymentBadge } from "./paymentBadge";
+import { PaymentBadge } from "./PaymentBadge";
 import { getApiErrorMessage } from "@/lib/api";
 import { fetchAdminStats } from "@/lib/transactions";
 import { formatDate, formatNumber, formatRupiah, formatRupiahShort } from "@/lib/format";

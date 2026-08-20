@@ -12,7 +12,7 @@ import {
 } from "@/lib/transactions";
 import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { PaymentBadge } from "@/components/dashboard/paymentBadge";
+import { PaymentBadge } from "@/components/dashboard/PaymentBadge";
 import type {
     AdminTransaction,
     SupplierTransaction,
