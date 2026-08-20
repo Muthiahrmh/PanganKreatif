@@ -17,6 +17,13 @@ export interface ForecastDetail {
     forecast: ForecastResult;
     detail: {
         monthlyTotals: { periodKey: string; quantity: number }[];
+        movingAverage?: number;
+        linearTrend?: number;
+        seasonalFactor?: number;
+        seasonalityApplied?: boolean;
+        monthsOfData?: number;
+        lastDataPeriod?: string;
+        keterangan?: string;
     };
     algoritma: string;
 }

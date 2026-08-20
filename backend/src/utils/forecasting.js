@@ -1,17 +1,3 @@
-/**
- * Peramalan kebutuhan bahan baku PanganKreatif.
- *
- * Pendekatan: time-series statistik klasik, bukan machine learning.
- *   1. Moving average 3 bulan  -> meredam fluktuasi jangka pendek
- *   2. Regresi linear (OLS)    -> menangkap arah tren
- *   3. Indeks musiman          -> menyesuaikan pola bulanan berulang
- *
- * Indeks musiman hanya dipakai kalau data historis sudah >= 24 bulan,
- * karena di bawah itu pola musiman belum bisa dibedakan dari kebetulan.
- */
-
-// ---------- util periode ----------
-
 const pad = (n) => String(n).padStart(2, '0');
 
 /** "2026-03" -> jumlah bulan absolut sejak tahun 0, dipakai sebagai sumbu X */
@@ -35,6 +21,12 @@ function currentPeriod() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
 }
 
+/** Tanggal penjualan juga dibaca sebagai UTC supaya bulannya konsisten */
+function periodKeyOf(date) {
+  const d = new Date(date);
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+}
+
 function nextPeriod(lastPeriod) {
   if (!lastPeriod) {
     return indexToPeriod(periodToIndex(currentPeriod()) + 1);
@@ -53,10 +45,14 @@ function resolveTargetPeriod(lastPeriod) {
   return indexToPeriod(Math.max(fromData, fromNow) + 1);
 }
 
-/** "2026-09" -> Date(2026, 8, 1), untuk disimpan ke kolom period */
+/**
+ * "2026-09" -> 1 September 2026 dalam UTC.
+ * Wajib UTC: kolom period bertipe @db.Date, dan tanggal lokal WIB
+ * akan tersimpan mundur satu hari sehingga bulannya ikut meleset.
+ */
 function periodToDate(period) {
   const [y, m] = period.split('-').map(Number);
-  return new Date(y, m - 1, 1);
+  return new Date(Date.UTC(y, m - 1, 1));
 }
 
 // ---------- agregasi ----------
@@ -64,13 +60,17 @@ function periodToDate(period) {
 function aggregateMonthly(records) {
   const map = new Map();
   for (const r of records) {
-    const d = new Date(r.date);
-    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    const key = periodKeyOf(r.date);
     map.set(key, (map.get(key) || 0) + Number(r.quantity));
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([period, quantity]) => ({ period, quantity }));
+    // Dibulatkan 2 desimal supaya galat penjumlahan pecahan biner
+    // tidak bocor ke tampilan sebagai 37.599999999999994
+    .map(([period, quantity]) => ({
+      period,
+      quantity: Math.round(quantity * 100) / 100,
+    }));
 }
 
 // ---------- metode ----------
@@ -227,6 +227,7 @@ module.exports = {
   linearTrendAt,
   seasonalIndex,
   nextPeriod,
+  periodKeyOf,
   resolveTargetPeriod,
   periodToDate,
   periodToIndex,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { NotebookPen, Sparkles, ShoppingCart, PiggyBank, ArrowUpRight } from "lucide-react";
 import { api } from "@/lib/api";
@@ -18,6 +18,7 @@ export function UmkmDashboardHome() {
     const [latestForecast, setLatestForecast] = useState<ForecastResult | null>(null);
     const [activeItems, setActiveItems] = useState<number | null>(null);
     const [totalHemat, setTotalHemat] = useState<number | null>(null);
+    const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
 
     useEffect(() => {
         if (user?.role !== "umkm") return;
@@ -25,6 +26,7 @@ export function UmkmDashboardHome() {
         api.get<SalesRecord[]>("/sales-records").then((res) => {
             setSalesCount(res.data.length);
             setProductCount(new Set(res.data.map((r) => r.productName)).size);
+            setSalesRecords(res.data);
         });
 
         api.get<ForecastResult[]>("/forecasts").then((res) => {
@@ -44,6 +46,46 @@ export function UmkmDashboardHome() {
             );
         });
     }, [user]);
+
+    // Bandingkan prediksi dengan rata-rata 3 bulan terakhir bahan yang sama,
+    // supaya kalimat insight-nya mengikuti data, bukan teks tetap.
+    const arahTren = useMemo(() => {
+        if (!latestForecast || salesRecords.length === 0) return null;
+
+        const rows = salesRecords.filter(
+            (r) => r.productName === latestForecast.productName
+        );
+        if (rows.length === 0) return null;
+
+        const perBulan = new Map<string, number>();
+        for (const r of rows) {
+            const d = new Date(r.date);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            perBulan.set(key, (perBulan.get(key) ?? 0) + Number(r.quantity));
+        }
+
+        const urut = [...perBulan.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([, v]) => v);
+
+        const terakhir = urut.slice(-3);
+        if (terakhir.length === 0) return null;
+
+        const rata = terakhir.reduce((a, b) => a + b, 0) / terakhir.length;
+        const prediksi = Number(latestForecast.predictedQuantity);
+        const selisihPersen = rata > 0 ? ((prediksi - rata) / rata) * 100 : 0;
+
+        return {
+            rata: Math.round(rata * 10) / 10,
+            persen: Math.abs(Math.round(selisihPersen)),
+            arah:
+                Math.abs(selisihPersen) < 5
+                    ? ("stabil" as const)
+                    : selisihPersen > 0
+                        ? ("naik" as const)
+                        : ("turun" as const),
+        };
+    }, [latestForecast, salesRecords]);
 
     if (!user) return null;
 
@@ -77,9 +119,45 @@ export function UmkmDashboardHome() {
                                     <span className="font-semibold">
                                         {latestForecast.productName}
                                     </span>{" "}
-                                    diperkirakan meningkat pada periode berikutnya.
-                                    Disarankan menyiapkan stok lebih awal atau bergabung
-                                    dalam belanja kolektif.
+                                    {arahTren?.arah === "naik" && (
+                                        <>
+                                            diperkirakan{" "}
+                                            <span className="font-semibold">
+                                                naik {arahTren.persen}%
+                                            </span>{" "}
+                                            dibanding rata-rata tiga bulan terakhir (
+                                            {arahTren.rata}). Disarankan menyiapkan stok lebih
+                                            awal atau bergabung dalam belanja kolektif supaya
+                                            dapat harga grosir.
+                                        </>
+                                    )}
+                                    {arahTren?.arah === "turun" && (
+                                        <>
+                                            diperkirakan{" "}
+                                            <span className="font-semibold">
+                                                turun {arahTren.persen}%
+                                            </span>{" "}
+                                            dibanding rata-rata tiga bulan terakhir (
+                                            {arahTren.rata}). Kurangi pembelian supaya tidak
+                                            ada stok berlebih yang terbuang.
+                                        </>
+                                    )}
+                                    {arahTren?.arah === "stabil" && (
+                                        <>
+                                            diperkirakan{" "}
+                                            <span className="font-semibold">relatif stabil</span>{" "}
+                                            dibanding rata-rata tiga bulan terakhir (
+                                            {arahTren.rata}). Pertahankan pola pembelian dan
+                                            manfaatkan belanja kolektif untuk menekan biaya.
+                                        </>
+                                    )}
+                                    {!arahTren && (
+                                        <>
+                                            diperkirakan sebesar{" "}
+                                            {latestForecast.predictedQuantity} pada periode
+                                            berikutnya.
+                                        </>
+                                    )}
                                 </p>
                             </>
                         ) : (
@@ -202,7 +280,13 @@ export function UmkmDashboardHome() {
 
                     <p className="mt-3 text-sm text-ink-soft">
                         {latestForecast
-                            ? `Permintaan ${latestForecast.productName} diperkirakan mencapai ${latestForecast.predictedQuantity} kg pada periode berikutnya.`
+                            ? `Permintaan ${latestForecast.productName} diperkirakan mencapai ${latestForecast.predictedQuantity} pada periode berikutnya` +
+                            (arahTren
+                                ? `, ${arahTren.arah === "stabil"
+                                    ? "relatif stabil"
+                                    : `${arahTren.arah} ${arahTren.persen}%`
+                                } dibanding rata-rata tiga bulan terakhir.`
+                                : ".")
                             : "Belum ada data prediksi untuk dianalisis."}
                     </p>
 

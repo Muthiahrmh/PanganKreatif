@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Info } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import type { SalesRecord, ForecastResult, ForecastDetail } from "@/types/dashboard";
 import { ForecastChart } from "@/components/dashboard/ForecastChart";
+
+/** Kolom period bertipe Date UTC, jadi dibaca sebagai UTC supaya bulannya tidak mundur */
+function formatPeriode(value: string) {
+    return new Date(value).toLocaleDateString("id-ID", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+    });
+}
 
 export default function ForecastPage() {
     const [productOptions, setProductOptions] = useState<string[]>([]);
@@ -17,6 +26,7 @@ export default function ForecastPage() {
     const [loadingHistory, setLoadingHistory] = useState(true);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         api.get<SalesRecord[]>("/sales-records").then((res) => {
             const unique = Array.from(new Set(res.data.map((r) => r.productName)));
             setProductOptions(unique);
@@ -106,11 +116,7 @@ export default function ForecastPage() {
                             {result.forecast.predictedQuantity}
                         </div>
                         <div className="text-xs text-white/80">
-                            untuk periode{" "}
-                            {new Date(result.forecast.period).toLocaleDateString("id-ID", {
-                                month: "long",
-                                year: "numeric",
-                            })}
+                            untuk periode {formatPeriode(result.forecast.period)}
                         </div>
 
                         <div className="mt-4 rounded-xl bg-white p-3 text-black">
@@ -119,7 +125,9 @@ export default function ForecastPage() {
 
                         {result.detail.monthlyTotals.length > 0 && (
                             <div className="mt-4 border-t border-white/20 pt-3">
-                                <div className="text-xs font-medium text-white/80">Histori bulanan dipakai:</div>
+                                <div className="text-xs font-medium text-white/80">
+                                    Histori bulanan dipakai:
+                                </div>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {result.detail.monthlyTotals.map((m) => (
                                         <span
@@ -135,6 +143,75 @@ export default function ForecastPage() {
                     </div>
                 )}
             </div>
+
+            {/* Cara perhitungan — supaya prediksinya bisa ditelusuri, bukan kotak hitam */}
+            {result && (
+                <div className="rounded-xl border border-ink/5 bg-white p-5">
+                    <div className="flex items-start gap-2">
+                        <Info size={16} className="mt-0.5 shrink-0 text-brand-blue" />
+                        <div>
+                            <h3 className="font-display text-sm font-bold text-ink">
+                                Cara Perhitungan
+                            </h3>
+                            <p className="mt-1 text-xs text-ink-soft">
+                                Metode deret waktu statistik. Setiap komponen di bawah bisa
+                                ditelusuri dari data penjualan yang tercatat.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <Komponen
+                            label="Rata-rata bergerak"
+                            nilai={result.detail.movingAverage}
+                            catatan="3 bulan terakhir"
+                        />
+                        <Komponen
+                            label="Proyeksi tren linear"
+                            nilai={result.detail.linearTrend}
+                            catatan="regresi kuadrat terkecil"
+                        />
+                        <Komponen
+                            label="Faktor musiman"
+                            nilai={result.detail.seasonalFactor}
+                            catatan={
+                                result.detail.seasonalityApplied
+                                    ? "pola bulanan berulang"
+                                    : "belum aktif"
+                            }
+                        />
+                    </div>
+
+                    <div className="mt-4 space-y-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-ink-soft">Algoritma:</span>
+                            <code className="rounded bg-paper-soft px-2 py-1 font-data text-ink">
+                                {result.algoritma}
+                            </code>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-ink-soft">Data historis:</span>
+                            <span className="font-medium text-ink">
+                                {result.detail.monthsOfData ?? 0} bulan
+                                {result.detail.lastDataPeriod &&
+                                    ` (terakhir ${result.detail.lastDataPeriod})`}
+                            </span>
+                        </div>
+                    </div>
+
+                    {result.detail.keterangan && (
+                        <p
+                            className={`mt-4 rounded-lg px-3 py-2.5 text-xs ${result.detail.seasonalityApplied
+                                    ? "bg-green-50 text-green-700"
+                                    : "bg-amber-50 text-amber-800"
+                                }`}
+                        >
+                            {result.detail.keterangan}
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Riwayat prediksi */}
             <div className="rounded-xl border border-ink/5 bg-white p-5">
@@ -158,15 +235,14 @@ export default function ForecastPage() {
                             <tbody>
                                 {history.map((f) => (
                                     <tr key={f.id} className="border-b border-ink/5 last:border-0">
-                                        <td className="py-2.5 font-medium text-ink">{f.productName}</td>
-                                        <td className="py-2.5 text-brand-green font-semibold">
+                                        <td className="py-2.5 font-medium text-ink">
+                                            {f.productName}
+                                        </td>
+                                        <td className="py-2.5 font-semibold text-brand-green">
                                             {f.predictedQuantity}
                                         </td>
                                         <td className="py-2.5 text-ink-soft">
-                                            {new Date(f.period).toLocaleDateString("id-ID", {
-                                                month: "long",
-                                                year: "numeric",
-                                            })}
+                                            {formatPeriode(f.period)}
                                         </td>
                                         <td className="py-2.5 text-ink-soft">
                                             {new Date(f.createdAt).toLocaleDateString("id-ID")}
@@ -178,6 +254,26 @@ export default function ForecastPage() {
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
+
+function Komponen({
+    label,
+    nilai,
+    catatan,
+}: {
+    label: string;
+    nilai?: number;
+    catatan: string;
+}) {
+    return (
+        <div className="rounded-lg bg-paper-soft p-3">
+            <div className="text-xs text-ink-soft">{label}</div>
+            <div className="mt-1 font-display text-lg font-bold text-ink">
+                {nilai == null ? "-" : nilai}
+            </div>
+            <div className="text-xs text-ink-soft">{catatan}</div>
         </div>
     );
 }

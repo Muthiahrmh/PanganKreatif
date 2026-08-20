@@ -1,15 +1,3 @@
-/**
- * Data demo PanganKreatif.
- *
- * Jalankan dari folder backend:
- *   node prisma/seed.js
- *
- * Skrip ini aman dijalankan berulang: akun dicari dulu berdasarkan email,
- * dan riwayat penjualan tidak ditambah kalau sudah cukup panjang.
- *
- * Semua akun demo memakai password: demo1234
- */
-
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 
@@ -264,7 +252,7 @@ async function seedPenjualan(umkmProfile, u) {
             where: { umkmId: umkmProfile.id, productName: bahan },
         });
 
-        if (sudahAda >= 40) {
+        if (sudahAda >= 48) {
             console.log(`  = riwayat ${bahan} sudah lengkap (${sudahAda} catatan)`);
             continue;
         }
@@ -286,7 +274,7 @@ async function seedPenjualan(umkmProfile, u) {
                     umkmId: umkmProfile.id,
                     productName: bahan,
                     quantity: Math.max(1, Math.round(totalBulan * porsi * 10) / 10),
-                    date: new Date(b.tahun, b.bulan - 1, i === 0 ? 8 : 22),
+                    date: new Date(Date.UTC(b.tahun, b.bulan - 1, i === 0 ? 8 : 22)),
                 });
             });
         });
