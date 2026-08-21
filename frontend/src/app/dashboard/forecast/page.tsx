@@ -26,7 +26,7 @@ export default function ForecastPage() {
     const [loadingHistory, setLoadingHistory] = useState(true);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        
         api
             .get<SalesRecord[]>("/sales-records")
             .then((res) => {

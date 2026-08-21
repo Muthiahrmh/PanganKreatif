@@ -54,9 +54,10 @@ export function AdminDashboard() {
 
     return (
         <div className="flex flex-col gap-6">
-            <div>
-                <h2 className="font-display text-xl font-bold text-ink">Ringkasan Platform</h2>
-                <p className="mt-1 text-sm text-ink-soft">
+            <div className="rounded-2xl bg-gradient-to-r from-[#1B1A2E] to-[#D97706] p-6 text-white">
+                <div className="text-xs font-medium text-white/70">Pengelola Platform</div>
+                <h2 className="mt-1 font-display text-xl font-bold">Ringkasan Platform</h2>
+                <p className="mt-1 text-sm text-white/85">
                     Kinerja bisnis PanganKreatif — mitra terdaftar, nilai transaksi, dan pendapatan
                     komisi.
                 </p>

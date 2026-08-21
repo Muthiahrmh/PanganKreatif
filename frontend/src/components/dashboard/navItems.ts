@@ -9,6 +9,7 @@ import {
     Receipt,
     Users,
     UserCircle,
+    Wallet,
     type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/types/auth";
@@ -41,6 +42,7 @@ const supplierNav: NavItem[] = [
 const adminNav: NavItem[] = [
     { href: "/dashboard", label: "Ringkasan Platform", shortLabel: "Ringkasan", icon: Home },
     { href: "/dashboard/transactions", label: "Transaksi", shortLabel: "Transaksi", icon: Receipt },
+    { href: "/dashboard/payouts", label: "Penerusan Dana", shortLabel: "Payout", icon: Wallet },
     { href: "/dashboard/users", label: "Mitra Terdaftar", shortLabel: "Mitra", icon: Users },
     { href: "/dashboard/profile", label: "Profil", shortLabel: "Profil", icon: UserCircle },
 ];
@@ -53,6 +55,7 @@ export function getNavItems(role: Role | undefined): NavItem[] {
 
 export function getPageTitle(pathname: string, role: Role | undefined): string {
     const items = getNavItems(role);
+    // Cocokkan yang paling spesifik dulu, biar /dashboard nggak nangkep semua
     const match = [...items]
         .sort((a, b) => b.href.length - a.href.length)
         .find((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));

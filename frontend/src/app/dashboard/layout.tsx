@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -27,8 +28,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     if (!user) return null;
 
+    const tema = temaPeran(user.role);
+
     return (
-        <div className="flex min-h-screen bg-paper-soft/40">
+        <div className="flex min-h-screen" style={{ backgroundColor: tema.latar }}>
             <DashboardSidebar />
 
             <div className="flex min-w-0 flex-1 flex-col">

@@ -79,8 +79,8 @@ export default function UsersPage() {
                     </h3>
                 </div>
             ) : (
-                <div className="overflow-x-auto rounded-xl border border-ink/5 bg-white shadow-sm">
-                    <table className="w-full min-w-[640px] text-left text-sm">
+                <div className="overflow-hidden rounded-xl border border-ink/5 bg-white shadow-sm">
+                    <table className="hidden w-full text-left text-sm md:table">
                         <thead className="bg-paper-soft text-xs font-semibold text-ink-soft">
                             <tr>
                                 <th className="px-5 py-3">Nama Usaha</th>
@@ -123,6 +123,42 @@ export default function UsersPage() {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Kartu bertumpuk untuk layar kecil */}
+                    <div className="divide-y divide-slate-100 md:hidden">
+                        {visible.map((r) => (
+                            <div key={r.id} className="p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="truncate font-medium text-ink">
+                                            {r.businessName ?? r.name}
+                                        </div>
+                                        {r.businessType && (
+                                            <div className="truncate text-xs text-ink-soft">
+                                                {r.businessType}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <span
+                                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${r.role === "supplier"
+                                                ? "bg-green-50 text-green-700"
+                                                : "bg-blue-50 text-brand-blue"
+                                            }`}
+                                    >
+                                        {r.role === "supplier" ? "Pemasok" : "UMKM"}
+                                    </span>
+                                </div>
+
+                                <div className="mt-2 space-y-0.5 text-xs text-ink-soft">
+                                    <div>{r.city ?? "-"}</div>
+                                    <div className="truncate">{r.email}</div>
+                                    {r.phone && <div>{r.phone}</div>}
+                                    <div>Bergabung {formatDate(r.createdAt)}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

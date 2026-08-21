@@ -46,6 +46,8 @@ async function listOrders(req, res) {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Tambahan info harga grosir. Field lama sengaja tidak diubah
+  // supaya tampilan yang sudah ada tetap jalan.
   res.json(
     orders.map((o) => ({
       ...o,
@@ -71,6 +73,7 @@ async function getOrder(req, res) {
   });
 }
 
+// Supplier/admin nutup order manual (misal sebelum deadline karena kuota tercapai)
 async function closeOrder(req, res) {
   const order = await requireOwnedOrder(req, res);
   if (!order) return;
@@ -110,10 +113,13 @@ async function requireOwnedOrder(req, res) {
   return order;
 }
 
+// ---------- Procurement Order Items (kontribusi UMKM ke order) ----------
+
 const joinSchema = z.object({
   quantity: z.number().positive(),
 });
 
+// UMKM ikut gabung ke order kolektif yang lagi 'open'
 async function joinOrder(req, res) {
   const parsed = joinSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
@@ -157,28 +163,38 @@ async function listMyItems(req, res) {
   if (!umkmProfile) return res.status(403).json({ error: 'Bukan akun UMKM' });
 
   const items = await prisma.procurementOrderItem.findMany({
-    where: { umkmId: umkmProfile.id },
-    include: {
-      order: {
-        include: {
-          product: {
-            include: {
-              supplier: true,
-            },
+  where: { umkmId: umkmProfile.id },
+  include: {
+    order: {
+      include: {
+        product: {
+          include: {
+            supplier: true,
           },
         },
       },
-      transactions: true,
     },
+    transactions: true,
+  },
   });
 
   res.json(
     items.map((it) => {
       const pricing = resolveUnitPrice(it.order.product, it.order.totalQuantity);
+      const sup = it.order.product.supplier;
+
       return {
         ...it,
         pricing,
         subtotal: Number(it.quantity) * pricing.unitPrice,
+        // Rekening tujuan, supaya UMKM tahu ke mana harus transfer
+        rekening: sup?.bankName
+          ? {
+              bank: sup.bankName,
+              nomor: sup.bankAccountNumber,
+              atasNama: sup.bankAccountHolder,
+            }
+          : null,
       };
     })
   );

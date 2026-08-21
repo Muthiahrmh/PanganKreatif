@@ -10,6 +10,8 @@ function sanitizeUser(user) {
 
 const withProfiles = { umkmProfile: true, supplierProfile: true };
 
+// ---------- GET /api/auth/profile ----------
+
 async function getProfile(req, res) {
     const user = await prisma.user.findUnique({
         where: { id: req.user.id },
@@ -19,6 +21,8 @@ async function getProfile(req, res) {
     res.json(sanitizeUser(user));
 }
 
+// ---------- PATCH /api/auth/profile ----------
+
 const updateSchema = z.object({
     name: z.string().min(2, 'Nama minimal 2 karakter').optional(),
     phone: z.string().optional().nullable(),
@@ -27,6 +31,9 @@ const updateSchema = z.object({
     businessType: z.string().min(1).optional(),
     // Supplier
     groupName: z.string().min(1).optional(),
+    bankName: z.string().max(60).optional().nullable(),
+    bankAccountNumber: z.string().max(40).optional().nullable(),
+    bankAccountHolder: z.string().max(80).optional().nullable(),
     // Keduanya
     city: z.string().min(1).optional(),
     address: z.string().min(1).optional(),
@@ -56,6 +63,13 @@ async function updateProfile(req, res) {
         }
     } else if (req.user.role === 'supplier') {
         if (d.groupName !== undefined) profileData.groupName = d.groupName;
+        if (d.bankName !== undefined) profileData.bankName = d.bankName || null;
+        if (d.bankAccountNumber !== undefined) {
+            profileData.bankAccountNumber = d.bankAccountNumber || null;
+        }
+        if (d.bankAccountHolder !== undefined) {
+            profileData.bankAccountHolder = d.bankAccountHolder || null;
+        }
 
         if (Object.keys(profileData).length > 0) {
             userData.supplierProfile = { update: profileData };
@@ -70,6 +84,8 @@ async function updateProfile(req, res) {
 
     res.json(sanitizeUser(user));
 }
+
+// ---------- PATCH /api/auth/password ----------
 
 const passwordSchema = z.object({
     currentPassword: z.string().min(1, 'Password saat ini wajib diisi'),
@@ -94,6 +110,8 @@ async function changePassword(req, res) {
 
     res.json({ message: 'Password berhasil diubah' });
 }
+
+// ---------- POST /api/auth/avatar ----------
 
 const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
@@ -137,6 +155,8 @@ async function uploadAvatar(req, res) {
     res.json(sanitizeUser(user));
 }
 
+// ---------- DELETE /api/auth/avatar ----------
+
 async function deleteAvatar(req, res) {
     const current = await prisma.user.findUnique({
         where: { id: req.user.id },
@@ -160,4 +180,4 @@ module.exports = {
     changePassword,
     uploadAvatar,
     deleteAvatar,
-};  
+};

@@ -13,6 +13,9 @@ export interface SupplierProfile {
     groupName: string;
     city: string;
     address: string;
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountHolder?: string | null;
 }
 
 export interface User {
@@ -40,4 +43,7 @@ export interface ProfilePayload {
     groupName?: string;
     city?: string;
     address?: string;
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountHolder?: string | null;
 }

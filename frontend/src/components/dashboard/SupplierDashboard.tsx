@@ -15,6 +15,7 @@ import {
 import { StatCard } from "./StatCard";
 import { StatusBadge } from "./StatusBadge";
 import { WeatherCard } from "./WeatherCard";
+import { KartuPanduan } from "./KartuPanduan";
 import { useAuthStore } from "@/store/authStore";
 import { fetchDemandInsights, fetchMyOrders, fetchSupplierStats } from "@/lib/supplier";
 import { getApiErrorMessage } from "@/lib/api";
@@ -84,21 +85,24 @@ export function SupplierDashboard() {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#0C2318] to-[#16A34A] p-6 text-white">
                 <div>
-                    <h2 className="font-display text-xl font-bold text-ink">Halo, {groupName} 🌱</h2>
-                    <p className="mt-1 text-sm text-ink-soft">
+                    <div className="text-xs font-medium text-white/70">Sisi Pemasok · Hulu</div>
+                    <h2 className="mt-1 font-display text-xl font-bold">Halo, {groupName} 🌱</h2>
+                    <p className="mt-1 text-sm text-white/85">
                         Kelola katalog bahan baku dan pesanan kolektif dari UMKM kuliner.
                     </p>
                 </div>
 
                 <Link
                     href="/dashboard/orders"
-                    className="inline-flex items-center gap-2 rounded-lg bg-brand-green px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark"
+                    className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium text-white ring-1 ring-white/25 transition hover:bg-white/25"
                 >
                     <Plus size={16} /> Buka pesanan kolektif
                 </Link>
             </div>
+
+            <KartuPanduan aksen="#16A34A" />
 
             {stats && stats.needsAction > 0 && (
                 <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">

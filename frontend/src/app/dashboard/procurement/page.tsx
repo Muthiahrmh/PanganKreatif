@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Users, Clock, Package, TrendingDown } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { TombolBayarMidtrans } from "@/components/dashboard/TombolBayarDaring";
+import { batalkanPembayaran } from "@/lib/payment";
 import type { BulkPricing, ProcurementOrder, ProcurementOrderItem } from "@/types/dashboard";
 
 const statusLabel: Record<string, string> = {
@@ -24,8 +26,6 @@ export default function ProcurementPage() {
     const [loading, setLoading] = useState(true);
     const [joiningId, setJoiningId] = useState<string | null>(null);
     const [quantityInput, setQuantityInput] = useState<Record<string, string>>({});
-    const [payingId, setPayingId] = useState<string | null>(null);
-    const [amountInput, setAmountInput] = useState<Record<string, string>>({});
     const [error, setError] = useState<string | null>(null);
 
     async function loadData() {
@@ -70,24 +70,6 @@ export default function ProcurementPage() {
         }
     }
 
-    async function handlePay(itemId: string, suggestedAmount: number) {
-        setError(null);
-        const raw = amountInput[itemId];
-        const amount = raw ? Number(raw) : suggestedAmount;
-        if (!amount || amount <= 0) {
-            setError("Masukkan nominal pembayaran yang valid dulu");
-            return;
-        }
-        setPayingId(itemId);
-        try {
-            await api.post(`/procurement/items/${itemId}/transactions`, { amount });
-            loadData();
-        } catch (err) {
-            setError(getApiErrorMessage(err));
-        } finally {
-            setPayingId(null);
-        }
-    }
 
     return (
         <div className="flex flex-col gap-5">
@@ -331,30 +313,38 @@ export default function ProcurementPage() {
                                         ✓ Pembayaran Lunas
                                     </div>
                                 ) : pendingTx ? (
-                                    <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-sm text-amber-700">
-                                        Menunggu Verifikasi Pembayaran
+                                    <div className="mt-4 space-y-2">
+                                        <div className="rounded-lg bg-amber-50 px-3 py-2 text-center text-sm text-amber-700">
+                                            Menunggu Verifikasi Pembayaran
+                                        </div>
+
+                                        <button
+                                            onClick={async () => {
+                                                if (
+                                                    !window.confirm(
+                                                        "Batalkan pembayaran ini supaya bisa pilih cara lain?"
+                                                    )
+                                                )
+                                                    return;
+                                                try {
+                                                    await batalkanPembayaran(pendingTx.id);
+                                                    loadData();
+                                                } catch (err) {
+                                                    setError(getApiErrorMessage(err));
+                                                }
+                                            }}
+                                            className="w-full rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-ink-soft transition hover:bg-paper-soft hover:text-ink"
+                                        >
+                                            Batalkan dan pilih cara bayar lain
+                                        </button>
                                     </div>
                                 ) : (
-                                    <div className="mt-4 flex gap-2">
-                                        <input
-                                            type="number"
-                                            placeholder={rupiah(suggestedAmount)}
-                                            value={amountInput[item.id] ?? ""}
-                                            onChange={(e) =>
-                                                setAmountInput((prev) => ({
-                                                    ...prev,
-                                                    [item.id]: e.target.value,
-                                                }))
-                                            }
-                                            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-brand-blue"
+                                    <div className="mt-4">
+                                        <TombolBayarMidtrans
+                                            itemId={item.id}
+                                            jumlah={suggestedAmount}
+                                            onLunas={loadData}
                                         />
-
-                                        <Button
-                                            onClick={() => handlePay(item.id, suggestedAmount)}
-                                            loading={payingId === item.id}
-                                        >
-                                            Bayar
-                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -424,3 +414,4 @@ function BulkProgress({
         </div>
     );
 }
+

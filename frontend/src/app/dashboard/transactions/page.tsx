@@ -116,6 +116,37 @@ function UmkmTransactions() {
             ) : (
                 <TableShell
                     head={["Bahan Baku", "Pemasok", "Jumlah", "Nilai", "Hemat", "Status", "Tanggal"]}
+                    mobile={rows.map((r) => (
+                        <div key={r.id} className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="truncate font-medium text-ink">
+                                        {r.product.name}
+                                    </div>
+                                    <div className="truncate text-xs text-ink-soft">
+                                        {r.supplier.groupName} · {formatNumber(r.quantity)}{" "}
+                                        {r.product.unit}
+                                    </div>
+                                </div>
+                                <PaymentBadge status={r.status} />
+                            </div>
+
+                            <div className="mt-3 flex items-baseline justify-between text-sm">
+                                <span className="font-semibold text-ink">
+                                    {formatRupiah(r.amount)}
+                                </span>
+                                {r.saving > 0 && (
+                                    <span className="text-xs font-medium text-brand-green">
+                                        hemat {formatRupiah(r.saving)}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="mt-1 text-xs text-ink-soft">
+                                {formatDate(r.createdAt)}
+                            </div>
+                        </div>
+                    ))}
                 >
                     {rows.map((r) => (
                         <tr key={r.id} className="border-t border-slate-100">
@@ -288,7 +319,19 @@ function SupplierTransactions() {
                                     <div className="mt-1 text-xs text-ink-soft">
                                         {r.product.name} · {formatNumber(r.quantity)}{" "}
                                         {r.product.unit} · {formatDate(r.createdAt)}
+                                        {r.channel && ` · ${r.channel}`}
                                     </div>
+
+                                    {r.paymentProofUrl && (
+                                        <a
+                                            href={r.paymentProofUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="mt-1.5 inline-block text-xs font-medium text-brand-blue hover:underline"
+                                        >
+                                            Lihat bukti transfer
+                                        </a>
+                                    )}
                                 </div>
 
                                 <div className="text-right">
@@ -301,6 +344,33 @@ function SupplierTransactions() {
                                     </div>
                                 </div>
                             </div>
+
+                            {r.status === "success" && (
+                                <div
+                                    className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-xs ${r.payoutStatus === "paid"
+                                            ? "bg-green-50 text-green-700"
+                                            : "bg-paper-soft text-ink-soft"
+                                        }`}
+                                >
+                                    <span>
+                                        {r.payoutStatus === "paid"
+                                            ? `Dana ${formatRupiah(r.supplierPayout)} sudah diteruskan${r.payoutAt ? ` pada ${formatDate(r.payoutAt)}` : ""
+                                            }`
+                                            : `Dana ${formatRupiah(r.supplierPayout)} menunggu diteruskan platform`}
+                                    </span>
+
+                                    {r.payoutProofUrl && (
+                                        <a
+                                            href={r.payoutProofUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="font-medium underline"
+                                        >
+                                            Lihat bukti transfer
+                                        </a>
+                                    )}
+                                </div>
+                            )}
 
                             {r.status === "pending" && (
                                 <div className="mt-4 flex flex-wrap gap-2">
@@ -399,6 +469,33 @@ function AdminTransactions() {
             ) : (
                 <TableShell
                     head={["UMKM", "Pemasok", "Bahan Baku", "Nilai", "Komisi", "Status", "Tanggal"]}
+                    mobile={rows.map((r) => (
+                        <div key={r.id} className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="truncate font-medium text-ink">
+                                        {r.umkm.businessName}
+                                    </div>
+                                    <div className="truncate text-xs text-ink-soft">
+                                        {r.product.name} dari {r.supplier.groupName}
+                                    </div>
+                                </div>
+                                <PaymentBadge status={r.status} />
+                            </div>
+
+                            <div className="mt-3 flex items-baseline justify-between text-sm">
+                                <span className="text-ink">{formatRupiah(r.amount)}</span>
+                                <span className="text-xs font-medium text-brand-green">
+                                    komisi {formatRupiah(r.platformFee)}
+                                </span>
+                            </div>
+
+                            <div className="mt-1 text-xs text-ink-soft">
+                                {formatNumber(r.quantity)} {r.product.unit} ·{" "}
+                                {formatDate(r.createdAt)}
+                            </div>
+                        </div>
+                    ))}
                 >
                     {rows.map((r) => (
                         <tr key={r.id} className="border-t border-slate-100">
@@ -438,10 +535,24 @@ function AdminTransactions() {
 // Potongan tampilan bersama
 // ============================================================
 
-function TableShell({ head, children }: { head: string[]; children: React.ReactNode }) {
+/**
+ * Tabel untuk layar lebar, kartu bertumpuk untuk layar kecil.
+ *
+ * Sebagian besar pengguna membuka lewat HP, dan tabel yang harus
+ * digeser ke samping sulit dibaca di sana.
+ */
+function TableShell({
+    head,
+    children,
+    mobile,
+}: {
+    head: string[];
+    children: React.ReactNode;
+    mobile?: React.ReactNode;
+}) {
     return (
-        <div className="overflow-x-auto rounded-xl border border-ink/5 bg-white shadow-sm">
-            <table className="w-full min-w-[640px] text-left text-sm">
+        <div className="overflow-hidden rounded-xl border border-ink/5 bg-white shadow-sm">
+            <table className="hidden w-full text-left text-sm md:table">
                 <thead className="bg-paper-soft text-xs font-semibold text-ink-soft">
                     <tr>
                         {head.map((h) => (
@@ -453,6 +564,8 @@ function TableShell({ head, children }: { head: string[]; children: React.ReactN
                 </thead>
                 <tbody>{children}</tbody>
             </table>
+
+            <div className="divide-y divide-slate-100 md:hidden">{mobile}</div>
         </div>
     );
 }

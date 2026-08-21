@@ -1,15 +1,24 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { splitPayment, resolveUnitPrice } = require('../utils/pricing');
+const storage = require('../utils/supabaseStorage');
+
+const { daftarKanalManual } = require('./paymentController');
 
 const createTxSchema = z.object({
-  amount: z.number().positive(),
-  paymentProofUrl: z.string().url().optional(),
+  // Kode kanal dari daftar yang disediakan platform: bank, gopay, dana, dst
+  kanal: z.string().max(30).default('bank'),
+  catatan: z.string().max(300).optional(),
 });
 
-// UMKM buat transaksi pembayaran utk salah satu order item miliknya
+/**
+ * Pembayaran manual oleh UMKM: transfer bank atau tunai.
+ * Nilainya dihitung ulang di server dari kuantitas dikali harga
+ * yang berlaku — angka dari browser tidak dipercaya.
+ * Bukti transfer diunggah sebagai berkas, bukan sekadar diketik.
+ */
 async function createTransaction(req, res) {
-  const parsed = createTxSchema.safeParse(req.body);
+  const parsed = createTxSchema.safeParse(req.body ?? {});
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const umkmProfile = await prisma.umkmProfile.findUnique({ where: { userId: req.user.id } });
@@ -17,20 +26,64 @@ async function createTransaction(req, res) {
 
   const item = await prisma.procurementOrderItem.findUnique({
     where: { id: req.params.itemId },
+    include: { order: { include: { product: true } } },
   });
   if (!item || item.umkmId !== umkmProfile.id) {
     return res.status(403).json({ error: 'Item order tidak ditemukan / bukan milik anda' });
   }
+  if (item.status === 'paid') {
+    return res.status(400).json({ error: 'Pesanan ini sudah lunas' });
+  }
 
-  // Pisahkan komisi platform dari hak supplier, lalu simpan keduanya.
-  const split = splitPayment(parsed.data.amount);
+  const { kanal: kodeKanal, catatan } = parsed.data;
+
+  // Kanal harus salah satu yang memang disediakan platform
+  const kanal = daftarKanalManual().find((k) => k.kode === kodeKanal);
+  if (!kanal) {
+    return res.status(400).json({ error: 'Cara pembayaran tidak dikenali' });
+  }
+
+  const metode = kanal.jenis === 'cash' ? 'cash' : 'transfer';
+
+  // Selain tunai, bukti transfer wajib
+  if (metode === 'transfer' && !req.file) {
+    return res.status(400).json({ error: 'Bukti transfer wajib diunggah' });
+  }
+
+  let buktiUrl = null;
+  if (req.file) {
+    const izin = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!izin.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Bukti harus berupa gambar JPG, PNG, atau WEBP' });
+    }
+    if (req.file.size > 3 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Ukuran bukti maksimal 3 MB' });
+    }
+    if (!storage.isConfigured()) {
+      return res.status(503).json({ error: 'Penyimpanan bukti belum dikonfigurasi di server' });
+    }
+
+    try {
+      const hasil = await storage.uploadBuktiBayar(item.id, req.file.buffer, req.file.mimetype);
+      buktiUrl = hasil.url;
+    } catch (err) {
+      return res.status(502).json({ error: err.message });
+    }
+  }
+
+  const harga = resolveUnitPrice(item.order.product, item.order.totalQuantity);
+  const nilai = Math.round(Number(item.quantity) * harga.unitPrice);
+  const split = splitPayment(nilai);
 
   const transaction = await prisma.transaction.create({
     data: {
       orderItemId: item.id,
       amount: split.amount,
-      paymentProofUrl: parsed.data.paymentProofUrl,
+      paymentProofUrl: buktiUrl,
       status: 'pending',
+      paymentMethod: metode,
+      paymentChannel: kanal.nama,
+      payoutNote: catatan || null,
       platformFee: split.platformFee,
       commissionRate: split.commissionRate,
       supplierPayout: split.supplierPayout,
@@ -182,6 +235,12 @@ async function listSupplierTransactions(req, res) {
       createdAt: t.createdAt,
       paymentProofUrl: t.paymentProofUrl,
       quantity: Number(t.orderItem.quantity),
+      metode: t.paymentMethod,
+      channel: t.paymentChannel,
+      payoutStatus: t.payoutStatus,
+      payoutAt: t.payoutAt,
+      payoutProofUrl: t.payoutProofUrl,
+      payoutNote: t.payoutNote,
       umkm: {
         businessName: t.orderItem.umkm.businessName,
         city: t.orderItem.umkm.city,

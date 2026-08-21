@@ -11,6 +11,8 @@ export interface UmkmTransaction {
     quantity: number;
     itemStatus: "pending" | "paid";
     orderStatus: "open" | "closed" | "delivered";
+    metode?: "gateway" | "transfer" | "cash";
+    channel?: string | null;
     /** Harga per unit yang benar-benar dibayar */
     unitPrice: number;
     normalPrice: number;
@@ -31,6 +33,12 @@ export interface SupplierTransaction {
     createdAt: string;
     paymentProofUrl: string | null;
     quantity: number;
+    metode?: "gateway" | "transfer" | "cash";
+    channel?: string | null;
+    payoutStatus?: "pending" | "paid";
+    payoutAt?: string | null;
+    payoutProofUrl?: string | null;
+    payoutNote?: string | null;
     umkm: { businessName: string; city: string };
     product: { name: string; unit: string };
 }

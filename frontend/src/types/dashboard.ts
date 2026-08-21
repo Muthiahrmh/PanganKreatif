@@ -65,6 +65,12 @@ export interface ProcurementOrder {
     participantCount?: number;
 }
 
+export interface RekeningPemasok {
+    bank: string;
+    nomor: string | null;
+    atasNama: string | null;
+}
+
 export interface ProcurementOrderItem {
     id: string;
     orderId: string;
@@ -73,6 +79,8 @@ export interface ProcurementOrderItem {
     order: ProcurementOrder;
     pricing?: BulkPricing;
     subtotal?: number;
+    /** Rekening tujuan transfer, kalau pemasok sudah mengisinya */
+    rekening?: RekeningPemasok | null;
     transactions?: {
         id: string;
         amount: string;

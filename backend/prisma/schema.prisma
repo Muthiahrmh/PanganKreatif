@@ -30,6 +30,17 @@ enum TransactionStatus {
   failed
 }
 
+enum PaymentMethod {
+  gateway
+  transfer
+  cash
+}
+
+enum PayoutStatus {
+  pending
+  paid
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -72,6 +83,11 @@ model SupplierProfile {
   groupName String @map("group_name")
   city      String
   address   String
+
+  // Rekening tujuan penerusan dana dari platform ke pemasok
+  bankName          String? @map("bank_name")
+  bankAccountNumber String? @map("bank_account_number")
+  bankAccountHolder String? @map("bank_account_holder")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   products Product[]
@@ -165,6 +181,23 @@ model Transaction {
   platformFee     Decimal @default(0) @db.Decimal(12, 2) @map("platform_fee")
   commissionRate  Decimal @default(0) @db.Decimal(5, 4)  @map("commission_rate")
   supplierPayout  Decimal @default(0) @db.Decimal(12, 2) @map("supplier_payout")
+
+  // Cara membayar: gateway (daring), transfer (manual), atau tunai
+  paymentMethod   PaymentMethod @default(gateway) @map("payment_method")
+
+  // Pembayaran daring lewat payment gateway.
+  gatewayOrderId  String?   @unique @map("gateway_order_id")
+  snapToken       String?   @map("snap_token")
+  paymentChannel  String?   @map("payment_channel")
+  paidAt          DateTime? @map("paid_at")
+
+  // Penerusan dana dari platform ke pemasok.
+  // Dana masuk lebih dulu ke rekening platform, lalu diteruskan
+  // setelah dikurangi komisi. Statusnya dicatat di sini.
+  payoutStatus    PayoutStatus @default(pending) @map("payout_status")
+  payoutAt        DateTime?    @map("payout_at")
+  payoutNote      String?      @map("payout_note")
+  payoutProofUrl  String?      @map("payout_proof_url")
 
   orderItem ProcurementOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 

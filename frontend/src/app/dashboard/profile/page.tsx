@@ -22,6 +22,9 @@ const emptyForm: ProfilePayload = {
     groupName: "",
     city: "",
     address: "",
+    bankName: "",
+    bankAccountNumber: "",
+    bankAccountHolder: "",
 };
 
 export default function ProfilePage() {
@@ -52,6 +55,9 @@ export default function ProfilePage() {
                 groupName: data.supplierProfile?.groupName ?? "",
                 city: data.umkmProfile?.city ?? data.supplierProfile?.city ?? "",
                 address: data.umkmProfile?.address ?? data.supplierProfile?.address ?? "",
+                bankName: data.supplierProfile?.bankName ?? "",
+                bankAccountNumber: data.supplierProfile?.bankAccountNumber ?? "",
+                bankAccountHolder: data.supplierProfile?.bankAccountHolder ?? "",
             });
             setError(null);
         } catch (err) {
@@ -85,6 +91,9 @@ export default function ProfilePage() {
                 payload.address = form.address;
                 if (isSupplier) {
                     payload.groupName = form.groupName;
+                    payload.bankName = form.bankName || null;
+                    payload.bankAccountNumber = form.bankAccountNumber || null;
+                    payload.bankAccountHolder = form.bankAccountHolder || null;
                 } else {
                     payload.businessName = form.businessName;
                     payload.businessType = form.businessType;
@@ -148,7 +157,7 @@ export default function ProfilePage() {
                 </p>
             )}
 
-            <div className="grid items-start gap-5 lg:grid-cols-[320px_1fr]">
+            <div className="grid items-start gap-5 lg:grid-cols-[400px_1fr]">
                 {/* Kolom kiri: foto profil + keamanan */}
                 <div className="flex flex-col gap-5">
             <div className="rounded-xl border border-ink/5 bg-white p-6">
@@ -161,17 +170,17 @@ export default function ProfilePage() {
                             <img
                                 src={user.avatarUrl}
                                 alt="Foto profil"
-                                className="h-32 w-32 rounded-full object-cover ring-2 ring-ink/5"
+                                className="h-44 w-44 rounded-full object-cover ring-4 ring-ink/5"
                             />
                         ) : (
-                            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-brand-blue font-display text-4xl font-bold text-white">
+                            <div className="flex h-44 w-44 items-center justify-center rounded-full bg-brand-blue font-display text-5xl font-bold text-white">
                                 {initial}
                             </div>
                         )}
 
                         {uploading && (
                             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-ink/40">
-                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                             </div>
                         )}
                     </div>
@@ -330,6 +339,61 @@ export default function ProfilePage() {
                 )}
             </div>
 
+            {isSupplier && (
+                    <div className="rounded-xl border border-ink/5 bg-white p-6">
+                        <h3 className="font-display text-base font-bold text-ink">
+                            Rekening Penerimaan Dana
+                        </h3>
+                        <p className="mt-1 text-sm text-ink-soft">
+                            Pembayaran UMKM masuk lebih dulu ke rekening platform, lalu diteruskan
+                            ke rekening ini setelah dipotong komisi. UMKM yang membayar manual juga
+                            melihat rekening ini sebagai tujuan transfer.
+                        </p>
+
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                            <Field label="Nama bank">
+                                <input
+                                    value={form.bankName ?? ""}
+                                    onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                                    placeholder="Bank Aceh Syariah"
+                                    className={inputClass}
+                                />
+                            </Field>
+
+                            <Field label="Nomor rekening">
+                                <input
+                                    value={form.bankAccountNumber ?? ""}
+                                    onChange={(e) =>
+                                        setForm({ ...form, bankAccountNumber: e.target.value })
+                                    }
+                                    placeholder="0102030405"
+                                    className={inputClass}
+                                />
+                            </Field>
+
+                            <div className="sm:col-span-2">
+                                <Field label="Atas nama">
+                                    <input
+                                        value={form.bankAccountHolder ?? ""}
+                                        onChange={(e) =>
+                                            setForm({ ...form, bankAccountHolder: e.target.value })
+                                        }
+                                        placeholder="Kelompok Tani Makmur"
+                                        className={inputClass}
+                                    />
+                                </Field>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="mt-5 rounded-lg bg-brand-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark disabled:opacity-60"
+                        >
+                            {saving ? "Menyimpan..." : "Simpan rekening"}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

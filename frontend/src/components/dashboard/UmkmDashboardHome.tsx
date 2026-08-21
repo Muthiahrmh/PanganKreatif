@@ -7,6 +7,8 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WeatherCard } from "@/components/dashboard/WeatherCard";
+import { KartuRekomendasi } from "@/components/dashboard/KartuRekomendasi";
+import { KartuPanduan } from "@/components/dashboard/KartuPanduan";
 import { ForecastChart } from "@/components/dashboard/ForecastChart";
 import type { SalesRecord, ForecastResult, ProcurementOrderItem } from "@/types/dashboard";
 import type { UmkmTransaction } from "@/types/transaction";
@@ -107,8 +109,11 @@ export function UmkmDashboardHome() {
 
     return (
         <div className="flex flex-col gap-6">
+            <KartuPanduan aksen="#2563EB" />
+
             <div>
-                <h2 className="font-display text-xl font-bold text-ink">
+                <div className="text-xs font-medium text-brand-blue">Sisi Pembeli · Hilir</div>
+                <h2 className="mt-1 font-display text-xl font-bold text-ink">
                     Halo, {user.umkmProfile?.businessName ?? user.name} 👋
                 </h2>
                 <p className="mt-1 text-sm text-ink-soft">
@@ -190,7 +195,13 @@ export function UmkmDashboardHome() {
                         )}
                     </div>
 
-                    <ArrowUpRight size={28} className="text-white/80" />
+                    <Link
+                        href="/dashboard/forecast"
+                        aria-label="Buka halaman Prediksi AI"
+                        className="shrink-0 rounded-lg p-1.5 text-white/80 transition hover:bg-white/15 hover:text-white"
+                    >
+                        <ArrowUpRight size={26} />
+                    </Link>
                 </div>
             </div>
 
@@ -238,6 +249,8 @@ export function UmkmDashboardHome() {
                     color="text-amber-500"
                 />
             </div>
+
+            <KartuRekomendasi />
 
             <WeatherCard peran="umkm" />
 
