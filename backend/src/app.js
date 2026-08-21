@@ -9,6 +9,7 @@ const forecastRoutes = require('./routes/forecastRoutes');
 const procurementRoutes = require('./routes/procurementRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const weatherRoutes = require('./routes/weatherRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/forecasts', forecastRoutes);
 app.use('/api/procurement', procurementRoutes);
 app.use('/api/supplier', supplierRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/weather', weatherRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

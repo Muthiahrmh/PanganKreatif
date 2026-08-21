@@ -27,11 +27,14 @@ export default function ForecastPage() {
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        api.get<SalesRecord[]>("/sales-records").then((res) => {
-            const unique = Array.from(new Set(res.data.map((r) => r.productName)));
-            setProductOptions(unique);
-            if (unique.length > 0) setSelectedProduct(unique[0]);
-        });
+        api
+            .get<SalesRecord[]>("/sales-records")
+            .then((res) => {
+                const unique = Array.from(new Set(res.data.map((r) => r.productName)));
+                setProductOptions(unique);
+                if (unique.length > 0) setSelectedProduct(unique[0]);
+            })
+            .catch(() => setProductOptions([]));
         loadHistory();
     }, []);
 

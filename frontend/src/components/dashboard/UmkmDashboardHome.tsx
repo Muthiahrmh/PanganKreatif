@@ -6,6 +6,7 @@ import { NotebookPen, Sparkles, ShoppingCart, PiggyBank, ArrowUpRight } from "lu
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { WeatherCard } from "@/components/dashboard/WeatherCard";
 import { ForecastChart } from "@/components/dashboard/ForecastChart";
 import type { SalesRecord, ForecastResult, ProcurementOrderItem } from "@/types/dashboard";
 import type { UmkmTransaction } from "@/types/transaction";
@@ -23,28 +24,43 @@ export function UmkmDashboardHome() {
     useEffect(() => {
         if (user?.role !== "umkm") return;
 
-        api.get<SalesRecord[]>("/sales-records").then((res) => {
-            setSalesCount(res.data.length);
-            setProductCount(new Set(res.data.map((r) => r.productName)).size);
-            setSalesRecords(res.data);
-        });
+        // Tiap panggilan diberi catch sendiri supaya satu kegagalan
+        // tidak menjatuhkan seluruh dashboard
+        api
+            .get<SalesRecord[]>("/sales-records")
+            .then((res) => {
+                setSalesCount(res.data.length);
+                setProductCount(new Set(res.data.map((r) => r.productName)).size);
+                setSalesRecords(res.data);
+            })
+            .catch(() => {
+                setSalesCount(0);
+                setProductCount(0);
+            });
 
-        api.get<ForecastResult[]>("/forecasts").then((res) => {
-            setLatestForecast(res.data[0] ?? null);
-        });
+        api
+            .get<ForecastResult[]>("/forecasts")
+            .then((res) => setLatestForecast(res.data[0] ?? null))
+            .catch(() => setLatestForecast(null));
 
-        api.get<ProcurementOrderItem[]>("/procurement/items/mine").then((res) => {
-            setActiveItems(res.data.filter((i) => i.status === "pending").length);
-        });
+        api
+            .get<ProcurementOrderItem[]>("/procurement/items/mine")
+            .then((res) =>
+                setActiveItems(res.data.filter((i) => i.status === "pending").length)
+            )
+            .catch(() => setActiveItems(0));
 
         // Total rupiah yang dihemat berkat belanja kolektif
-        api.get<UmkmTransaction[]>("/procurement/transactions/mine").then((res) => {
-            setTotalHemat(
-                res.data
-                    .filter((t) => t.status === "success")
-                    .reduce((sum, t) => sum + t.saving, 0)
-            );
-        });
+        api
+            .get<UmkmTransaction[]>("/procurement/transactions/mine")
+            .then((res) =>
+                setTotalHemat(
+                    res.data
+                        .filter((t) => t.status === "success")
+                        .reduce((sum, t) => sum + t.saving, 0)
+                )
+            )
+            .catch(() => setTotalHemat(0));
     }, [user]);
 
     // Bandingkan prediksi dengan rata-rata 3 bulan terakhir bahan yang sama,
@@ -222,6 +238,8 @@ export function UmkmDashboardHome() {
                     color="text-amber-500"
                 />
             </div>
+
+            <WeatherCard peran="umkm" />
 
             <div className="rounded-xl border border-ink/5 bg-white p-5">
                 <h3 className="font-display text-lg font-bold text-ink">

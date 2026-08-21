@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { StatusBadge } from "./StatusBadge";
+import { WeatherCard } from "./WeatherCard";
 import { useAuthStore } from "@/store/authStore";
 import { fetchDemandInsights, fetchMyOrders, fetchSupplierStats } from "@/lib/supplier";
 import { getApiErrorMessage } from "@/lib/api";
@@ -33,8 +34,6 @@ export function SupplierDashboard() {
         let cancelled = false;
 
         async function load() {
-            setLoading(true);
-            setError(null);
             try {
                 const [s, o, d] = await Promise.all([
                     fetchSupplierStats(),
@@ -45,6 +44,7 @@ export function SupplierDashboard() {
                 setStats(s);
                 setOrders(o);
                 setDemand(d);
+                setError(null);
             } catch (err) {
                 if (!cancelled) setError(getApiErrorMessage(err));
             } finally {
@@ -155,6 +155,8 @@ export function SupplierDashboard() {
                     color="text-amber-500"
                 />
             </div>
+
+            <WeatherCard peran="supplier" />
 
             <div className="grid gap-4 lg:grid-cols-2">
                 {/* Permintaan pasar */}
