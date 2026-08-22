@@ -100,9 +100,48 @@ async function uploadBuktiPayout(supplierId, buffer, mimeType) {
     return { url: data.publicUrl, path };
 }
 
+/**
+ * Buat URL bertanda tangan yang berlaku sementara.
+ *
+ * Bukti pembayaran tidak boleh disimpan di bucket publik — siapa pun
+ * yang punya tautannya bisa melihat bukti transfer orang lain.
+ * Dengan bucket privat, berkas hanya bisa diakses lewat URL yang
+ * diterbitkan server setelah memeriksa hak akses pemintanya.
+ *
+ * @param {string} path jalur berkas di dalam bucket
+ * @param {number} detik masa berlaku, bawaan 5 menit
+ */
+async function urlBertandaTangan(path, detik = 300) {
+    if (!path) return null;
+
+    const { data, error } = await getClient()
+        .storage.from(BUCKET_BUKTI)
+        .createSignedUrl(path, detik);
+
+    if (error) throw new Error(`Gagal membuat tautan bukti: ${error.message}`);
+    return data.signedUrl;
+}
+
+/**
+ * Ambil jalur berkas dari URL publik lama.
+ *
+ * Data yang tersimpan sebelum bucket dijadikan privat hanya menyimpan
+ * URL. Jalurnya masih bisa dipulihkan dari potongan setelah nama
+ * bucket, sehingga berkas lama tetap bisa diakses.
+ */
+function jalurDariUrl(url) {
+    if (!url) return null;
+    const penanda = `/public/${BUCKET_BUKTI}/`;
+    const posisi = url.indexOf(penanda);
+    if (posisi === -1) return null;
+    return decodeURIComponent(url.slice(posisi + penanda.length));
+}
+
 module.exports = {
     getClient,
     isConfigured,
+    urlBertandaTangan,
+    jalurDariUrl,
     uploadAvatar,
     removeAvatar,
     uploadBuktiBayar,

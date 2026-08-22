@@ -202,7 +202,7 @@ async function notifikasiSupplier(supplierId) {
                     tipe: 'dana_diteruskan',
                     tingkat: 'baik',
                     judul: 'Dana diteruskan platform',
-                    pesan: `${rupiah(sukses.supplierPayout)} dari penjualan ${o.product.name} sudah ditransfer ke rekening Anda.`,
+                    pesan: `${rupiah(sukses.supplierPayout)} dari penjualan ${o.product.name} sudah ditransfer ke rekening kamu.`,
                     waktu: sukses.payoutAt ?? sukses.createdAt,
                     tautan: '/dashboard/transactions',
                 });

@@ -19,99 +19,145 @@ const monthLabel = (key) => {
  * berapa nilainya, dan berapa yang jadi pendapatan PanganKreatif.
  */
 async function getStats(req, res) {
-    const [umkmCount, supplierCount, productCount, orders, transactions] = await Promise.all([
+    const now = new Date();
+    const awalRentang = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+    // Penjumlahan dikerjakan basis data, bukan ditarik ke memori.
+    // Dengan ribuan transaksi, memuat semuanya lalu menjumlah di sini
+    // memakan waktu dan memori tanpa perlu.
+    const [
+        umkmCount,
+        supplierCount,
+        productCount,
+        orderTotal,
+        orderOpen,
+        orderDelivered,
+        volumeAgg,
+        suksesAgg,
+        tertundaAgg,
+    ] = await Promise.all([
         prisma.umkmProfile.count(),
         prisma.supplierProfile.count(),
         prisma.product.count(),
-        prisma.procurementOrder.findMany({
-            include: { product: true, items: true },
+        prisma.procurementOrder.count(),
+        prisma.procurementOrder.count({ where: { status: 'open' } }),
+        prisma.procurementOrder.count({ where: { status: 'delivered' } }),
+        prisma.procurementOrder.aggregate({ _sum: { totalQuantity: true } }),
+        prisma.transaction.aggregate({
+            where: { status: 'success' },
+            _sum: { amount: true, platformFee: true, distributionMargin: true },
+            _count: { _all: true },
         }),
-        prisma.transaction.findMany({
-            include: {
-                orderItem: {
-                    include: {
-                        umkm: true,
-                        order: { include: { product: { include: { supplier: true } } } },
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
+        prisma.transaction.aggregate({
+            where: { status: 'pending' },
+            _sum: { amount: true },
+            _count: { _all: true },
         }),
     ]);
 
-    const success = transactions.filter((t) => t.status === 'success');
-    const pending = transactions.filter((t) => t.status === 'pending');
+    const gmv = round2(toNum(suksesAgg._sum.amount));
+    const komisi = round2(toNum(suksesAgg._sum.platformFee));
+    const margin = round2(toNum(suksesAgg._sum.distributionMargin));
+    const revenue = round2(komisi + margin);
+    const successCount = suksesAgg._count._all;
+    const cogs = round2(successCount * COST_PER_TRANSACTION);
 
-    // GMV = total nilai barang yang mengalir lewat platform
-    const gmv = round2(success.reduce((s, t) => s + toNum(t.amount), 0));
-    // Pendapatan platform = akumulasi komisi
-    const revenue = round2(success.reduce((s, t) => s + toNum(t.platformFee), 0));
-    // HPP menurut Bab V proposal: biaya komputasi & verifikasi per transaksi
-    const cogs = round2(success.length * COST_PER_TRANSACTION);
+    // Tren enam bulan: hanya kolom angka, tanpa relasi
+    const transaksiRentang = await prisma.transaction.findMany({
+        where: { status: 'success', createdAt: { gte: awalRentang } },
+        select: { createdAt: true, amount: true, platformFee: true, distributionMargin: true },
+    });
 
-    // Tren 6 bulan terakhir
     const series = new Map();
-    const now = new Date();
     for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        series.set(monthKey(d), { key: monthKey(d), label: monthLabel(monthKey(d)), gmv: 0, revenue: 0, count: 0 });
-    }
-    for (const t of success) {
-        const k = monthKey(t.createdAt);
-        const row = series.get(k);
-        if (row) {
-            row.gmv = round2(row.gmv + toNum(t.amount));
-            row.revenue = round2(row.revenue + toNum(t.platformFee));
-            row.count += 1;
-        }
+        const k = monthKey(d);
+        series.set(k, { key: k, label: monthLabel(k), gmv: 0, revenue: 0, count: 0 });
     }
 
-    // Komoditas paling banyak ditransaksikan
-    const byCommodity = new Map();
-    for (const t of success) {
-        const p = t.orderItem.order.product;
-        const entry = byCommodity.get(p.name) || { name: p.name, unit: p.unit, quantity: 0, value: 0 };
-        entry.quantity += toNum(t.orderItem.quantity);
-        entry.value = round2(entry.value + toNum(t.amount));
-        byCommodity.set(p.name, entry);
+    for (const t of transaksiRentang) {
+        const row = series.get(monthKey(t.createdAt));
+        if (!row) continue;
+        row.gmv = round2(row.gmv + toNum(t.amount));
+        row.revenue = round2(row.revenue + toNum(t.platformFee) + toNum(t.distributionMargin));
+        row.count += 1;
     }
-    const topCommodities = [...byCommodity.values()]
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
 
-    const recentTransactions = transactions.slice(0, 8).map((t) => ({
-        id: t.id,
-        amount: toNum(t.amount),
-        platformFee: toNum(t.platformFee),
-        status: t.status,
-        createdAt: t.createdAt,
-        umkm: t.orderItem.umkm.businessName,
-        supplier: t.orderItem.order.product.supplier.groupName,
-        product: t.orderItem.order.product.name,
-    }));
+    // Komoditas teratas lewat kueri agregat langsung, karena Prisma
+    // belum bisa mengelompokkan berdasarkan kolom di tabel relasi
+    const topCommodities = await prisma.$queryRaw`
+    select p.name,
+           p.unit,
+           sum(i.quantity)::float as quantity,
+           sum(t.amount)::float   as value
+    from transactions t
+    join procurement_order_items i on i.id = t.order_item_id
+    join procurement_orders o      on o.id = i.order_id
+    join products p                on p.id = o.product_id
+    where t.status = 'success'
+    group by p.name, p.unit
+    order by value desc
+    limit 5
+  `;
+
+    const recent = await prisma.transaction.findMany({
+        take: 8,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            orderItem: {
+                include: {
+                    umkm: { select: { businessName: true } },
+                    order: {
+                        select: {
+                            product: {
+                                select: { name: true, supplier: { select: { groupName: true } } },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
 
     res.json({
         commissionRate: COMMISSION_RATE,
         users: { umkm: umkmCount, supplier: supplierCount, total: umkmCount + supplierCount },
         catalog: { products: productCount },
         orders: {
-            total: orders.length,
-            open: orders.filter((o) => o.status === 'open').length,
-            delivered: orders.filter((o) => o.status === 'delivered').length,
-            totalVolume: round2(orders.reduce((s, o) => s + toNum(o.totalQuantity), 0)),
+            total: orderTotal,
+            open: orderOpen,
+            delivered: orderDelivered,
+            totalVolume: round2(toNum(volumeAgg._sum.totalQuantity)),
         },
         finance: {
             gmv,
             revenue,
+            komisi,
+            margin,
             cogs,
             grossProfit: round2(revenue - cogs),
-            successCount: success.length,
-            pendingCount: pending.length,
-            pendingValue: round2(pending.reduce((s, t) => s + toNum(t.amount), 0)),
+            successCount,
+            pendingCount: tertundaAgg._count._all,
+            pendingValue: round2(toNum(tertundaAgg._sum.amount)),
         },
         series: [...series.values()],
-        topCommodities,
-        recentTransactions,
+        topCommodities: topCommodities.map((c) => ({
+            name: c.name,
+            unit: c.unit,
+            quantity: round2(c.quantity),
+            value: round2(c.value),
+        })),
+        recentTransactions: recent.map((t) => ({
+            id: t.id,
+            amount: toNum(t.amount),
+            platformFee: toNum(t.platformFee),
+            distributionMargin: toNum(t.distributionMargin),
+            status: t.status,
+            createdAt: t.createdAt,
+            umkm: t.orderItem.umkm.businessName,
+            supplier: t.orderItem.order.product.supplier.groupName,
+            product: t.orderItem.order.product.name,
+        })),
     });
 }
 
@@ -166,6 +212,7 @@ async function listAllTransactions(req, res) {
             id: t.id,
             amount: toNum(t.amount),
             platformFee: toNum(t.platformFee),
+            distributionMargin: toNum(t.distributionMargin),
             supplierPayout: toNum(t.supplierPayout),
             commissionRate: toNum(t.commissionRate),
             status: t.status,
@@ -208,10 +255,12 @@ async function getPayouts(req, res) {
             id: true,
             amount: true,
             platformFee: true,
+            distributionMargin: true,
             supplierPayout: true,
             createdAt: true,
             payoutAt: true,
             payoutProofUrl: true,
+            payoutProofPath: true,
             payoutNote: true,
             orderItem: {
                 select: {
@@ -262,22 +311,27 @@ async function getPayouts(req, res) {
             jumlahTransaksi: 0,
             totalNilai: 0,
             totalKomisi: 0,
+            totalMargin: 0,
             totalDiteruskan: 0,
             transaksiTerakhir: null,
-            buktiUrl: null,
+            buktiTransaksiId: null,
             catatan: null,
         };
 
         entri.jumlahTransaksi += 1;
         entri.totalNilai = round2(entri.totalNilai + toNum(t.amount));
         entri.totalKomisi = round2(entri.totalKomisi + toNum(t.platformFee));
+        entri.totalMargin = round2(entri.totalMargin + toNum(t.distributionMargin));
         entri.totalDiteruskan = round2(entri.totalDiteruskan + toNum(t.supplierPayout));
 
         const waktu = status === 'paid' ? t.payoutAt : t.createdAt;
         if (!entri.transaksiTerakhir || (waktu && waktu > entri.transaksiTerakhir)) {
             entri.transaksiTerakhir = waktu;
             if (status === 'paid') {
-                entri.buktiUrl = t.payoutProofUrl;
+                // Kirim id transaksinya saja; tautan bukti diminta terpisah
+                // lewat endpoint yang memeriksa hak akses
+                entri.buktiTransaksiId =
+                    t.payoutProofUrl || t.payoutProofPath ? t.id : null;
                 entri.catatan = t.payoutNote;
             }
         }
@@ -294,6 +348,7 @@ async function getPayouts(req, res) {
             jumlahTransaksi: transaksi.length,
             totalNilai: round2(daftar.reduce((s, d) => s + d.totalNilai, 0)),
             totalKomisi: round2(daftar.reduce((s, d) => s + d.totalKomisi, 0)),
+            totalMargin: round2(daftar.reduce((s, d) => s + d.totalMargin, 0)),
             totalDiteruskan: round2(daftar.reduce((s, d) => s + d.totalDiteruskan, 0)),
             tanpaRekening: daftar.filter((d) => !d.rekening).length,
         },
@@ -340,6 +395,7 @@ async function tandaiPayout(req, res) {
     const total = round2(sasaran.reduce((s, t) => s + toNum(t.supplierPayout), 0));
 
     let buktiUrl;
+    let buktiPath;
     try {
         const hasil = await storage.uploadBuktiPayout(
             req.params.supplierId,
@@ -347,6 +403,7 @@ async function tandaiPayout(req, res) {
             req.file.mimetype
         );
         buktiUrl = hasil.url;
+        buktiPath = hasil.path;
     } catch (err) {
         return res.status(502).json({ error: err.message });
     }
@@ -357,6 +414,7 @@ async function tandaiPayout(req, res) {
             payoutStatus: 'paid',
             payoutAt: new Date(),
             payoutProofUrl: buktiUrl,
+            payoutProofPath: buktiPath,
             ...(catatan ? { payoutNote: catatan } : {}),
         },
     });

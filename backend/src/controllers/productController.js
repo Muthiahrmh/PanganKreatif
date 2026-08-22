@@ -1,8 +1,10 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
+const { hitungPengiriman } = require('../utils/jarak');
 
 async function listProducts(req, res) {
   const { category, city } = req.query;
+
   const products = await prisma.product.findMany({
     where: {
       ...(category && { category: String(category) }),
@@ -11,7 +13,24 @@ async function listProducts(req, res) {
     include: { supplier: true },
     orderBy: { name: 'asc' },
   });
-  res.json(products);
+
+  // Kalau yang meminta adalah UMKM, sertakan jarak dan estimasi
+  // pengiriman dari kotanya ke kota tiap pemasok
+  let kotaPembeli = null;
+  if (req.user?.role === 'umkm') {
+    const profil = await prisma.umkmProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { city: true },
+    });
+    kotaPembeli = profil?.city ?? null;
+  }
+
+  res.json(
+    products.map((p) => ({
+      ...p,
+      pengiriman: kotaPembeli ? hitungPengiriman(kotaPembeli, p.supplier?.city) : null,
+    }))
+  );
 }
 
 async function getProduct(req, res) {
@@ -122,4 +141,119 @@ async function deleteProduct(req, res) {
   res.status(204).send();
 }
 
-module.exports = { listProducts, getProduct, createProduct, updateProduct, deleteProduct };
+/**
+ * GET /api/products/katalog
+ *
+ * Katalog yang sudah dikelompokkan per komoditas beserta
+ * perbandingan antarpemasok.
+ *
+ * Pengelompokan dikerjakan di server supaya browser tidak perlu
+ * menerima ratusan produk lalu menyusunnya sendiri. Yang dikirim
+ * hanya kolom yang benar-benar ditampilkan.
+ */
+async function katalogKomoditas(req, res) {
+  const { q, category, city } = req.query;
+
+  const products = await prisma.product.findMany({
+    where: {
+      ...(category && category !== 'all' && { category: String(category) }),
+      ...(city && city !== 'all' && { supplier: { city: String(city) } }),
+      ...(q && {
+        OR: [
+          { name: { contains: String(q), mode: 'insensitive' } },
+          { supplier: { groupName: { contains: String(q), mode: 'insensitive' } } },
+        ],
+      }),
+    },
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      unit: true,
+      price: true,
+      stock: true,
+      bulkPrice: true,
+      bulkMinQty: true,
+      supplier: { select: { id: true, groupName: true, city: true } },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  // Produk yang sedang punya pesanan kolektif terbuka
+  const terbuka = await prisma.procurementOrder.findMany({
+    where: { status: 'open' },
+    select: { productId: true },
+  });
+  const adaOrder = new Set(terbuka.map((o) => o.productId));
+
+  let kotaPembeli = null;
+  if (req.user?.role === 'umkm') {
+    const profil = await prisma.umkmProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { city: true },
+    });
+    kotaPembeli = profil?.city ?? null;
+  }
+
+  const peta = new Map();
+
+  for (const p of products) {
+    const kunci = `${p.name.toLowerCase()}|${p.unit}`;
+    const harga = Number(p.price);
+
+    const grup = peta.get(kunci) ?? {
+      nama: p.name,
+      satuan: p.unit,
+      kategori: p.category,
+      penawaran: [],
+      termurah: Number.POSITIVE_INFINITY,
+      termahal: 0,
+    };
+
+    grup.penawaran.push({
+      produkId: p.id,
+      pemasokId: p.supplier?.id ?? null,
+      pemasok: p.supplier?.groupName ?? 'Pemasok',
+      kota: p.supplier?.city ?? null,
+      harga,
+      hargaGrosir: p.bulkPrice == null ? null : Number(p.bulkPrice),
+      minGrosir: p.bulkMinQty,
+      stok: p.stock,
+      adaPesananTerbuka: adaOrder.has(p.id),
+      pengiriman: kotaPembeli ? hitungPengiriman(kotaPembeli, p.supplier?.city) : null,
+    });
+
+    grup.termurah = Math.min(grup.termurah, harga);
+    grup.termahal = Math.max(grup.termahal, harga);
+    peta.set(kunci, grup);
+  }
+
+  const komoditas = [...peta.values()]
+    .map((g) => ({
+      ...g,
+      jumlahPemasok: g.penawaran.length,
+      selisihHarga: Math.round(g.termahal - g.termurah),
+    }))
+    .sort((a, b) => b.jumlahPemasok - a.jumlahPemasok || a.nama.localeCompare(b.nama));
+
+  // Pilihan filter ikut dikirim supaya browser tidak perlu menghitung
+  const semua = await prisma.product.findMany({
+    select: { category: true, supplier: { select: { city: true } } },
+  });
+
+  res.json({
+    kotaPembeli,
+    kategori: [...new Set(semua.map((x) => x.category))].sort(),
+    kota: [...new Set(semua.map((x) => x.supplier?.city).filter(Boolean))].sort(),
+    komoditas,
+  });
+}
+
+module.exports = {
+  listProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  katalogKomoditas,
+};

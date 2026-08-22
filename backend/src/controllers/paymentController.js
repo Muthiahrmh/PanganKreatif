@@ -139,6 +139,8 @@ async function buatPembayaran(req, res) {
             status: 'pending',
             platformFee: bagi.platformFee,
             commissionRate: bagi.commissionRate,
+            distributionMargin: bagi.distributionMargin,
+            marginRate: bagi.marginRate,
             supplierPayout: bagi.supplierPayout,
             gatewayOrderId: orderId,
             snapToken: sesi.token,

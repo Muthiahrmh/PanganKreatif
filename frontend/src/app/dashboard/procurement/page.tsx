@@ -6,6 +6,7 @@ import { api, getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { TombolBayarMidtrans } from "@/components/dashboard/TombolBayarDaring";
 import { batalkanPembayaran } from "@/lib/payment";
+import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
 import type { BulkPricing, ProcurementOrder, ProcurementOrderItem } from "@/types/dashboard";
 
 const statusLabel: Record<string, string> = {
@@ -27,6 +28,12 @@ export default function ProcurementPage() {
     const [joiningId, setJoiningId] = useState<string | null>(null);
     const [quantityInput, setQuantityInput] = useState<Record<string, string>>({});
     const [error, setError] = useState<string | null>(null);
+    const [membatalkan, setMembatalkan] = useState<string | null>(null);
+    const [galatBatal, setGalatBatal] = useState<Record<string, string>>({});
+    const [konfirmasiBatal, setKonfirmasiBatal] = useState<{
+        txId: string;
+        itemId: string;
+    } | null>(null);
 
     async function loadData() {
         try {
@@ -46,7 +53,6 @@ export default function ProcurementPage() {
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, []);
 
@@ -319,24 +325,25 @@ export default function ProcurementPage() {
                                         </div>
 
                                         <button
-                                            onClick={async () => {
-                                                if (
-                                                    !window.confirm(
-                                                        "Batalkan pembayaran ini supaya bisa pilih cara lain?"
-                                                    )
-                                                )
-                                                    return;
-                                                try {
-                                                    await batalkanPembayaran(pendingTx.id);
-                                                    loadData();
-                                                } catch (err) {
-                                                    setError(getApiErrorMessage(err));
-                                                }
-                                            }}
-                                            className="w-full rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-ink-soft transition hover:bg-paper-soft hover:text-ink"
+                                            onClick={() =>
+                                                setKonfirmasiBatal({
+                                                    txId: pendingTx.id,
+                                                    itemId: item.id,
+                                                })
+                                            }
+                                            disabled={membatalkan === pendingTx.id}
+                                            className="w-full rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-ink-soft transition hover:bg-paper-soft hover:text-ink disabled:opacity-60"
                                         >
-                                            Batalkan dan pilih cara bayar lain
+                                            {membatalkan === pendingTx.id
+                                                ? "Membatalkan..."
+                                                : "Batalkan pembayaran ini"}
                                         </button>
+
+                                        {galatBatal[item.id] && (
+                                            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                                                {galatBatal[item.id]}
+                                            </p>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="mt-4">
@@ -352,6 +359,40 @@ export default function ProcurementPage() {
                     })}
                 </div>
             )}
+            <DialogKonfirmasi
+                terbuka={konfirmasiBatal !== null}
+                sibuk={membatalkan !== null}
+                bahaya
+                judul="Batalkan pembayaran?"
+                pesan="Pembayaran yang sedang menunggu akan dibatalkan supaya kamu bisa bayar ulang."
+                keterangan="Kalau kamu sudah terlanjur membayar lewat jendela Midtrans, jangan dibatalkan — tunggu beberapa saat lalu muat ulang halaman."
+                labelYa="Batalkan pembayaran"
+                onBatal={() => setKonfirmasiBatal(null)}
+                onYa={async () => {
+                    if (!konfirmasiBatal) return;
+                    const { txId, itemId } = konfirmasiBatal;
+
+                    setMembatalkan(txId);
+                    setGalatBatal((prev) => {
+                        const salin = { ...prev };
+                        delete salin[itemId];
+                        return salin;
+                    });
+
+                    try {
+                        await batalkanPembayaran(txId);
+                        await loadData();
+                    } catch (err) {
+                        setGalatBatal((prev) => ({
+                            ...prev,
+                            [itemId]: getApiErrorMessage(err),
+                        }));
+                    } finally {
+                        setMembatalkan(null);
+                        setKonfirmasiBatal(null);
+                    }
+                }}
+            />
         </div>
     );
 }
@@ -414,4 +455,3 @@ function BulkProgress({
         </div>
     );
 }
-

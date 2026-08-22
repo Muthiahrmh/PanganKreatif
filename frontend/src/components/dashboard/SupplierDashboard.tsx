@@ -16,6 +16,7 @@ import { StatCard } from "./StatCard";
 import { StatusBadge } from "./StatusBadge";
 import { WeatherCard } from "./WeatherCard";
 import { KartuPanduan } from "./KartuPanduan";
+import { GrafikPendapatan } from "./GrafikPendapatan";
 import { useAuthStore } from "@/store/authStore";
 import { fetchDemandInsights, fetchMyOrders, fetchSupplierStats } from "@/lib/supplier";
 import { getApiErrorMessage } from "@/lib/api";
@@ -147,7 +148,7 @@ export function SupplierDashboard() {
                     icon={Users}
                     label="UMKM Terjangkau"
                     value={loading ? "..." : String(stats?.umkmReached ?? 0)}
-                    sub="Pernah pesan dari Anda"
+                    sub="Pernah pesan darimu"
                     color="text-brand-blue"
                 />
 
@@ -159,6 +160,8 @@ export function SupplierDashboard() {
                     color="text-amber-500"
                 />
             </div>
+
+            <GrafikPendapatan />
 
             <WeatherCard peran="supplier" />
 
@@ -187,7 +190,7 @@ export function SupplierDashboard() {
                                                 {c.name}
                                                 {!c.suppliedByMe && (
                                                     <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                                                        belum Anda pasok
+                                                        belum kamu pasok
                                                     </span>
                                                 )}
                                             </span>
@@ -329,7 +332,7 @@ export function SupplierDashboard() {
                     ) : demand && demand.opportunities.length > 0 ? (
                         <>
                             <p className="mt-3 text-sm text-ink-soft">
-                                Komoditas ini banyak dicari UMKM tapi belum ada di katalog Anda.
+                                Komoditas ini banyak dicari UMKM tapi belum ada di katalogmu.
                             </p>
 
                             <div className="mt-4 space-y-2">
@@ -356,7 +359,7 @@ export function SupplierDashboard() {
                         </>
                     ) : (
                         <EmptyNote>
-                            Katalog Anda sudah menutupi komoditas yang paling dicari. Terus pantau
+                            Katalogmu sudah menutupi komoditas yang paling dicari. Terus pantau
                             halaman ini saat permintaan berubah.
                         </EmptyNote>
                     )}

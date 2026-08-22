@@ -24,6 +24,7 @@ const prisma = new PrismaClient();
 
 const PASSWORD_AKUN_BARU = 'Demo12345!';
 const KOMISI = Number(process.env.PLATFORM_COMMISSION_RATE ?? 0.02);
+const MARGIN = Number(process.env.PLATFORM_MARGIN_RATE ?? 0.017);
 
 // --- Sasaran dari proposal ---
 const TARGET_UMKM = 300;            // Tabel 3.4
@@ -279,7 +280,7 @@ const KATALOG = {
 
 const SUPPLIERS_UTAMA = [
     {
-        email: 'makmur@supplier.com', name: 'Sudirman', groupName: 'Kelompok Tani Makmur', katalog: 'sayur',
+        email: 'makmur@supplier.com', bankName: 'Bank Aceh Syariah', bankAccountNumber: '0102030405', bankAccountHolder: 'Kelompok Tani Makmur', name: 'Sudirman', groupName: 'Kelompok Tani Makmur', katalog: 'sayur',
         city: 'Lhokseumawe', address: 'Gampong Blang Panyang, Muara Satu, Lhokseumawe', phone: '081111111111',
         products: [
             { name: 'Cabai Merah Keriting', category: 'Sayuran', unit: 'kg', price: 38000, stock: 400, bulkPrice: 33000, bulkMinQty: 60 },
@@ -292,7 +293,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'sembako@supplier.com', name: 'Rosnani', groupName: 'Distributor Sembako Aceh', katalog: 'sembako',
+        email: 'sembako@supplier.com', bankName: 'Bank BRI', bankAccountNumber: '015601000123456', bankAccountHolder: 'Rosnani', name: 'Rosnani', groupName: 'Distributor Sembako Aceh', katalog: 'sembako',
         city: 'Lhokseumawe', address: 'Jl. Merdeka, Banda Sakti, Lhokseumawe', phone: '082222222222',
         products: [
             { name: 'Minyak Goreng', category: 'Sembako', unit: 'liter', price: 18000, stock: 600, bulkPrice: 16200, bulkMinQty: 100 },
@@ -307,7 +308,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'jaya@supplier.com', name: 'Iskandar', groupName: 'Tani Jaya', katalog: 'sayur',
+        email: 'jaya@supplier.com', bankName: 'Bank Aceh Syariah', bankAccountNumber: '0203040506', bankAccountHolder: 'Tani Jaya', name: 'Iskandar', groupName: 'Tani Jaya', katalog: 'sayur',
         city: 'Bireuen', address: 'Gampong Cot Gapu, Kota Juang, Bireuen', phone: '083333333333',
         products: [
             { name: 'Bawang Merah', category: 'Bumbu Dapur', unit: 'kg', price: 30000, stock: 320, bulkPrice: 26500, bulkMinQty: 60 },
@@ -320,7 +321,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'meunasah@supplier.com', name: 'Bustami', groupName: 'Gapoktan Meunasah Blang', katalog: 'sembako',
+        email: 'meunasah@supplier.com', bankName: 'Bank BSI', bankAccountNumber: '7112345678', bankAccountHolder: 'Gapoktan Meunasah Blang', name: 'Bustami', groupName: 'Gapoktan Meunasah Blang', katalog: 'sembako',
         city: 'Aceh Utara', address: 'Kecamatan Lhoksukon, Aceh Utara', phone: '084444444444',
         products: [
             { name: 'Beras Lokal', category: 'Sembako', unit: 'kg', price: 13800, stock: 900, bulkPrice: 12500, bulkMinQty: 200 },
@@ -333,7 +334,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'pusong@supplier.com', name: 'Hasballah', groupName: 'Koperasi Nelayan Pusong', katalog: 'ikan',
+        email: 'pusong@supplier.com', bankName: 'Bank BRI', bankAccountNumber: '015601000987654', bankAccountHolder: 'Koperasi Nelayan Pusong', name: 'Hasballah', groupName: 'Koperasi Nelayan Pusong', katalog: 'ikan',
         city: 'Lhokseumawe', address: 'Gampong Pusong Lama, Banda Sakti, Lhokseumawe', phone: '085555555555',
         products: [
             { name: 'Ikan Tongkol', category: 'Protein', unit: 'kg', price: 30000, stock: 220, bulkPrice: 26000, bulkMinQty: 50 },
@@ -348,7 +349,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'gayo@supplier.com', name: 'Muliadi', groupName: 'Koperasi Tani Gayo Mandiri', katalog: 'sayur',
+        email: 'gayo@supplier.com', bankName: 'Bank Mandiri', bankAccountNumber: '1580001234567', bankAccountHolder: 'Koperasi Tani Gayo Mandiri', name: 'Muliadi', groupName: 'Koperasi Tani Gayo Mandiri', katalog: 'sayur',
         city: 'Bener Meriah', address: 'Kecamatan Bandar, Bener Meriah', phone: '086666666666',
         products: [
             { name: 'Kopi Arabika Gayo', category: 'Minuman', unit: 'kg', price: 155000, stock: 150, bulkPrice: 140000, bulkMinQty: 25 },
@@ -363,7 +364,7 @@ const SUPPLIERS_UTAMA = [
         ],
     },
     {
-        email: 'rempahpidie@supplier.com', name: 'Zulkifli', groupName: 'UD Rempah Pidie', katalog: 'bumbu',
+        email: 'rempahpidie@supplier.com', bankName: 'Bank BNI', bankAccountNumber: '0987654321', bankAccountHolder: 'UD Rempah Pidie', name: 'Zulkifli', groupName: 'UD Rempah Pidie', katalog: 'bumbu',
         city: 'Pidie', address: 'Kecamatan Meureudu, Pidie Jaya', phone: '087777777777',
         products: [
             { name: 'Asam Sunti', category: 'Bumbu Dapur', unit: 'kg', price: 42000, stock: 140, bulkPrice: 37000, bulkMinQty: 25 },
@@ -506,8 +507,13 @@ function buatSuppliersTambahan(jumlah) {
             });
         }
 
+        const bankPilihan = ['Bank Aceh Syariah', 'Bank BRI', 'Bank BSI', 'Bank Mandiri', 'Bank BNI'];
+
         hasil.push({
             katalog: jenisKatalog,
+            bankName: pilih(bankPilihan, s + 11),
+            bankAccountNumber: String(1000000000 + Math.floor(rnd(s + 12) * 8999999999)),
+            bankAccountHolder: nama,
             email: `supplier${String(i + 1).padStart(3, '0')}@demo.pangankreatif.id`,
             name: `${pilih(NAMA_DEPAN, s + 5)} ${pilih(NAMA_BELAKANG, s + 6)}`,
             groupName: nama,
@@ -640,7 +646,16 @@ async function simpanAkun(daftar, peran) {
             });
             profilBaru.push(
                 peran === 'supplier'
-                    ? { id: uuid(), userId, groupName: d.groupName, city: d.city, address: d.address }
+                    ? {
+                        id: uuid(),
+                        userId,
+                        groupName: d.groupName,
+                        city: d.city,
+                        address: d.address,
+                        bankName: d.bankName ?? null,
+                        bankAccountNumber: d.bankAccountNumber ?? null,
+                        bankAccountHolder: d.bankAccountHolder ?? null,
+                    }
                     : {
                         id: uuid(),
                         userId,
@@ -653,7 +668,16 @@ async function simpanAkun(daftar, peran) {
         } else if (!profilLama) {
             profilBaru.push(
                 peran === 'supplier'
-                    ? { id: uuid(), userId: lama.id, groupName: d.groupName, city: d.city, address: d.address }
+                    ? {
+                        id: uuid(),
+                        userId: lama.id,
+                        groupName: d.groupName,
+                        city: d.city,
+                        address: d.address,
+                        bankName: d.bankName ?? null,
+                        bankAccountNumber: d.bankAccountNumber ?? null,
+                        bankAccountHolder: d.bankAccountHolder ?? null,
+                    }
                     : {
                         id: uuid(),
                         userId: lama.id,
@@ -839,6 +863,7 @@ function bangunPesananTahunPertama({ produkList, umkmIdsUrut }) {
                 const qty = Math.max(1, Math.round(target / harga));
                 const amount = Math.round(qty * harga);
                 const platformFee = Math.round(amount * KOMISI * 100) / 100;
+                const distributionMargin = Math.round(amount * MARGIN * 100) / 100;
 
                 totalQty += qty;
                 nilaiDibuat += amount;
@@ -858,7 +883,9 @@ function bangunPesananTahunPertama({ produkList, umkmIdsUrut }) {
                     status: 'success',
                     platformFee,
                     commissionRate: KOMISI,
-                    supplierPayout: Math.round((amount - platformFee) * 100) / 100,
+                    distributionMargin,
+                    marginRate: MARGIN,
+                    supplierPayout: Math.round((amount - platformFee - distributionMargin) * 100) / 100,
                     createdAt: bayar,
                 });
             }
@@ -1046,12 +1073,13 @@ async function main() {
 
     const agg = await prisma.transaction.aggregate({
         where: { status: 'success' },
-        _sum: { amount: true, platformFee: true },
+        _sum: { amount: true, platformFee: true, distributionMargin: true },
         _count: { _all: true },
     });
 
     const gmv = Number(agg._sum.amount ?? 0);
     const komisi = Number(agg._sum.platformFee ?? 0);
+    const margin = Number(agg._sum.distributionMargin ?? 0);
     const trxSukses = agg._count._all;
     const hpp = trxSukses * Number(process.env.PLATFORM_COST_PER_TRX ?? 10000);
 
@@ -1070,14 +1098,14 @@ async function main() {
     console.log(`                        sistem            proposal`);
     console.log(`  Transaksi           : ${String(trxSukses).padEnd(18)}${TARGET_TRANSAKSI}`);
     console.log(`  Komisi transaksi    : ${rupiah(komisi).padEnd(18)}${rupiah(TARGET_KOMISI)}`);
+    console.log(`  Margin distribusi   : ${rupiah(margin).padEnd(18)}${rupiah(55000000)}`);
+    console.log(`  Total pendapatan    : ${rupiah(komisi + margin).padEnd(18)}${rupiah(120000000)}`);
     console.log(`  HPP                 : ${rupiah(hpp).padEnd(18)}${rupiah(20000000)}`);
     console.log(`  Nilai transaksi     : ${rupiah(gmv)}`);
     console.log(
         `  Rata-rata / transaksi: ${rupiah(trxSukses ? gmv / trxSukses : 0)}`
     );
 
-    console.log('\nCatatan: margin distribusi grosir (Rp55.000.000 pada Tabel 5.6)');
-    console.log('belum dicatat sistem — MVP baru merekam komisi transaksi.');
 
     console.log('\nAkun lama -> password tidak berubah:');
     console.log('  makmur@ / sembako@ / jaya@supplier.com');

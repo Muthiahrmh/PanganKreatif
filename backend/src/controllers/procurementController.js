@@ -137,7 +137,7 @@ async function joinOrder(req, res) {
     where: { orderId: order.id, umkmId: umkmProfile.id },
   });
   if (existingItem) {
-    return res.status(409).json({ error: 'Anda sudah bergabung di order ini' });
+    return res.status(409).json({ error: 'Kamu sudah bergabung di pesanan ini' });
   }
 
   const [item] = await prisma.$transaction([
@@ -163,19 +163,19 @@ async function listMyItems(req, res) {
   if (!umkmProfile) return res.status(403).json({ error: 'Bukan akun UMKM' });
 
   const items = await prisma.procurementOrderItem.findMany({
-  where: { umkmId: umkmProfile.id },
-  include: {
-    order: {
-      include: {
-        product: {
-          include: {
-            supplier: true,
+    where: { umkmId: umkmProfile.id },
+    include: {
+      order: {
+        include: {
+          product: {
+            include: {
+              supplier: true,
+            },
           },
         },
       },
+      transactions: true,
     },
-    transactions: true,
-  },
   });
 
   res.json(
@@ -190,10 +190,10 @@ async function listMyItems(req, res) {
         // Rekening tujuan, supaya UMKM tahu ke mana harus transfer
         rekening: sup?.bankName
           ? {
-              bank: sup.bankName,
-              nomor: sup.bankAccountNumber,
-              atasNama: sup.bankAccountHolder,
-            }
+            bank: sup.bankName,
+            nomor: sup.bankAccountNumber,
+            atasNama: sup.bankAccountHolder,
+          }
           : null,
       };
     })

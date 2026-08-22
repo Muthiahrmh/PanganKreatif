@@ -14,6 +14,7 @@ import {
     TrendingDown,
 } from "lucide-react";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
 import { useAuthStore } from "@/store/authStore";
 import { getApiErrorMessage } from "@/lib/api";
 import {
@@ -52,6 +53,10 @@ export default function OrdersPage() {
     const [actingId, setActingId] = useState<string | null>(null);
     const [verifyingId, setVerifyingId] = useState<string | null>(null);
     const [formOpen, setFormOpen] = useState(false);
+    const [konfirmasi, setKonfirmasi] = useState<{
+        id: string;
+        aksi: "close" | "deliver";
+    } | null>(null);
 
     // useCallback + tanpa setState sinkron di awal, supaya aman dipanggil dari effect
     const load = useCallback(async () => {
@@ -90,12 +95,6 @@ export default function OrdersPage() {
     }
 
     async function runAction(id: string, action: "close" | "deliver") {
-        const label =
-            action === "close"
-                ? "Tutup pesanan ini? UMKM tidak bisa bergabung lagi setelah ditutup."
-                : "Tandai pesanan ini sudah dikirim? Stok produk akan otomatis berkurang.";
-        if (!window.confirm(label)) return;
-
         setActingId(id);
         try {
             if (action === "close") await closeOrder(id);
@@ -105,6 +104,7 @@ export default function OrdersPage() {
             setError(getApiErrorMessage(err));
         } finally {
             setActingId(null);
+            setKonfirmasi(null);
         }
     }
 
@@ -185,7 +185,7 @@ export default function OrdersPage() {
                     </h3>
                     <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
                         {filter === "all"
-                            ? "Buka sesi pemesanan untuk salah satu produk Anda, lalu UMKM bisa bergabung sampai batas waktu yang Anda tentukan."
+                            ? "Buka sesi pemesanan untuk salah satu produkmu, lalu UMKM bisa bergabung sampai batas waktu yang kamu tentukan."
                             : "Coba pilih filter lain untuk melihat pesanan yang tersedia."}
                     </p>
                 </div>
@@ -265,7 +265,7 @@ export default function OrdersPage() {
                                     <div className="mt-4 flex flex-wrap items-center gap-2">
                                         {o.status === "open" && (
                                             <button
-                                                onClick={() => runAction(o.id, "close")}
+                                                onClick={() => setKonfirmasi({ id: o.id, aksi: "close" })}
                                                 disabled={busy}
                                                 className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-600 disabled:opacity-60"
                                             >
@@ -276,7 +276,7 @@ export default function OrdersPage() {
 
                                         {o.status === "closed" && (
                                             <button
-                                                onClick={() => runAction(o.id, "deliver")}
+                                                onClick={() => setKonfirmasi({ id: o.id, aksi: "deliver" })}
                                                 disabled={busy}
                                                 className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-blue-dark disabled:opacity-60"
                                             >
@@ -401,6 +401,31 @@ export default function OrdersPage() {
                     })}
                 </div>
             )}
+
+            <DialogKonfirmasi
+                terbuka={konfirmasi !== null}
+                sibuk={actingId !== null}
+                judul={
+                    konfirmasi?.aksi === "close"
+                        ? "Tutup pesanan kolektif?"
+                        : "Tandai pesanan sudah dikirim?"
+                }
+                pesan={
+                    konfirmasi?.aksi === "close"
+                        ? "UMKM tidak bisa bergabung lagi setelah pesanan ditutup."
+                        : "Pesanan akan tercatat selesai dan stok produk berkurang otomatis."
+                }
+                keterangan={
+                    konfirmasi?.aksi === "close"
+                        ? "Lakukan ini kalau kuota sudah terkumpul atau batas waktunya lewat."
+                        : "Pastikan barang benar-benar sudah dikirim ke seluruh UMKM peserta."
+                }
+                labelYa={konfirmasi?.aksi === "close" ? "Tutup pesanan" : "Tandai terkirim"}
+                onBatal={() => setKonfirmasi(null)}
+                onYa={() => {
+                    if (konfirmasi) runAction(konfirmasi.id, konfirmasi.aksi);
+                }}
+            />
 
             {formOpen && (
                 <NewOrderModal

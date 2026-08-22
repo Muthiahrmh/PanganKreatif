@@ -51,6 +51,7 @@ async function createTransaction(req, res) {
   }
 
   let buktiUrl = null;
+  let buktiPath = null;
   if (req.file) {
     const izin = ['image/jpeg', 'image/png', 'image/webp'];
     if (!izin.includes(req.file.mimetype)) {
@@ -66,6 +67,7 @@ async function createTransaction(req, res) {
     try {
       const hasil = await storage.uploadBuktiBayar(item.id, req.file.buffer, req.file.mimetype);
       buktiUrl = hasil.url;
+      buktiPath = hasil.path;
     } catch (err) {
       return res.status(502).json({ error: err.message });
     }
@@ -80,12 +82,15 @@ async function createTransaction(req, res) {
       orderItemId: item.id,
       amount: split.amount,
       paymentProofUrl: buktiUrl,
+      paymentProofPath: buktiPath,
       status: 'pending',
       paymentMethod: metode,
       paymentChannel: kanal.nama,
       payoutNote: catatan || null,
       platformFee: split.platformFee,
       commissionRate: split.commissionRate,
+      distributionMargin: split.distributionMargin,
+      marginRate: split.marginRate,
       supplierPayout: split.supplierPayout,
     },
   });
@@ -230,16 +235,17 @@ async function listSupplierTransactions(req, res) {
       id: t.id,
       amount: Number(t.amount),
       platformFee: Number(t.platformFee),
+      distributionMargin: Number(t.distributionMargin),
       supplierPayout: Number(t.supplierPayout),
       status: t.status,
       createdAt: t.createdAt,
-      paymentProofUrl: t.paymentProofUrl,
+      adaBuktiBayar: Boolean(t.paymentProofUrl || t.paymentProofPath),
       quantity: Number(t.orderItem.quantity),
       metode: t.paymentMethod,
       channel: t.paymentChannel,
       payoutStatus: t.payoutStatus,
       payoutAt: t.payoutAt,
-      payoutProofUrl: t.payoutProofUrl,
+      adaBuktiPayout: Boolean(t.payoutProofUrl || t.payoutProofPath),
       payoutNote: t.payoutNote,
       umkm: {
         businessName: t.orderItem.umkm.businessName,

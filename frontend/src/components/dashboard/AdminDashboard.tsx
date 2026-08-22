@@ -81,14 +81,20 @@ export function AdminDashboard() {
                     icon={TrendingUp}
                     label="Nilai Transaksi"
                     value={loading ? "..." : formatRupiahShort(f?.gmv ?? 0)}
-                    sub={`${f?.successCount ?? 0} transaksi lunas`}
+                    // Angka penuh ditaruh di baris bawah — miliaran rupiah
+                    // sulit dibaca kalau ditulis utuh di angka besar
+                    sub={loading ? "" : `${formatRupiah(f?.gmv ?? 0)} · ${f?.successCount ?? 0} transaksi`}
                     color="text-brand-blue"
                 />
                 <StatCard
                     icon={Wallet}
-                    label="Pendapatan Komisi"
+                    label="Pendapatan Platform"
                     value={loading ? "..." : formatRupiahShort(f?.revenue ?? 0)}
-                    sub={`Tarif ${((stats?.commissionRate ?? 0) * 100).toFixed(1)}% per transaksi`}
+                    sub={
+                        loading
+                            ? ""
+                            : `Komisi ${formatRupiahShort(f?.komisi ?? 0)} + margin ${formatRupiahShort(f?.margin ?? 0)}`
+                    }
                     color="text-amber-500"
                 />
             </div>
@@ -103,15 +109,26 @@ export function AdminDashboard() {
 
                 <div className="mt-5 space-y-2">
                     <MoneyRow
-                        label="Pendapatan komisi"
-                        value={f?.revenue ?? 0}
-                        hint="Akumulasi komisi transaksi lunas"
+                        label="Komisi transaksi supply chain"
+                        value={f?.komisi ?? 0}
+                        hint={`Tarif ${((stats?.commissionRate ?? 0) * 100).toFixed(1)}% dari nilai transaksi`}
                     />
+                    <MoneyRow
+                        label="Margin distribusi grosir"
+                        value={f?.margin ?? 0}
+                        hint="Imbalan atas volume bahan baku yang disalurkan"
+                    />
+
+                    <div className="border-t border-slate-100 pt-2">
+                        <MoneyRow label="Total pendapatan" value={f?.revenue ?? 0} bold />
+                    </div>
+
                     <MoneyRow
                         label="Harga pokok penjualan"
                         value={-(f?.cogs ?? 0)}
                         hint={`${f?.successCount ?? 0} transaksi x biaya komputasi & verifikasi`}
                     />
+
                     <div className="border-t border-slate-100 pt-2">
                         <MoneyRow label="Laba kotor" value={f?.grossProfit ?? 0} bold />
                     </div>
@@ -146,7 +163,12 @@ export function AdminDashboard() {
                                 tickFormatter={(v) => formatRupiahShort(v)}
                             />
                             <Tooltip
-                                formatter={(value, name) => [formatRupiah(Number(value)), String(name)]}
+                                // Recharts v3 punya tipe parameter sendiri, jadi
+                                // biarkan disimpulkan lalu konversi di dalam
+                                formatter={(value, name) => [
+                                    formatRupiah(Number(value)),
+                                    String(name),
+                                ]}
                             />
                             <Legend />
                             <Bar

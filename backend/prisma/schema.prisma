@@ -173,14 +173,21 @@ model Transaction {
   orderItemId      String             @map("order_item_id")
   amount           Decimal            @db.Decimal(12, 2)
   paymentProofUrl  String?            @map("payment_proof_url")
+  paymentProofPath String?            @map("payment_proof_path")
   status           TransactionStatus  @default(pending)
   createdAt        DateTime           @default(now()) @map("created_at")
 
   // Pendapatan PanganKreatif dari transaksi ini. Disimpan per baris
   // supaya riwayat tetap akurat walau tarif komisi berubah nanti.
-  platformFee     Decimal @default(0) @db.Decimal(12, 2) @map("platform_fee")
-  commissionRate  Decimal @default(0) @db.Decimal(5, 4)  @map("commission_rate")
-  supplierPayout  Decimal @default(0) @db.Decimal(12, 2) @map("supplier_payout")
+  platformFee        Decimal @default(0) @db.Decimal(12, 2) @map("platform_fee")
+  commissionRate     Decimal @default(0) @db.Decimal(5, 4)  @map("commission_rate")
+
+  // Margin distribusi atas volume yang disalurkan — sumber pendapatan
+  // kedua pada Tabel 5.6, terpisah dari komisi transaksi.
+  distributionMargin Decimal @default(0) @db.Decimal(12, 2) @map("distribution_margin")
+  marginRate         Decimal @default(0) @db.Decimal(5, 4)  @map("margin_rate")
+
+  supplierPayout     Decimal @default(0) @db.Decimal(12, 2) @map("supplier_payout")
 
   // Cara membayar: gateway (daring), transfer (manual), atau tunai
   paymentMethod   PaymentMethod @default(gateway) @map("payment_method")
@@ -198,6 +205,7 @@ model Transaction {
   payoutAt        DateTime?    @map("payout_at")
   payoutNote      String?      @map("payout_note")
   payoutProofUrl  String?      @map("payout_proof_url")
+  payoutProofPath String?      @map("payout_proof_path")
 
   orderItem ProcurementOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 

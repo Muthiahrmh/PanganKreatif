@@ -13,6 +13,7 @@ import {
 import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { PaymentBadge } from "@/components/dashboard/PaymentBadge";
+import { TombolLihatBukti } from "@/components/dashboard/TombolLihatBukti";
 import type {
     AdminTransaction,
     SupplierTransaction,
@@ -239,7 +240,7 @@ function SupplierTransactions() {
     return (
         <div className="flex flex-col gap-5">
             <p className="text-sm text-ink-soft">
-                Pembayaran dari UMKM untuk pesanan kolektif Anda. Konfirmasi setelah dana diterima.
+                Pembayaran dari UMKM untuk pesanan kolektif kamu. Konfirmasi setelah dana diterima.
             </p>
 
             {error && <ErrorNote>{error}</ErrorNote>}
@@ -299,7 +300,7 @@ function SupplierTransactions() {
             ) : visible.length === 0 ? (
                 <EmptyState
                     title="Belum ada pembayaran"
-                    body="Pembayaran muncul di sini setelah UMKM membayar pesanan kolektif Anda."
+                    body="Pembayaran muncul di sini setelah UMKM membayar pesanan kolektif kamu."
                 />
             ) : (
                 <div className="space-y-3">
@@ -322,15 +323,10 @@ function SupplierTransactions() {
                                         {r.channel && ` · ${r.channel}`}
                                     </div>
 
-                                    {r.paymentProofUrl && (
-                                        <a
-                                            href={r.paymentProofUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="mt-1.5 inline-block text-xs font-medium text-brand-blue hover:underline"
-                                        >
-                                            Lihat bukti transfer
-                                        </a>
+                                    {r.adaBuktiBayar && (
+                                        <div className="mt-1.5">
+                                            <TombolLihatBukti transactionId={r.id} />
+                                        </div>
                                     )}
                                 </div>
 
@@ -339,8 +335,13 @@ function SupplierTransactions() {
                                         {formatRupiah(r.amount)}
                                     </div>
                                     <div className="text-xs text-ink-soft">
-                                        diterima {formatRupiah(r.supplierPayout)} · komisi{" "}
-                                        {formatRupiah(r.platformFee)}
+                                        diterima {formatRupiah(r.supplierPayout)}
+                                    </div>
+                                    <div className="text-[11px] text-ink-soft">
+                                        potongan komisi {formatRupiah(r.platformFee)}
+                                        {r.distributionMargin
+                                            ? ` + margin ${formatRupiah(r.distributionMargin)}`
+                                            : ""}
                                     </div>
                                 </div>
                             </div>
@@ -359,15 +360,12 @@ function SupplierTransactions() {
                                             : `Dana ${formatRupiah(r.supplierPayout)} menunggu diteruskan platform`}
                                     </span>
 
-                                    {r.payoutProofUrl && (
-                                        <a
-                                            href={r.payoutProofUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="font-medium underline"
-                                        >
-                                            Lihat bukti transfer
-                                        </a>
+                                    {r.adaBuktiPayout && (
+                                        <TombolLihatBukti
+                                            transactionId={r.id}
+                                            jenis="payout"
+                                            label="Lihat bukti penerusan"
+                                        />
                                     )}
                                 </div>
                             )}

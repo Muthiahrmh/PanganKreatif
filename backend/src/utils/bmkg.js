@@ -148,7 +148,7 @@ function susunPeringatan(harian, kota) {
         return {
             ada: false,
             tingkat: 'aman',
-            pesan: `Cuaca di ${kota || 'wilayah Anda'} beberapa hari ke depan relatif kondusif untuk panen dan pengiriman.`,
+            pesan: `Cuaca di ${kota || 'wilayahmu'} beberapa hari ke depan relatif kondusif untuk panen dan pengiriman.`,
         };
     }
 
@@ -157,8 +157,8 @@ function susunPeringatan(harian, kota) {
 
     const pesan =
         tingkat === 'tinggi'
-            ? `${tinggi.length} hari dengan hujan lebat diperkirakan di ${kota || 'wilayah Anda'}. Panen dan pengiriman dari kelompok tani berpotensi tertunda — pertimbangkan memesan lebih awal atau menambah cadangan stok.`
-            : `Hujan diperkirakan turun di ${kota || 'wilayah Anda'} dalam beberapa hari ke depan. Jadwal pengiriman bisa sedikit bergeser.`;
+            ? `${tinggi.length} hari dengan hujan lebat diperkirakan di ${kota || 'wilayahmu'}. Panen dan pengiriman dari kelompok tani berpotensi tertunda — pertimbangkan memesan lebih awal atau menambah cadangan stok.`
+            : `Hujan diperkirakan turun di ${kota || 'wilayahmu'} dalam beberapa hari ke depan. Jadwal pengiriman bisa sedikit bergeser.`;
 
     return { ada: true, tingkat, pesan, hariBerisiko: berisiko.length };
 }

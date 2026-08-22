@@ -24,7 +24,9 @@ export function DashboardSidebar() {
 
     return (
         <aside
-            className="hidden w-60 shrink-0 flex-col px-4 pb-5 pt-3 text-white md:flex"
+            // Menempel di tempatnya saat halaman digulir, supaya menu dan
+            // tombol keluar selalu terjangkau tanpa perlu menggulir balik
+            className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto px-4 pb-5 pt-3 text-white md:flex"
             style={{ backgroundColor: tema.sidebar }}
         >
             <Image

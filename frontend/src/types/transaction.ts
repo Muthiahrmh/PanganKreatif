@@ -7,7 +7,7 @@ export interface UmkmTransaction {
     platformFee: number;
     status: TxStatus;
     createdAt: string;
-    paymentProofUrl: string | null;
+    adaBuktiBayar?: boolean;
     quantity: number;
     itemStatus: "pending" | "paid";
     orderStatus: "open" | "closed" | "delivered";
@@ -28,16 +28,17 @@ export interface SupplierTransaction {
     id: string;
     amount: number;
     platformFee: number;
+    distributionMargin?: number;
     supplierPayout: number;
     status: TxStatus;
     createdAt: string;
-    paymentProofUrl: string | null;
+    adaBuktiBayar?: boolean;
     quantity: number;
     metode?: "gateway" | "transfer" | "cash";
     channel?: string | null;
     payoutStatus?: "pending" | "paid";
     payoutAt?: string | null;
-    payoutProofUrl?: string | null;
+    adaBuktiPayout?: boolean;
     payoutNote?: string | null;
     umkm: { businessName: string; city: string };
     product: { name: string; unit: string };
@@ -48,6 +49,7 @@ export interface AdminTransaction {
     id: string;
     amount: number;
     platformFee: number;
+    distributionMargin?: number;
     supplierPayout: number;
     commissionRate: number;
     status: TxStatus;
@@ -78,6 +80,8 @@ export interface AdminStats {
     finance: {
         gmv: number;
         revenue: number;
+        komisi: number;
+        margin: number;
         cogs: number;
         grossProfit: number;
         successCount: number;
@@ -90,6 +94,7 @@ export interface AdminStats {
         id: string;
         amount: number;
         platformFee: number;
+        distributionMargin?: number;
         status: TxStatus;
         createdAt: string;
         umkm: string;

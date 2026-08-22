@@ -26,7 +26,6 @@ export default function ForecastPage() {
     const [loadingHistory, setLoadingHistory] = useState(true);
 
     useEffect(() => {
-        
         api
             .get<SalesRecord[]>("/sales-records")
             .then((res) => {
@@ -163,7 +162,7 @@ export default function ForecastPage() {
                         </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <Komponen
                             label="Rata-rata bergerak"
                             nilai={result.detail.movingAverage}
@@ -180,6 +179,15 @@ export default function ForecastPage() {
                             catatan={
                                 result.detail.seasonalityApplied
                                     ? "pola bulanan berulang"
+                                    : "belum aktif"
+                            }
+                        />
+                        <Komponen
+                            label="Faktor hari libur"
+                            nilai={result.detail.holidayFactor}
+                            catatan={
+                                result.detail.holidayApplied
+                                    ? result.detail.holidayList?.join(", ") || "hari libur nasional"
                                     : "belum aktif"
                             }
                         />
@@ -202,6 +210,13 @@ export default function ForecastPage() {
                             </span>
                         </div>
                     </div>
+
+                    {result.detail.holidayNote && (
+                        <p className="mt-3 rounded-lg bg-paper-soft px-3 py-2.5 text-xs text-ink-soft">
+                            <span className="font-medium text-ink">Hari libur: </span>
+                            {result.detail.holidayNote}
+                        </p>
+                    )}
 
                     {result.detail.keterangan && (
                         <p

@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { TombolLihatBukti } from "@/components/dashboard/TombolLihatBukti";
 
 interface Rekening {
     bank: string;
@@ -23,7 +24,7 @@ interface BarisPemasok {
     totalKomisi: number;
     totalDiteruskan: number;
     transaksiTerakhir: string | null;
-    buktiUrl?: string | null;
+    buktiTransaksiId?: string | null;
     catatan?: string | null;
 }
 
@@ -244,15 +245,13 @@ export default function PayoutsPage() {
                                 </button>
                             )}
 
-                            {tab === "paid" && p.buktiUrl && (
-                                <a
-                                    href={p.buktiUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline"
-                                >
-                                    Lihat bukti transfer
-                                </a>
+                            {tab === "paid" && p.buktiTransaksiId && (
+                                <div className="mt-3">
+                                    <TombolLihatBukti
+                                        transactionId={p.buktiTransaksiId}
+                                        jenis="payout"
+                                    />
+                                </div>
                             )}
                         </div>
                     ))}

@@ -1,6 +1,10 @@
 const prisma = require('../utils/prisma');
 const { resolveUnitPrice } = require('../utils/pricing');
 
+// ---------- helper ----------
+
+// Ambil profil supplier milik user yang sedang login.
+// Balikin null + kirim 403 kalau user belum punya SupplierProfile.
 async function getSupplierProfile(req, res) {
     const profile = await prisma.supplierProfile.findUnique({
         where: { userId: req.user.id },
@@ -14,6 +18,8 @@ async function getSupplierProfile(req, res) {
 
 const num = (v) => (v == null ? 0 : Number(v));
 
+// ---------- GET /api/supplier/profile ----------
+
 async function getProfile(req, res) {
     const profile = await getSupplierProfile(req, res);
     if (!profile) return;
@@ -25,6 +31,8 @@ async function getProfile(req, res) {
 
     res.json({ ...profile, user });
 }
+
+// ---------- GET /api/supplier/products ----------
 
 async function listMyProducts(req, res) {
     const profile = await getSupplierProfile(req, res);
@@ -51,6 +59,9 @@ async function listMyProducts(req, res) {
     );
 }
 
+// ---------- GET /api/supplier/orders ----------
+// Query: ?status=open|closed|delivered
+
 async function listMyOrders(req, res) {
     const profile = await getSupplierProfile(req, res);
     if (!profile) return;
@@ -76,6 +87,7 @@ async function listMyOrders(req, res) {
 
     res.json(
         orders.map((o) => {
+            // Harga yang benar-benar berlaku: grosir kalau kuota tercapai
             const pricing = resolveUnitPrice(o.product, o.totalQuantity);
             const price = pricing.unitPrice;
             const items = o.items.map((it) => ({
@@ -104,6 +116,8 @@ async function listMyOrders(req, res) {
         })
     );
 }
+
+// ---------- GET /api/supplier/stats ----------
 
 async function getStats(req, res) {
     const profile = await getSupplierProfile(req, res);
@@ -140,6 +154,7 @@ async function getStats(req, res) {
         .filter((o) => new Date(o.createdAt) >= startOfMonth)
         .reduce((sum, o) => sum + num(o.totalQuantity) * num(o.product.price), 0);
 
+    // Order yang deadline-nya lewat tapi statusnya masih open -> butuh tindakan
     const needsAction = openOrders.filter((o) => new Date(o.deadline) < now).length;
 
     const lowStock = products
@@ -158,6 +173,11 @@ async function getStats(req, res) {
     });
 }
 
+// ---------- GET /api/supplier/demand ----------
+// Market Demand Analytics sederhana: komoditas apa yang paling banyak
+// diminta UMKM di seluruh platform, biar supplier tahu mau pasok apa.
+// Query: ?days=90&city=Lhokseumawe
+
 async function getDemandInsights(req, res) {
     const profile = await getSupplierProfile(req, res);
     if (!profile) return;
@@ -168,6 +188,7 @@ async function getDemandInsights(req, res) {
 
     const cityFilter = req.query.city ? String(req.query.city) : null;
 
+    // 1. Permintaan dari order kolektif (semua supplier, bukan cuma milik sendiri)
     const items = await prisma.procurementOrderItem.findMany({
         where: {
             order: { createdAt: { gte: since } },
@@ -242,8 +263,138 @@ async function getDemandInsights(req, res) {
     });
 }
 
+
+// ---------- GET /api/supplier/pendapatan ----------
+
+const namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+/**
+ * Riwayat pendapatan pemasok untuk grafik di beranda.
+ *
+ * Yang ditampilkan adalah dana bersih yang menjadi hak pemasok —
+ * nilai transaksi dikurangi komisi dan margin platform. Nilai kotor
+ * ikut dikirim sebagai pembanding supaya potongannya kelihatan.
+ *
+ * Query: ?rentang=bulanan (12 bulan) atau tahunan (5 tahun)
+ */
+async function getPendapatan(req, res) {
+    const profile = await getSupplierProfile(req, res);
+    if (!profile) return;
+
+    const tahunan = req.query.rentang === 'tahunan';
+    const now = new Date();
+
+    const mulai = tahunan
+        ? new Date(now.getFullYear() - 4, 0, 1)
+        : new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const transaksi = await prisma.transaction.findMany({
+        where: {
+            status: 'success',
+            createdAt: { gte: mulai },
+            orderItem: { order: { product: { supplierId: profile.id } } },
+        },
+        select: {
+            createdAt: true,
+            amount: true,
+            supplierPayout: true,
+            platformFee: true,
+            distributionMargin: true,
+            payoutStatus: true,
+            orderItem: { select: { quantity: true } },
+        },
+    });
+
+    // Siapkan kerangka periode lebih dulu supaya bulan atau tahun
+    // tanpa transaksi tetap muncul sebagai nol, bukan hilang
+    const kerangka = new Map();
+
+    if (tahunan) {
+        for (let i = 4; i >= 0; i--) {
+            const t = now.getFullYear() - i;
+            kerangka.set(String(t), {
+                kunci: String(t),
+                label: String(t),
+                pendapatan: 0,
+                nilaiTransaksi: 0,
+                potongan: 0,
+                volume: 0,
+                transaksi: 0,
+            });
+        }
+    } else {
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const kunci = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            kerangka.set(kunci, {
+                kunci,
+                label: `${namaBulan[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+                pendapatan: 0,
+                nilaiTransaksi: 0,
+                potongan: 0,
+                volume: 0,
+                transaksi: 0,
+            });
+        }
+    }
+
+    let belumDiteruskan = 0;
+
+    for (const t of transaksi) {
+        const d = new Date(t.createdAt);
+        const kunci = tahunan
+            ? String(d.getFullYear())
+            : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        const baris = kerangka.get(kunci);
+        if (!baris) continue;
+
+        const bersih = num(t.supplierPayout);
+        baris.pendapatan += bersih;
+        baris.nilaiTransaksi += num(t.amount);
+        baris.potongan += num(t.platformFee) + num(t.distributionMargin);
+        baris.volume += num(t.orderItem?.quantity);
+        baris.transaksi += 1;
+
+        if (t.payoutStatus !== 'paid') belumDiteruskan += bersih;
+    }
+
+    const bulat = (n) => Math.round(n * 100) / 100;
+    const seri = [...kerangka.values()].map((b) => ({
+        ...b,
+        pendapatan: bulat(b.pendapatan),
+        nilaiTransaksi: bulat(b.nilaiTransaksi),
+        potongan: bulat(b.potongan),
+        volume: bulat(b.volume),
+    }));
+
+    const total = seri.reduce((s, b) => s + b.pendapatan, 0);
+    const totalPotongan = seri.reduce((s, b) => s + b.potongan, 0);
+
+    // Bandingkan periode terakhir dengan sebelumnya
+    const terakhir = seri[seri.length - 1]?.pendapatan ?? 0;
+    const sebelumnya = seri[seri.length - 2]?.pendapatan ?? 0;
+    const perubahan =
+        sebelumnya > 0 ? Math.round(((terakhir - sebelumnya) / sebelumnya) * 100) : null;
+
+    res.json({
+        rentang: tahunan ? 'tahunan' : 'bulanan',
+        seri,
+        ringkasan: {
+            total: bulat(total),
+            totalPotongan: bulat(totalPotongan),
+            rataRata: bulat(total / (seri.length || 1)),
+            periodeTerakhir: bulat(terakhir),
+            perubahanPersen: perubahan,
+            belumDiteruskan: bulat(belumDiteruskan),
+            jumlahTransaksi: seri.reduce((s, b) => s + b.transaksi, 0),
+        },
+    });
+}
+
 module.exports = {
     getProfile,
+    getPendapatan,
     listMyProducts,
     listMyOrders,
     getStats,

@@ -21,6 +21,10 @@ export interface ForecastDetail {
         linearTrend?: number;
         seasonalFactor?: number;
         seasonalityApplied?: boolean;
+        holidayFactor?: number;
+        holidayApplied?: boolean;
+        holidayNote?: string;
+        holidayList?: string[];
         monthsOfData?: number;
         lastDataPeriod?: string;
         keterangan?: string;

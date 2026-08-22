@@ -3,7 +3,6 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const authRoutes = require('./routes/authRoutes');
-const onboardingRoutes = require('./routes/onboardingRoutes');
 const productRoutes = require('./routes/productRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const forecastRoutes = require('./routes/forecastRoutes');
@@ -13,6 +12,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const weatherRoutes = require('./routes/weatherRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const onboardingRoutes = require('./routes/onboardingRoutes');
+const fileRoutes = require('./routes/fileRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/files', fileRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
