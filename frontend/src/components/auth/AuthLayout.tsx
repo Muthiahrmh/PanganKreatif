@@ -49,7 +49,7 @@ export function AuthLayout({
                     © {new Date().getFullYear()} PanganKreatif — Tim Titip Absen
                 </p>
                 <div className="pointer-events-none absolute -bottom-20 -left-0 z-[1]">
-                    <div className="relative h-[54rem] w-[50rem] max-w-none">
+                    <div className="relative h-[40rem] w-[35rem] max-w-none">
                         <Image
                             key={backgroundImage}
                             src={backgroundImage}

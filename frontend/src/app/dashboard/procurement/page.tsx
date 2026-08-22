@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Users, Clock, Package, TrendingDown } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -53,10 +53,59 @@ export default function ProcurementPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, []);
 
     const joinedOrderIds = new Set(myItems.map((i) => i.orderId));
+
+    /**
+     * Yang belum digabung ditaruh di atas — itu yang masih perlu
+     * ditindak. Di antara sesama yang belum digabung, dahulukan yang
+     * paling dekat ke ambang harga grosir, lalu yang deadline-nya
+     * paling mepet.
+     */
+    const orderTerurut = useMemo(() => {
+        const nilaiUrut = (o: ProcurementOrder) => (joinedOrderIds.has(o.id) ? 1 : 0);
+
+        return [...openOrders].sort((a, b) => {
+            const beda = nilaiUrut(a) - nilaiUrut(b);
+            if (beda !== 0) return beda;
+
+            // Makin sedikit sisa menuju grosir, makin mendesak
+            const sisaA = a.pricing?.remainingToBulk ?? Number.POSITIVE_INFINITY;
+            const sisaB = b.pricing?.remainingToBulk ?? Number.POSITIVE_INFINITY;
+            if (sisaA !== sisaB) return sisaA - sisaB;
+
+            return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        });
+        // joinedOrderIds diturunkan dari myItems, jadi cukup pantau itu
+    }, [openOrders, myItems]);
+
+    /**
+     * Pesanan saya diurutkan menurut apa yang perlu dikerjakan:
+     * belum bayar dulu, lalu yang menunggu verifikasi, terakhir
+     * yang sudah lunas.
+     */
+    const itemTerurut = useMemo(() => {
+        const nilaiUrut = (it: ProcurementOrderItem) => {
+            const lunas = it.status === "paid" || it.transactions?.some((t) => t.status === "success");
+            if (lunas) return 2;
+
+            const menunggu = it.transactions?.some((t) => t.status === "pending");
+            return menunggu ? 1 : 0;
+        };
+
+        return [...myItems].sort((a, b) => {
+            const beda = nilaiUrut(a) - nilaiUrut(b);
+            if (beda !== 0) return beda;
+
+            // Yang deadline-nya lebih dekat didahulukan
+            return (
+                new Date(a.order.deadline).getTime() - new Date(b.order.deadline).getTime()
+            );
+        });
+    }, [myItems]);
 
     async function handleJoin(orderId: string) {
         setError(null);
@@ -110,7 +159,7 @@ export default function ProcurementPage() {
                     </p>
                 ) : (
                     <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                        {openOrders.map((order) => {
+                        {orderTerurut.map((order) => {
                             const alreadyJoined = joinedOrderIds.has(order.id);
                             const pricing = order.pricing;
                             const terkumpul = Number(order.totalQuantity);
@@ -236,7 +285,7 @@ export default function ProcurementPage() {
                 </p>
             ) : (
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {myItems.map((item) => {
+                    {itemTerurut.map((item) => {
                         // Backend sudah hitung subtotal pakai harga yang berlaku (grosir/normal)
                         const suggestedAmount =
                             item.subtotal ??

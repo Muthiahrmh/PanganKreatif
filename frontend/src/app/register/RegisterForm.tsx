@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Store, Truck } from "lucide-react";
+import { Store, Truck, MailCheck, RefreshCw } from "lucide-react";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import { api, getApiErrorMessage } from "@/lib/api";
-import { useAuthStore } from "@/store/authStore";
-import type { AuthResponse, Role } from "@/types/auth";
+import { kirimUlangVerifikasi } from "@/lib/verifikasi";
+import type { Role } from "@/types/auth";
 
 const registerSchema = z
     .object({
@@ -31,14 +31,23 @@ const registerSchema = z
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const initialRole = searchParams.get("role") === "supplier" ? "supplier" : "umkm";
 
     const [role, setRole] = useState<Extract<Role, "umkm" | "supplier">>(initialRole);
     const [serverError, setServerError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const setAuth = useAuthStore((s) => s.setAuth);
+
+    // Setelah pendaftaran berhasil, formulir diganti pesan cek email.
+    // Akun sudah dibuat tapi belum bisa dipakai sebelum diverifikasi.
+    const [terdaftar, setTerdaftar] = useState<{
+        email: string;
+        pesan: string;
+        emailTerkirim: boolean;
+        berlakuMenit: number;
+    } | null>(null);
+    const [mengirimUlang, setMengirimUlang] = useState(false);
+    const [pesanUlang, setPesanUlang] = useState<string | null>(null);
 
     const {
         register,
@@ -65,14 +74,120 @@ export function RegisterForm() {
                 role,
                 businessType: role === "umkm" ? data.businessType || "umum" : undefined,
             };
-            const res = await api.post<AuthResponse>("/auth/register", payload);
-            setAuth(res.data.user, res.data.token);
-            router.push("/dashboard");
+            const res = await api.post<{
+                email: string;
+                pesan: string;
+                emailTerkirim: boolean;
+                berlakuMenit: number;
+            }>("/auth/register", payload);
+
+            // Tidak langsung masuk — email harus diverifikasi dulu
+            setTerdaftar({
+                email: res.data.email ?? data.email,
+                pesan: res.data.pesan,
+                emailTerkirim: Boolean(res.data.emailTerkirim),
+                berlakuMenit: res.data.berlakuMenit ?? 5,
+            });
         } catch (err) {
             setServerError(getApiErrorMessage(err));
         } finally {
             setLoading(false);
         }
+    }
+
+    async function kirimUlang() {
+        if (!terdaftar) return;
+
+        setMengirimUlang(true);
+        setPesanUlang(null);
+        try {
+            const hasil = await kirimUlangVerifikasi(terdaftar.email);
+            setPesanUlang(hasil.pesan);
+        } catch (err) {
+            setPesanUlang(getApiErrorMessage(err));
+        } finally {
+            setMengirimUlang(false);
+        }
+    }
+
+    // ---------- Setelah pendaftaran berhasil ----------
+    if (terdaftar) {
+        return (
+            <AuthLayout
+                title="Cek email kamu"
+                subtitle="Satu langkah lagi sebelum akunmu bisa dipakai."
+                backgroundImage={
+                    role === "umkm"
+                        ? "/images/walpaper_regis_umkm.png"
+                        : "/images/walpaper_regis_supplier.png"
+                }
+            >
+                <div className="flex flex-col items-center text-center">
+                    <span
+                        className={`flex h-14 w-14 items-center justify-center rounded-full ${terdaftar.emailTerkirim
+                                ? "bg-blue-50 text-brand-blue"
+                                : "bg-amber-50 text-amber-600"
+                            }`}
+                    >
+                        <MailCheck size={26} />
+                    </span>
+
+                    <h2 className="mt-4 font-display text-lg font-bold text-ink">
+                        {terdaftar.emailTerkirim
+                            ? "Tautan verifikasi terkirim"
+                            : "Akun dibuat, email belum terkirim"}
+                    </h2>
+
+                    <p className="mt-2 text-sm text-ink-soft">
+                        {terdaftar.emailTerkirim ? (
+                            <>
+                                Kami mengirim tautan ke{" "}
+                                <span className="font-semibold text-ink">{terdaftar.email}</span>.
+                                Buka emailnya lalu klik tautan itu untuk mengaktifkan akun.
+                            </>
+                        ) : (
+                            terdaftar.pesan
+                        )}
+                    </p>
+
+                    {terdaftar.emailTerkirim && (
+                        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                            Tautan hanya berlaku {terdaftar.berlakuMenit} menit. Kalau lewat,
+                            tekan tombol di bawah untuk meminta tautan baru.
+                        </p>
+                    )}
+
+                    <p className="mt-2 text-xs text-ink-soft">
+                        Tidak ada di kotak masuk? Periksa folder Spam atau Promosi.
+                    </p>
+
+                    {pesanUlang && (
+                        <p className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-brand-blue">
+                            {pesanUlang}
+                        </p>
+                    )}
+
+                    <button
+                        onClick={kirimUlang}
+                        disabled={mengirimUlang}
+                        className="mt-5 inline-flex items-center gap-2 rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-paper-soft disabled:opacity-60"
+                    >
+                        <RefreshCw size={14} className={mengirimUlang ? "animate-spin" : ""} />
+                        {mengirimUlang ? "Mengirim..." : "Kirim ulang tautan"}
+                    </button>
+
+                    <p className="mt-6 text-sm text-ink-soft">
+                        Sudah verifikasi?{" "}
+                        <Link
+                            href="/login"
+                            className="font-semibold text-brand-blue hover:underline"
+                        >
+                            Masuk di sini
+                        </Link>
+                    </p>
+                </div>
+            </AuthLayout>
+        );
     }
 
     return (
