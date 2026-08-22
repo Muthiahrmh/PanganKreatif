@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { PWARegister } from "@/components/PWARegister";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,13 +21,19 @@ export const metadata: Metadata = {
     "Platform B2B yang menghubungkan UMKM kuliner dengan kelompok tani lewat AI Demand Forecasting dan Collective Procurement.",
 };
 
+export const viewport = {
+    themeColor: "#16A34A",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="id"
       className={`${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-paper text-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-paper text-ink">{children}
+        <PWARegister />
+      </body>
     </html>
   );
 }
