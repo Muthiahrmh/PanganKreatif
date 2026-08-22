@@ -263,36 +263,48 @@ async function getDemandInsights(req, res) {
     });
 }
 
-
-// ---------- GET /api/supplier/pendapatan ----------
-
 const namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-/**
- * Riwayat pendapatan pemasok untuk grafik di beranda.
- *
- * Yang ditampilkan adalah dana bersih yang menjadi hak pemasok —
- * nilai transaksi dikurangi komisi dan margin platform. Nilai kotor
- * ikut dikirim sebagai pembanding supaya potongannya kelihatan.
- *
- * Query: ?rentang=bulanan (12 bulan) atau tahunan (5 tahun)
- */
 async function getPendapatan(req, res) {
     const profile = await getSupplierProfile(req, res);
     if (!profile) return;
 
-    const tahunan = req.query.rentang === 'tahunan';
     const now = new Date();
+    const mode = ['bulanan', 'tahun', 'tahunan'].includes(req.query.rentang)
+        ? req.query.rentang
+        : 'bulanan';
 
-    const mulai = tahunan
-        ? new Date(now.getFullYear() - 4, 0, 1)
-        : new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const kondisiPemasok = {
+        status: 'success',
+        orderItem: { order: { product: { supplierId: profile.id } } },
+    };
+    const semuaWaktu = await prisma.transaction.findMany({
+        where: kondisiPemasok,
+        select: { createdAt: true },
+    });
+
+    const tahunTersedia = [
+        ...new Set(semuaWaktu.map((t) => new Date(t.createdAt).getFullYear())),
+    ].sort((a, b) => b - a);
+
+    const tahunDipilih = Number(req.query.tahun) || tahunTersedia[0] || now.getFullYear();
+
+    let mulai;
+    let sampai = null;
+
+    if (mode === 'tahun') {
+        mulai = new Date(tahunDipilih - 1, 0, 1);
+        sampai = new Date(tahunDipilih + 1, 0, 1);
+    } else if (mode === 'tahunan') {
+        mulai = new Date(now.getFullYear() - 4, 0, 1);
+    } else {
+        mulai = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    }
 
     const transaksi = await prisma.transaction.findMany({
         where: {
-            status: 'success',
-            createdAt: { gte: mulai },
-            orderItem: { order: { product: { supplierId: profile.id } } },
+            ...kondisiPemasok,
+            createdAt: { gte: mulai, ...(sampai ? { lt: sampai } : {}) },
         },
         select: {
             createdAt: true,
@@ -305,51 +317,59 @@ async function getPendapatan(req, res) {
         },
     });
 
-    // Siapkan kerangka periode lebih dulu supaya bulan atau tahun
-    // tanpa transaksi tetap muncul sebagai nol, bukan hilang
+    const kosong = (kunci, label) => ({
+        kunci,
+        label,
+        pendapatan: 0,
+        nilaiTransaksi: 0,
+        potongan: 0,
+        volume: 0,
+        transaksi: 0,
+    });
+
     const kerangka = new Map();
 
-    if (tahunan) {
+    if (mode === 'tahunan') {
         for (let i = 4; i >= 0; i--) {
             const t = now.getFullYear() - i;
-            kerangka.set(String(t), {
-                kunci: String(t),
-                label: String(t),
-                pendapatan: 0,
-                nilaiTransaksi: 0,
-                potongan: 0,
-                volume: 0,
-                transaksi: 0,
-            });
+            kerangka.set(String(t), kosong(String(t), String(t)));
+        }
+    } else if (mode === 'tahun') {
+        for (let m = 0; m < 12; m++) {
+            const kunci = `${tahunDipilih}-${String(m + 1).padStart(2, '0')}`;
+            kerangka.set(kunci, kosong(kunci, namaBulan[m]));
         }
     } else {
         for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const kunci = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            kerangka.set(kunci, {
+            kerangka.set(
                 kunci,
-                label: `${namaBulan[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
-                pendapatan: 0,
-                nilaiTransaksi: 0,
-                potongan: 0,
-                volume: 0,
-                transaksi: 0,
-            });
+                kosong(kunci, `${namaBulan[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`)
+            );
         }
     }
 
     let belumDiteruskan = 0;
+    let totalTahunSebelum = 0;
 
     for (const t of transaksi) {
         const d = new Date(t.createdAt);
-        const kunci = tahunan
-            ? String(d.getFullYear())
-            : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const bersih = num(t.supplierPayout);
+
+        if (mode === 'tahun' && d.getFullYear() === tahunDipilih - 1) {
+            totalTahunSebelum += bersih;
+            continue;
+        }
+
+        const kunci =
+            mode === 'tahunan'
+                ? String(d.getFullYear())
+                : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
         const baris = kerangka.get(kunci);
         if (!baris) continue;
 
-        const bersih = num(t.supplierPayout);
         baris.pendapatan += bersih;
         baris.nilaiTransaksi += num(t.amount);
         baris.potongan += num(t.platformFee) + num(t.distributionMargin);
@@ -371,21 +391,45 @@ async function getPendapatan(req, res) {
     const total = seri.reduce((s, b) => s + b.pendapatan, 0);
     const totalPotongan = seri.reduce((s, b) => s + b.potongan, 0);
 
-    // Bandingkan periode terakhir dengan sebelumnya
-    const terakhir = seri[seri.length - 1]?.pendapatan ?? 0;
-    const sebelumnya = seri[seri.length - 2]?.pendapatan ?? 0;
-    const perubahan =
-        sebelumnya > 0 ? Math.round(((terakhir - sebelumnya) / sebelumnya) * 100) : null;
+    let pembanding = null;
+
+    if (mode === 'tahun') {
+        const selisih = totalTahunSebelum > 0
+            ? Math.round(((total - totalTahunSebelum) / totalTahunSebelum) * 100)
+            : null;
+
+        pembanding = {
+            jenis: 'tahun',
+            label: `dibanding ${tahunDipilih - 1}`,
+            nilaiPembanding: bulat(totalTahunSebelum),
+            persen: selisih,
+        };
+    } else {
+        const terakhir = seri[seri.length - 1]?.pendapatan ?? 0;
+        const sebelumnya = seri[seri.length - 2]?.pendapatan ?? 0;
+
+        pembanding = {
+            jenis: mode === 'tahunan' ? 'tahun' : 'bulan',
+            label: mode === 'tahunan' ? 'dibanding tahun lalu' : 'dibanding bulan lalu',
+            nilaiPembanding: bulat(sebelumnya),
+            persen:
+                sebelumnya > 0 ? Math.round(((terakhir - sebelumnya) / sebelumnya) * 100) : null,
+        };
+    }
 
     res.json({
-        rentang: tahunan ? 'tahunan' : 'bulanan',
+        rentang: mode,
+        tahunDipilih: mode === 'tahun' ? tahunDipilih : null,
+        tahunTersedia,
         seri,
         ringkasan: {
             total: bulat(total),
             totalPotongan: bulat(totalPotongan),
             rataRata: bulat(total / (seri.length || 1)),
-            periodeTerakhir: bulat(terakhir),
-            perubahanPersen: perubahan,
+            periodeTerakhir: bulat(
+                mode === 'tahun' ? total : seri[seri.length - 1]?.pendapatan ?? 0
+            ),
+            pembanding,
             belumDiteruskan: bulat(belumDiteruskan),
             jumlahTransaksi: seri.reduce((s, b) => s + b.transaksi, 0),
         },

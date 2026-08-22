@@ -16,6 +16,8 @@ import { TrendingUp, TrendingDown, Minus, Wallet } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatRupiah, formatRupiahShort } from "@/lib/format";
 
+type Mode = "bulanan" | "tahun" | "tahunan";
+
 interface BarisPendapatan {
     kunci: string;
     label: string;
@@ -26,15 +28,24 @@ interface BarisPendapatan {
     transaksi: number;
 }
 
+interface Pembanding {
+    jenis: "bulan" | "tahun";
+    label: string;
+    nilaiPembanding: number;
+    persen: number | null;
+}
+
 interface DataPendapatan {
-    rentang: "bulanan" | "tahunan";
+    rentang: Mode;
+    tahunDipilih: number | null;
+    tahunTersedia: number[];
     seri: BarisPendapatan[];
     ringkasan: {
         total: number;
         totalPotongan: number;
         rataRata: number;
         periodeTerakhir: number;
-        perubahanPersen: number | null;
+        pembanding: Pembanding | null;
         belumDiteruskan: number;
         jumlahTransaksi: number;
     };
@@ -48,7 +59,8 @@ interface DataPendapatan {
  * besaran komisi dan margin platform terlihat, bukan disembunyikan.
  */
 export function GrafikPendapatan() {
-    const [rentang, setRentang] = useState<"bulanan" | "tahunan">("bulanan");
+    const [mode, setMode] = useState<Mode>("bulanan");
+    const [tahun, setTahun] = useState<number | null>(null);
     const [data, setData] = useState<DataPendapatan | null>(null);
     const [memuat, setMemuat] = useState(true);
     const [galat, setGalat] = useState<string | null>(null);
@@ -56,16 +68,23 @@ export function GrafikPendapatan() {
     const muat = useCallback(async () => {
         try {
             const res = await api.get<DataPendapatan>("/supplier/pendapatan", {
-                params: { rentang },
+                params: {
+                    rentang: mode,
+                    ...(mode === "tahun" && tahun ? { tahun } : {}),
+                },
             });
             setData(res.data);
+            // Ikuti tahun yang dipilih server kalau belum ditentukan
+            if (mode === "tahun" && !tahun && res.data.tahunDipilih) {
+                setTahun(res.data.tahunDipilih);
+            }
             setGalat(null);
         } catch (err) {
             setGalat(getApiErrorMessage(err));
         } finally {
             setMemuat(false);
         }
-    }, [rentang]);
+    }, [mode, tahun]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -81,10 +100,27 @@ export function GrafikPendapatan() {
     }
 
     const r = data?.ringkasan;
-    const naik = (r?.perubahanPersen ?? 0) > 0;
-    const turun = (r?.perubahanPersen ?? 0) < 0;
+    const p = r?.pembanding;
+    const naik = (p?.persen ?? 0) > 0;
+    const turun = (p?.persen ?? 0) < 0;
 
     const adaIsi = (data?.seri ?? []).some((b) => b.pendapatan > 0);
+
+    const judulPeriode =
+        mode === "tahun"
+            ? `Total ${data?.tahunDipilih ?? ""}`
+            : mode === "tahunan"
+                ? "Tahun ini"
+                : "Bulan ini";
+
+    const judulTotal =
+        mode === "tahun"
+            ? "Rata-rata per bulan"
+            : mode === "tahunan"
+                ? "Total 5 tahun"
+                : "Total 12 bulan";
+
+    const nilaiTotal = mode === "tahun" ? (r?.rataRata ?? 0) : (r?.total ?? 0);
 
     return (
         <div className="rounded-2xl bg-white p-6 shadow-sm">
@@ -99,22 +135,48 @@ export function GrafikPendapatan() {
                     </p>
                 </div>
 
-                <div className="inline-flex rounded-lg bg-paper-soft p-1">
-                    {(["bulanan", "tahunan"] as const).map((t) => (
-                        <button
-                            key={t}
-                            onClick={() => {
-                                setRentang(t);
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex rounded-lg bg-paper-soft p-1">
+                        {(
+                            [
+                                ["bulanan", "12 bulan"],
+                                ["tahun", "Per tahun"],
+                                ["tahunan", "5 tahun"],
+                            ] as const
+                        ).map(([nilai, label]) => (
+                            <button
+                                key={nilai}
+                                onClick={() => {
+                                    setMode(nilai);
+                                    setMemuat(true);
+                                }}
+                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${mode === nilai
+                                        ? "bg-white text-ink shadow-sm"
+                                        : "text-ink-soft hover:text-ink"
+                                    }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {mode === "tahun" && (data?.tahunTersedia.length ?? 0) > 0 && (
+                        <select
+                            value={tahun ?? data?.tahunDipilih ?? ""}
+                            onChange={(e) => {
+                                setTahun(Number(e.target.value));
                                 setMemuat(true);
                             }}
-                            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${rentang === t
-                                    ? "bg-white text-ink shadow-sm"
-                                    : "text-ink-soft hover:text-ink"
-                                }`}
+                            aria-label="Pilih tahun"
+                            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs outline-none transition focus:border-brand-green"
                         >
-                            {t === "bulanan" ? "12 bulan" : "5 tahun"}
-                        </button>
-                    ))}
+                            {data?.tahunTersedia.map((t) => (
+                                <option key={t} value={t}>
+                                    {t}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                 </div>
             </div>
 
@@ -124,13 +186,12 @@ export function GrafikPendapatan() {
                 <>
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
                         <div className="rounded-lg bg-paper-soft p-3">
-                            <div className="text-xs text-ink-soft">
-                                {rentang === "bulanan" ? "Bulan ini" : "Tahun ini"}
-                            </div>
+                            <div className="text-xs text-ink-soft">{judulPeriode}</div>
                             <div className="mt-0.5 font-display text-lg font-bold text-brand-green">
                                 {formatRupiah(r?.periodeTerakhir ?? 0)}
                             </div>
-                            {r?.perubahanPersen !== null && r?.perubahanPersen !== undefined && (
+
+                            {p?.persen !== null && p?.persen !== undefined ? (
                                 <div
                                     className={`mt-0.5 inline-flex items-center gap-1 text-xs ${naik
                                             ? "text-brand-green"
@@ -146,17 +207,19 @@ export function GrafikPendapatan() {
                                     ) : (
                                         <Minus size={12} />
                                     )}
-                                    {Math.abs(r.perubahanPersen)}% dari periode sebelumnya
+                                    {Math.abs(p.persen)}% {p.label}
+                                </div>
+                            ) : (
+                                <div className="mt-0.5 text-xs text-ink-soft">
+                                    Belum ada pembanding
                                 </div>
                             )}
                         </div>
 
                         <div className="rounded-lg bg-paper-soft p-3">
-                            <div className="text-xs text-ink-soft">
-                                Total {rentang === "bulanan" ? "12 bulan" : "5 tahun"}
-                            </div>
+                            <div className="text-xs text-ink-soft">{judulTotal}</div>
                             <div className="mt-0.5 font-display text-lg font-bold text-ink">
-                                {formatRupiah(r?.total ?? 0)}
+                                {formatRupiah(nilaiTotal)}
                             </div>
                             <div className="mt-0.5 text-xs text-ink-soft">
                                 {r?.jumlahTransaksi ?? 0} transaksi
@@ -173,6 +236,14 @@ export function GrafikPendapatan() {
                             </div>
                         </div>
                     </div>
+
+                    {p?.jenis === "tahun" && mode === "tahun" && (p.nilaiPembanding ?? 0) > 0 && (
+                        <p className="mt-3 rounded-lg bg-paper-soft px-3 py-2 text-xs text-ink-soft">
+                            Tahun {(data?.tahunDipilih ?? 0) - 1} pendapatanmu{" "}
+                            {formatRupiah(p.nilaiPembanding)}. Tahun {data?.tahunDipilih}{" "}
+                            {formatRupiah(r?.total ?? 0)}.
+                        </p>
+                    )}
 
                     {adaIsi ? (
                         <div className="mt-5 h-72 w-full">
@@ -211,8 +282,9 @@ export function GrafikPendapatan() {
                     ) : (
                         <div className="mt-5 rounded-xl border border-dashed border-ink/15 p-8 text-center">
                             <p className="text-sm text-ink-soft">
-                                Belum ada pendapatan tercatat. Grafik terisi setelah ada pembayaran
-                                UMKM yang dikonfirmasi.
+                                {mode === "tahun"
+                                    ? `Belum ada pendapatan tercatat pada tahun ${data?.tahunDipilih}.`
+                                    : "Belum ada pendapatan tercatat. Grafik terisi setelah ada pembayaran UMKM yang dikonfirmasi."}
                             </p>
                         </div>
                     )}
