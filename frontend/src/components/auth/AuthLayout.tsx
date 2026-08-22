@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export function AuthLayout({
     children,
@@ -49,7 +50,7 @@ export function AuthLayout({
                     © {new Date().getFullYear()} PanganKreatif — Tim Titip Absen
                 </p>
                 <div className="pointer-events-none absolute -bottom-20 -left-0 z-[1]">
-                    <div className="relative h-[40rem] w-[35rem] max-w-none">
+                    <div className="relative h-[38rem] w-[34rem] max-w-none">
                         <Image
                             key={backgroundImage}
                             src={backgroundImage}
@@ -64,6 +65,16 @@ export function AuthLayout({
 
             <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 lg:px-20">
                 <div className="mx-auto w-full max-w-sm">
+                    {/* Jalan pulang ke halaman depan, karena halaman ini
+                        sering dibuka langsung dari tautan email */}
+                    <Link
+                        href="/"
+                        className="mb-6 inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
+                    >
+                        <ArrowLeft size={15} />
+                        Kembali ke beranda
+                    </Link>
+
                     <Link href="/" className="mb-8 flex lg:hidden">
                         <Image
                             src="/images/logo-pangankreatif.png"

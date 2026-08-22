@@ -53,18 +53,11 @@ export default function ProcurementPage() {
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, []);
 
     const joinedOrderIds = new Set(myItems.map((i) => i.orderId));
 
-    /**
-     * Yang belum digabung ditaruh di atas — itu yang masih perlu
-     * ditindak. Di antara sesama yang belum digabung, dahulukan yang
-     * paling dekat ke ambang harga grosir, lalu yang deadline-nya
-     * paling mepet.
-     */
     const orderTerurut = useMemo(() => {
         const nilaiUrut = (o: ProcurementOrder) => (joinedOrderIds.has(o.id) ? 1 : 0);
 
@@ -79,14 +72,8 @@ export default function ProcurementPage() {
 
             return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
         });
-        // joinedOrderIds diturunkan dari myItems, jadi cukup pantau itu
     }, [openOrders, myItems]);
 
-    /**
-     * Pesanan saya diurutkan menurut apa yang perlu dikerjakan:
-     * belum bayar dulu, lalu yang menunggu verifikasi, terakhir
-     * yang sudah lunas.
-     */
     const itemTerurut = useMemo(() => {
         const nilaiUrut = (it: ProcurementOrderItem) => {
             const lunas = it.status === "paid" || it.transactions?.some((t) => t.status === "success");

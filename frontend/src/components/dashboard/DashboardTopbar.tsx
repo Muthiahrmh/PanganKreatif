@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, Headset } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { getNavItems, getPageTitle, getRoleLabel } from "./navItems";
 import { temaPeran } from "./roleTheme";
@@ -70,6 +70,18 @@ export function DashboardTopbar() {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                        {/* Bantuan ditaruh di topbar, bukan di menu samping,
+                            karena sifatnya pertolongan sewaktu-waktu — bukan
+                            tempat yang rutin dikunjungi */}
+                        <Link
+                            href="/bantuan"
+                            aria-label="Pusat bantuan"
+                            title="Pusat bantuan"
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-soft text-ink-soft transition hover:bg-slate-100 hover:text-ink"
+                        >
+                            <Headset size={18} />
+                        </Link>
+
                         <PanelNotifikasi aksen={tema.aksen} />
 
                         <Link href="/dashboard/profile" aria-label="Profil">
@@ -139,9 +151,8 @@ export function DashboardTopbar() {
                                         onClick={tutupMenu}
                                         aria-current={aktif ? "page" : undefined}
                                         style={aktif ? { backgroundColor: tema.aktif } : undefined}
-                                        className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                                            aktif ? "text-white" : "text-white/60 hover:text-white"
-                                        }`}
+                                        className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${aktif ? "text-white" : "text-white/60 hover:text-white"
+                                            }`}
                                     >
                                         <Icon size={17} />
                                         {item.label}
@@ -178,6 +189,14 @@ export function DashboardTopbar() {
                                         {getRoleLabel(user?.role)}
                                     </div>
                                 </div>
+                            </Link>
+
+                            <Link
+                                href="/bantuan"
+                                onClick={tutupMenu}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/60 transition-colors hover:text-white"
+                            >
+                                <Headset size={16} /> Bantuan
                             </Link>
 
                             <button

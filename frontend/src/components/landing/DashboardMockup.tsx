@@ -5,47 +5,54 @@ import {
   Home,
   Sparkles,
   Package,
-  Users,
+  Store,
   Receipt,
-  FileText,
+  ShoppingCart,
+  NotebookPen,
   Bell,
   ChevronDown,
   TrendingUp,
-  ShoppingBag,
-  Wallet,
-  ShieldCheck,
-  Star,
+  PiggyBank,
   Bot,
 } from "lucide-react";
 import { MiniChart } from "./MiniChart";
 
+/**
+ * Cuplikan tampilan dashboard untuk halaman depan.
+ *
+ * Isinya sengaja mengikuti aplikasi yang sebenarnya — menu, kartu,
+ * dan angkanya mencerminkan fitur yang memang ada. Menampilkan
+ * sesuatu yang belum dibangun, misalnya rating pemasok atau
+ * persentase stok, hanya akan mengecewakan orang yang mencoba.
+ */
+
 const sidebarItems = [
   { icon: Home, label: "Beranda", active: true },
+  { icon: NotebookPen, label: "Riwayat Penjualan" },
   { icon: Sparkles, label: "Prediksi AI" },
-  { icon: Package, label: "Pesanan" },
-  { icon: Users, label: "Supplier" },
-  { icon: ShoppingBag, label: "Produk" },
+  { icon: Store, label: "Cari Pemasok" },
+  { icon: ShoppingCart, label: "Belanja Kolektif" },
   { icon: Receipt, label: "Transaksi" },
-  { icon: FileText, label: "Laporan" },
 ];
 
 const statCards = [
-  { icon: TrendingUp, label: "Prediksi Permintaan", value: "+18%", sub: "Minggu Depan", color: "text-brand-blue" },
-  { icon: ShoppingBag, label: "Pesanan Aktif", value: "24", sub: "Pesanan", color: "text-ink" },
-  { icon: Wallet, label: "Total Pengeluaran", value: "Rp2.450.000", sub: "+12% dari bulan lalu", color: "text-ink" },
-  { icon: ShieldCheck, label: "Stok Aman", value: "85%", sub: "Kategori Aman", color: "text-brand-green" },
+  { icon: NotebookPen, label: "Data Penjualan", value: "162", sub: "3 bahan baku", color: "text-brand-blue" },
+  { icon: Sparkles, label: "Prediksi Bulan Depan", value: "66 kg", sub: "Cabai Merah", color: "text-brand-green" },
+  { icon: ShoppingCart, label: "Pesanan Aktif", value: "2", sub: "Belanja kolektif", color: "text-ink" },
+  { icon: PiggyBank, label: "Hemat Kolektif", value: "Rp300.000", sub: "Dibanding harga satuan", color: "text-amber-500" },
 ];
 
-const suppliers = [
-  { name: "Tani Makmur", rating: 4.8, price: "Rp28.000/kg" },
-  { name: "Agro Fresh", rating: 4.6, price: "Rp30.000/kg" },
-  { name: "Sawah Sejahtera", rating: 4.5, price: "Rp29.000/kg" },
+/** Rekomendasi pembelian — beberapa bahan sekaligus, seperti di aplikasi */
+const rekomendasi = [
+  { bahan: "Cabai Merah", prediksi: "66 kg", arah: "naik 8%", pemasok: "Tani Makmur", harga: "Rp35.000" },
+  { bahan: "Bawang Merah", prediksi: "42 kg", arah: "stabil", pemasok: "Tani Jaya", harga: "Rp26.500" },
+  { bahan: "Minyak Goreng", prediksi: "58 lt", arah: "naik 5%", pemasok: "Sembako Aceh", harga: "Rp18.000" },
 ];
 
-const orders = [
-  { no: "PO-240514-001", supplier: "Tani Makmur", produk: "Cabai Merah", jumlah: "15 kg", status: "Diproses", statusColor: "bg-amber-100 text-amber-700" },
-  { no: "PO-240514-017", supplier: "Agro Fresh", produk: "Bawang Putih", jumlah: "20 kg", status: "Dikirim", statusColor: "bg-blue-100 text-blue-700" },
-  { no: "PO-240513-025", supplier: "Sawah Sejahtera", produk: "Tomat", jumlah: "10 kg", status: "Selesai", statusColor: "bg-green-100 text-green-700" },
+/** Progres menuju harga grosir — inti dari belanja kolektif */
+const kolektif = [
+  { produk: "Cabai Merah", terkumpul: 47, target: 60, satuan: "kg", umkm: 4 },
+  { produk: "Bawang Merah", terkumpul: 37, target: 50, satuan: "kg", umkm: 3 },
 ];
 
 export function DashboardMockup() {
@@ -53,7 +60,7 @@ export function DashboardMockup() {
     <div className="flex overflow-hidden rounded-2xl border border-white/10 bg-navy shadow-2xl">
       {/* Sidebar */}
       <div className="hidden w-44 shrink-0 flex-col bg-navy p-4 sm:flex">
-        <div className="mb-6 flex items-center px-1">
+        <div className="mb-4 flex items-center px-1">
           <Image
             src="/images/logo-pangankreatif.png"
             alt="PanganKreatif"
@@ -62,15 +69,19 @@ export function DashboardMockup() {
             className="h-6 w-auto brightness-0 invert"
           />
         </div>
+
+        <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-blue/25 px-2 py-0.5 text-[9px] font-medium text-white">
+          <span className="h-1 w-1 rounded-full bg-brand-blue" />
+          Sisi Pembeli
+        </div>
+
         <nav className="flex flex-col gap-1">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             return (
               <div
                 key={item.label}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium ${item.active
-                    ? "bg-brand-green text-white"
-                    : "text-white/60"
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium ${item.active ? "bg-brand-blue text-white" : "text-white/60"
                   }`}
               >
                 <Icon size={15} />
@@ -81,10 +92,10 @@ export function DashboardMockup() {
         </nav>
       </div>
 
-      {/* Content */}
+      {/* Isi */}
       <div className="flex-1 bg-paper-soft p-4">
         <div className="mb-4 flex items-center justify-between">
-          <span className="font-display text-base font-bold text-ink">Dashboard</span>
+          <span className="font-display text-base font-bold text-ink">Beranda</span>
           <div className="flex items-center gap-3">
             <Bell size={16} className="text-ink-soft" />
             <div className="flex items-center gap-2">
@@ -98,7 +109,7 @@ export function DashboardMockup() {
           </div>
         </div>
 
-        {/* Stat cards */}
+        {/* Kartu ringkas */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {statCards.map((s) => {
             const Icon = s.icon;
@@ -115,7 +126,7 @@ export function DashboardMockup() {
           })}
         </div>
 
-        {/* Chart + Rekomendasi */}
+        {/* Grafik prediksi + rekomendasi beberapa bahan */}
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1.4fr_1fr]">
           <div className="rounded-lg bg-white p-3 shadow-sm">
             <div className="mb-1 flex items-center justify-between text-[10px] font-semibold text-ink">
@@ -134,41 +145,64 @@ export function DashboardMockup() {
           </div>
 
           <div className="rounded-lg bg-white p-3 shadow-sm">
-            <div className="mb-2 text-[10px] font-semibold text-ink">Rekomendasi Supplier</div>
+            <div className="mb-2 flex items-center gap-1 text-[10px] font-semibold text-ink">
+              <Sparkles size={11} className="text-brand-blue" />
+              Rekomendasi Pembelian
+            </div>
+
             <div className="flex flex-col gap-2">
-              {suppliers.map((s) => (
-                <div key={s.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-5 w-5 rounded-full bg-gradient-to-br from-brand-green/30 to-brand-blue/30" />
-                    <div className="text-[9px]">
-                      <div className="font-medium text-ink">{s.name}</div>
-                      <div className="flex items-center gap-0.5 text-ink-soft">
-                        <Star size={8} className="fill-amber-400 text-amber-400" />
-                        {s.rating}
-                      </div>
+              {rekomendasi.map((r) => (
+                <div key={r.bahan} className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 text-[9px]">
+                    <div className="font-medium text-ink">{r.bahan}</div>
+                    <div className="truncate text-ink-soft">
+                      termurah {r.pemasok}
                     </div>
                   </div>
-                  <span className="text-[9px] font-semibold text-ink">{s.price}</span>
+
+                  <div className="shrink-0 text-right text-[9px]">
+                    <div className="font-semibold text-brand-blue">{r.prediksi}</div>
+                    <div className="text-ink-soft">{r.harga}</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Orders + Insight */}
+        {/* Progres harga grosir + insight */}
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1.4fr_1fr]">
           <div className="rounded-lg bg-white p-3 shadow-sm">
-            <div className="mb-2 text-[10px] font-semibold text-ink">Pesanan Terbaru</div>
-            <div className="flex flex-col gap-1.5">
-              {orders.map((o) => (
-                <div key={o.no} className="flex items-center justify-between text-[9px]">
-                  <span className="text-ink-soft">{o.produk}</span>
-                  <span className="text-ink-soft">{o.jumlah}</span>
-                  <span className={`rounded-full px-1.5 py-0.5 font-medium ${o.statusColor}`}>
-                    {o.status}
-                  </span>
-                </div>
-              ))}
+            <div className="mb-2 flex items-center gap-1 text-[10px] font-semibold text-ink">
+              <Package size={11} className="text-brand-green" />
+              Menuju Harga Grosir
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {kolektif.map((k) => {
+                const persen = Math.min((k.terkumpul / k.target) * 100, 100);
+                return (
+                  <div key={k.produk}>
+                    <div className="flex items-baseline justify-between text-[9px]">
+                      <span className="text-ink">{k.produk}</span>
+                      <span className="text-ink-soft">
+                        {k.terkumpul}/{k.target} {k.satuan}
+                      </span>
+                    </div>
+
+                    <div className="mt-1 h-1.5 rounded-full bg-slate-100">
+                      <div
+                        className="h-1.5 rounded-full bg-brand-green"
+                        style={{ width: `${persen}%` }}
+                      />
+                    </div>
+
+                    <div className="mt-0.5 text-[9px] text-ink-soft">
+                      {k.umkm} UMKM bergabung · kurang {k.target - k.terkumpul} {k.satuan} lagi
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -177,9 +211,15 @@ export function DashboardMockup() {
               <Bot size={13} /> Insight AI
             </div>
             <p className="text-[9px] leading-relaxed text-white/90">
-              Permintaan cabai merah diprediksi naik 18% minggu depan. Disarankan tambah stok
-              15–20%.
+              Kebutuhan Cabai Merah diperkirakan naik 8% dibanding rata-rata tiga bulan
+              terakhir. Gabung belanja kolektif, kurang 13 kg lagi harga turun jadi
+              Rp30.500/kg.
             </p>
+
+            <div className="mt-2 flex items-center gap-1 text-[9px] text-white/80">
+              <TrendingUp size={10} />
+              Hemat sampai Rp297.000
+            </div>
           </div>
         </div>
       </div>

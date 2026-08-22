@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -11,11 +11,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const hydrated = useAuthStore((s) => s.hydrated);
+    const pernahMasuk = useRef(false);
 
-    // Tunggu zustand selesai baca localStorage sebelum memutuskan redirect,
-    // kalau tidak user yang sudah login ikut kelempar ke /login saat refresh.
     useEffect(() => {
-        if (hydrated && !user) router.replace("/login");
+        if (user) pernahMasuk.current = true;
+    }, [user]);
+
+    useEffect(() => {
+        if (!hydrated || user) return;
+
+        router.replace(pernahMasuk.current ? "/" : "/login");
     }, [hydrated, user, router]);
 
     if (!hydrated) {
