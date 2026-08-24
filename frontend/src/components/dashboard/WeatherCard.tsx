@@ -115,6 +115,18 @@ export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" })
                     ? "Prakiraan ini membantu memperkirakan gangguan panen dan jadwal pengiriman."
                     : "Prakiraan ini tidak mengubah angka prediksi kebutuhan, tapi membantu menentukan kapan sebaiknya memesan."}
             </p>
+
+            <p className="mt-2 text-[11px] text-ink-soft/70">
+                Data cuaca bersumber dari{" "}
+                <a
+                    href="https://bmkg.go.id/publik/prakiraan-cuaca"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-ink-soft"
+                >
+                    BMKG
+                </a>             .
+            </p>
         </div>
     );
 }

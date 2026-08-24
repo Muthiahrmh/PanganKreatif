@@ -7,7 +7,7 @@ import { BrainCircuit, ArrowRight } from "lucide-react";
 const roles = [
   {
     type: "image" as const,
-    image: "/images/supplier.png",
+    image: "/images/supplier1.png",
     title: "Distributor / Petani",
     desc: "Menyediakan bahan baku berkualitas dengan harga kompetitif.",
     color: "border-brand-green/20",
@@ -21,7 +21,7 @@ const roles = [
   },
   {
     type: "image" as const,
-    image: "/images/umkm_kuliner.png",
+    image: "/images/umkm_kuliner1.png",
     title: "UMKM Kuliner",
     desc: "Mendapatkan bahan baku tepat waktu untuk bisnis yang lebih maju.",
     color: "border-brand-blue/20",
@@ -31,7 +31,7 @@ const roles = [
 export function PlatformRoles() {
   return (
     <section id="manfaat" className="border-t border-ink/5 bg-paper-soft">
-      <div className="mx-auto w-full max-w-[1700px] px-8 py-20 lg:px-160">
+      <div className="mx-auto w-full max-w-[1700px] px-8 py-20 lg:px-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -48,7 +48,7 @@ export function PlatformRoles() {
           </p>
         </motion.div>
 
-        <div className="mt-14 flex flex-col items-center justify-center gap-6 md:flex-row md:gap-4">
+        <div className="mt-14 flex flex-col items-center gap-10 md:mx-auto md:max-w-4xl md:flex-row md:items-center md:justify-center md:gap-16">
           {roles.map((role, i) => (
             <div key={role.title} className="flex items-center gap-4 md:gap-6">
               <motion.div
@@ -60,7 +60,7 @@ export function PlatformRoles() {
                 className="flex w-44 flex-col items-center text-center"
               >
                 {role.type === "image" ? (
-                  <div className="relative h-28 w-36">
+                  <div className="relative h-40 w-50">
                     <Image
                       src={role.image}
                       alt={role.title}

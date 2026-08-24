@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 
 export const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "https://dstqvc2c-4000.asse.devtunnels.ms",
+    baseURL: "http://localhost:4000/api",
 });
 
 // Sisipin token JWT otomatis ke tiap request kalau user udah login
