@@ -152,7 +152,7 @@ version: '3.8'
 services:
   pangan_backend:
     # Ganti "Muthiahrmh" dengan username GitHub pemilik repositori jika berbeda
-    image: ghcr.io/Muthiahrmh/pangan-backend:latest
+    image: ghcr.io/muthiahrmh/pangan-backend:latest
     container_name: pangan_backend
     restart: always
     environment:
@@ -162,7 +162,7 @@ services:
       - proxy_default
 
   pangan_frontend:
-    image: ghcr.io/Muthiahrmh/pangan-frontend:latest
+    image: ghcr.io/muthiahrmh/pangan-frontend:latest
     container_name: pangan_frontend
     restart: always
     environment:
