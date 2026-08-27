@@ -24,31 +24,31 @@ const fitur = [
     icon: Users,
     title: "Belanja Kolektif",
     desc: "Beli bersama UMKM lain supaya kuota grosir tercapai dan harga per satuan turun.",
-    warna: "#2563EB", // Aksen Biru
+    warna: "#2563EB",
   },
   {
     icon: Scale,
     title: "Perbandingan Pemasok",
     desc: "Harga, stok, jarak, dan estimasi pengiriman dari beberapa pemasok, berdampingan.",
-    warna: "#159B87", // Aksen Teal
+    warna: "#159B87",
   },
   {
     icon: LineChart,
     title: "Analitik & Insight",
     desc: "Pantau penghematan, tren permintaan, dan performa bisnis dari satu dashboard.",
-    warna: "#D98324", // Aksen Oranye
+    warna: "#D98324",
   },
   {
     icon: ShieldCheck,
     title: "Aman & Transparan",
     desc: "Potongan komisi ditampilkan terbuka, penerusan dana disertai bukti transfer.",
-    warna: "#0E7A6B", // Aksen Teal Gelap
+    warna: "#0E7A6B",
   },
   {
     icon: Headset,
     title: "Dukungan Profesional",
     desc: "Tim kami siap membantu lewat WhatsApp, termasuk pendampingan langsung untuk mitra.",
-    warna: "#3E7D22", // Aksen Hijau
+    warna: "#3E7D22",
     tautan: "/bantuan",
   },
 ];
@@ -56,7 +56,8 @@ const fitur = [
 export function FeaturesSection() {
   return (
     <section id="fitur" className="bg-white">
-      <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
+      {/* PERBAIKAN: pt-20 untuk HP biar nggak terlalu jauh ke bawah, pt-40 untuk desktop */}
+      <div className="mx-auto w-full max-w-[1700px] px-6 pb-16 pt-24 sm:px-8 lg:px-16 lg:pb-20 lg:pt-40">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -68,30 +69,31 @@ export function FeaturesSection() {
             Fitur Unggulan
           </span>
 
-          <h2 className="mt-4 font-display text-2xl font-bold leading-tight text-soil md:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
             Semua yang dibutuhkan untuk
             <br className="hidden sm:block" />{" "}
             <span className="text-teal-dark">mengatur bahan baku</span>
           </h2>
 
-          <p className="mt-4 text-sm leading-relaxed text-ink-soft sm:text-base">
+          <p className="mt-4 text-[15px] leading-relaxed text-ink-soft sm:text-base">
             Dari memperkirakan kebutuhan sampai barang sampai di dapur — dalam satu
             platform, tanpa berpindah aplikasi.
           </p>
         </motion.div>
 
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        {/* PERBAIKAN: gap-4 untuk desktop, tapi gap-5 untuk HP biar lebih lega */}
+        <div className="mt-10 grid gap-5 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.55 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-7 text-white lg:row-span-2 lg:p-8"
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-6 text-white md:col-span-2 lg:col-span-1 lg:row-span-2 sm:p-8"
           >
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5" />
             <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-leaf/10" />
 
-            <div className="relative">
+            <div className="relative h-full flex flex-col">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
                 <utama.icon size={26} strokeWidth={1.6} />
               </span>
@@ -100,7 +102,7 @@ export function FeaturesSection() {
                 {utama.title}
               </h3>
 
-              <p className="mt-3 text-sm leading-relaxed text-white/80">{utama.desc}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-white/80">{utama.desc}</p>
 
               <div className="mt-6 flex flex-wrap gap-2">
                 {utama.poin.map((p) => (
@@ -113,16 +115,16 @@ export function FeaturesSection() {
                 ))}
               </div>
 
-              <div className="mt-7 rounded-2xl bg-white/10 p-4 backdrop-blur">
-                <div className="text-[11px] text-white/60">Contoh hasil prediksi</div>
-
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="font-display text-2xl font-bold">66 kg</span>
-                  <span className="text-xs text-teal-300">naik 8%</span>
-                </div>
-
-                <div className="mt-1 text-[11px] leading-relaxed text-white/70">
-                  Cabai Merah, September. Dihitung dari 24 bulan riwayat penjualan.
+              <div className="mt-auto pt-7">
+                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+                  <div className="text-[11px] text-white/60">Contoh hasil prediksi</div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-bold">66 kg</span>
+                    <span className="text-xs text-teal-300">naik 8%</span>
+                  </div>
+                  <div className="mt-1 text-[11px] leading-relaxed text-white/70">
+                    Cabai Merah, September. Dihitung dari 24 bulan riwayat.
+                  </div>
                 </div>
               </div>
             </div>
@@ -130,36 +132,36 @@ export function FeaturesSection() {
 
           {fitur.map((f, i) => {
             const Icon = f.icon;
+            const isLast = i === 4;
+
+            // PERBAIKAN: Di HP, kartu terakhir tetap nyusun ke bawah (flex-col), baru pas di Tablet/Desktop dia nyamping (sm:flex-row)
+            const kelasInner = `group flex h-full rounded-3xl border border-ink/5 bg-cream p-5 sm:p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:bg-white hover:shadow-lg hover:shadow-soil/5 ${isLast ? 'flex-col sm:flex-row sm:items-center gap-4 sm:gap-6' : 'flex-col gap-4'
+              }`;
 
             const isi = (
               <>
                 <span
-                  className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
                   style={{ backgroundColor: `${f.warna}14`, color: f.warna }}
                 >
-                  <Icon size={20} strokeWidth={1.75} />
+                  <Icon size={22} strokeWidth={1.75} />
                 </span>
 
-                <h3 className="mt-4 font-display text-base font-bold text-soil">
-                  {f.title}
-                </h3>
+                <div className="flex flex-1 flex-col">
+                  <h3 className="font-display text-[15px] sm:text-base font-bold text-soil">
+                    {f.title}
+                  </h3>
+                  <p className="mt-1.5 text-[13px] sm:text-sm leading-relaxed text-ink-soft">{f.desc}</p>
 
-                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{f.desc}</p>
-
-                {f.tautan && (
-                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-leaf-dark">
-                    Buka pusat bantuan
-                    <ArrowRight
-                      size={12}
-                      className="transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                )}
+                  {f.tautan && (
+                    <span className="mt-auto pt-3 inline-flex items-center gap-1 text-xs font-semibold text-leaf-dark">
+                      Buka pusat bantuan
+                      <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  )}
+                </div>
               </>
             );
-
-            const kelas =
-              "group flex h-full flex-col rounded-3xl border border-ink/5 bg-cream p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:bg-white hover:shadow-lg hover:shadow-soil/5";
 
             return (
               <motion.div
@@ -168,13 +170,14 @@ export function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.45, delay: 0.1 + i * 0.07 }}
+                className={isLast ? "md:col-span-2 lg:col-span-3" : ""}
               >
                 {f.tautan ? (
-                  <Link href={f.tautan} className={kelas}>
+                  <Link href={f.tautan} className={kelasInner}>
                     {isi}
                   </Link>
                 ) : (
-                  <div className={kelas}>{isi}</div>
+                  <div className={kelasInner}>{isi}</div>
                 )}
               </motion.div>
             );

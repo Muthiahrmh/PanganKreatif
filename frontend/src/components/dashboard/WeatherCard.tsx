@@ -1,30 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CloudRain, Sun, CloudSun, AlertTriangle, Droplets } from "lucide-react";
+import { CloudRain, Sun, CloudSun, AlertTriangle, Droplets, Wind } from "lucide-react";
 import { fetchPrakiraanCuaca } from "@/lib/weather";
 import type { PrakiraanCuaca, PrakiraanHarian, TingkatRisiko } from "@/types/weather";
 
-const GAYA_RISIKO: Record<TingkatRisiko, string> = {
-    aman: "bg-green-50 text-green-700",
-    rendah: "bg-blue-50 text-brand-blue",
-    sedang: "bg-amber-50 text-amber-700",
-    tinggi: "bg-red-50 text-red-700",
+const GAYA_RISIKO: Record<TingkatRisiko, { badge: string; border: string }> = {
+    aman: { badge: "bg-emerald-50 text-emerald-700", border: "border-emerald-100" },
+    rendah: { badge: "bg-blue-50 text-blue-700", border: "border-blue-100" },
+    sedang: { badge: "bg-amber-50 text-amber-700", border: "border-amber-100" },
+    tinggi: { badge: "bg-rose-50 text-rose-700", border: "border-rose-100" },
 };
 
-/**
- * Komponen ikon dideklarasikan di level modul, bukan di dalam render.
- * Kalau komponennya dipilih saat render, React menganggapnya komponen
- * baru tiap kali dan state-nya ikut ter-reset.
- */
-function IkonCuaca({ deskripsi, size = 17 }: { deskripsi: string; size?: number }) {
+function IkonCuaca({ deskripsi, size = 22 }: { deskripsi: string; size?: number }) {
     const d = deskripsi.toLowerCase();
 
     if (d.includes("hujan") || d.includes("petir")) {
-        return <CloudRain size={size} className="text-brand-blue" />;
+        return <CloudRain size={size} className="text-blue-500 animate-pulse" />;
     }
     if (d.includes("berawan") || d.includes("mendung")) {
-        return <CloudSun size={size} className="text-brand-blue" />;
+        return <CloudSun size={size} className="text-sky-500" />;
     }
     return <Sun size={size} className="text-amber-500" />;
 }
@@ -37,15 +32,10 @@ function namaHari(tanggal: string) {
         d.getMonth() === hariIni.getMonth() &&
         d.getFullYear() === hariIni.getFullYear();
 
-    if (sama) return "Hari ini";
-    return d.toLocaleDateString("id-ID", { weekday: "long" });
+    if (sama) return "Hari Ini";
+    return d.toLocaleDateString("id-ID", { weekday: "short" });
 }
 
-/**
- * Kartu cuaca sebagai konteks pengadaan.
- * Bukan bagian dari model prediksi kebutuhan — hanya peringatan
- * risiko panen dan pengiriman untuk beberapa hari ke depan.
- */
 export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" }) {
     const [data, setData] = useState<PrakiraanCuaca | null>(null);
     const [loading, setLoading] = useState(true);
@@ -61,103 +51,111 @@ export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" })
     }, []);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         load();
     }, [load]);
 
     if (loading) {
-        return <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />;
+        return <div className="h-44 animate-pulse rounded-3xl bg-slate-100" />;
     }
 
-    // Cuaca cuma pelengkap. Kalau tidak tersedia, kartunya disembunyikan
-    // supaya tidak jadi kotak error di tengah dashboard.
     if (!data?.tersedia) return null;
 
     const peringatan = data.peringatan;
     const harian = data.harian ?? [];
 
     return (
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-gradient-to-br from-white via-blue-50/20 to-slate-50/50 p-6 sm:p-7 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                    <h3 className="font-display text-lg font-bold text-ink">Cuaca & Risiko Pasokan</h3>
-                    <p className="mt-0.5 text-xs text-ink-soft">
-                        {data.kota}
-                        {data.kecamatan ? `, ${data.kecamatan}` : ""} · sumber {data.sumber}
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
+                        🌤️ Pantauan Cuaca & Logistik
+                    </div>
+                    <h3 className="font-display text-lg font-bold text-slate-900 tracking-tight">
+                        Kondisi Lingkungan & Risiko Panen
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-500 font-medium">
+                        📍 {data.kota}
+                        {data.kecamatan ? `, ${data.kecamatan}` : ""} · Real-time BMKG
                     </p>
                 </div>
             </div>
 
             {peringatan && (
                 <div
-                    className={`mt-4 flex items-start gap-2.5 rounded-xl p-3.5 text-sm ${GAYA_RISIKO[peringatan.tingkat]
-                        }`}
+                    className={`mt-4 flex items-start gap-3 rounded-2xl p-4 text-sm font-medium border ${GAYA_RISIKO[peringatan.tingkat].badge
+                        } ${GAYA_RISIKO[peringatan.tingkat].border}`}
                 >
                     {peringatan.ada ? (
-                        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                        <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
                     ) : (
-                        <Sun size={16} className="mt-0.5 shrink-0" />
+                        <Sun size={20} className="mt-0.5 shrink-0 text-amber-500" />
                     )}
-                    <span>{peringatan.pesan}</span>
+                    <span className="leading-relaxed">{peringatan.pesan}</span>
                 </div>
             )}
 
             {harian.length > 0 && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3.5 sm:grid-cols-3">
                     {harian.map((h) => (
                         <HariCuaca key={h.tanggal} h={h} />
                     ))}
                 </div>
             )}
 
-            <p className="mt-4 text-xs text-ink-soft">
-                {peran === "supplier"
-                    ? "Prakiraan ini membantu memperkirakan gangguan panen dan jadwal pengiriman."
-                    : "Prakiraan ini tidak mengubah angka prediksi kebutuhan, tapi membantu menentukan kapan sebaiknya memesan."}
-            </p>
-
-            <p className="mt-2 text-[11px] text-ink-soft/70">
-                Data cuaca bersumber dari{" "}
+            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                <span>
+                    {peran === "supplier"
+                        ? "Membantu perkiraan gangguan panen & jadwal kirim."
+                        : "Membantu menentukan waktu optimal pemesanan bahan baku."}
+                </span>
                 <a
                     href="https://bmkg.go.id/publik/prakiraan-cuaca"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-ink-soft"
+                    className="font-semibold text-blue-600 hover:underline shrink-0"
                 >
-                    BMKG
-                </a>             .
-            </p>
+                    Sumber BMKG →
+                </a>
+            </div>
         </div>
     );
 }
 
 function HariCuaca({ h }: { h: PrakiraanHarian }) {
+    const suhuBulat = h.suhu != null ? Math.round(h.suhu) : null;
+
     return (
-        <div className="rounded-xl bg-paper-soft p-3.5">
+        <div className="group relative rounded-2xl border border-slate-200/70 bg-white p-4 transition-all duration-300 hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5">
             <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">{namaHari(h.tanggal)}</span>
-                <IkonCuaca deskripsi={h.deskripsi} />
+                <span className="text-xs font-bold text-slate-800">{namaHari(h.tanggal)}</span>
+                <div className="rounded-xl bg-slate-50 p-2 transition-transform group-hover:scale-110">
+                    <IkonCuaca deskripsi={h.deskripsi} />
+                </div>
             </div>
 
-            <div className="mt-2 text-sm font-semibold text-ink">{h.deskripsi}</div>
+            <div className="mt-3 text-sm font-bold text-slate-900 tracking-tight">{h.deskripsi}</div>
 
-            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft">
-                {h.suhu != null && <span>{h.suhu}°C</span>}
-                {h.kelembapan != null && (
+            <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 font-semibold">
+                {suhuBulat != null && (
                     <span className="inline-flex items-center gap-1">
-                        <Droplets size={11} /> {h.kelembapan}%
+                        🌡️ {suhuBulat}°C
+                    </span>
+                )}
+                {h.kelembapan != null && (
+                    <span className="inline-flex items-center gap-1 text-blue-600">
+                        <Droplets size={13} /> {h.kelembapan}%
                     </span>
                 )}
             </div>
 
             {(h.risiko === "tinggi" || h.risiko === "sedang") && (
                 <div
-                    className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${GAYA_RISIKO[h.risiko]
+                    className={`mt-3 inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${GAYA_RISIKO[h.risiko].badge
                         }`}
                 >
-                    risiko {h.risiko}
+                    ⚠️ Risiko {h.risiko}
                 </div>
             )}
         </div>
     );
-}
+}   

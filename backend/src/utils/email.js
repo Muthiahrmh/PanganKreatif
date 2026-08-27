@@ -26,12 +26,8 @@ function getTransporter() {
         transporter = nodemailer.createTransport({
             host: HOST,
             port: PORT,
-            // Port 465 memakai TLS langsung, 587 memakai STARTTLS
             secure: PORT === 465,
             auth: { user: USER, pass: PASS },
-
-            // Gagal cepat, jangan biarkan permintaan pendaftaran
-            // menggantung puluhan detik menunggu SMTP
             connectionTimeout: 10_000,
             greetingTimeout: 10_000,
             socketTimeout: 15_000,
@@ -41,7 +37,6 @@ function getTransporter() {
     return transporter;
 }
 
-/** Rangka email supaya tampilannya seragam */
 function bungkus(judul, isi) {
     return `<!doctype html>
 <html lang="id">
@@ -55,17 +50,13 @@ function bungkus(judul, isi) {
 
         <p style="margin-top:32px;font-size:12px;color:#64748b;line-height:1.6;">
             Email ini dikirim otomatis oleh sistem PanganKreatif.
-            Kalau kamu tidak merasa mendaftar, abaikan saja pesan ini.
+            Kalau kamu tidak merasa meminta ini, abaikan saja pesan ini.
         </p>
         </div>
     </body>
 </html>`;
 }
 
-/**
- * Kirim email berisi tautan verifikasi.
- * @param {{email: string, nama: string, tautan: string, berlakuMenit: number}} data
- */
 async function kirimVerifikasi({ email, nama, tautan, berlakuMenit = 5 }) {
     const isi = `
     <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.7;">
@@ -94,7 +85,6 @@ async function kirimVerifikasi({ email, nama, tautan, berlakuMenit = 5 }) {
     });
 }
 
-/** Pemberitahuan setelah email berhasil diverifikasi */
 async function kirimSelamatDatang({ email, nama, tautanMasuk }) {
     const isi = `
     <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.7;">
@@ -108,8 +98,6 @@ async function kirimSelamatDatang({ email, nama, tautanMasuk }) {
     </a>
     `;
 
-    // Email sambutan tidak wajib sampai, jadi kegagalannya tidak
-    // boleh menggagalkan proses verifikasi
     try {
         await getTransporter().sendMail({
             from: PENGIRIM,
@@ -122,11 +110,33 @@ async function kirimSelamatDatang({ email, nama, tautanMasuk }) {
     }
 }
 
-/**
- * Uji sambungan ke server SMTP tanpa mengirim email.
- * Berguna untuk memastikan kredensial dan jaringan sebelum
- * menyalahkan hal lain.
- */
+async function kirimResetPassword({ email, nama, tautan, berlakuMenit = 30 }) {
+    const isi = `
+    <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.7;">
+        Halo ${nama}, kami menerima permintaan untuk mereset kata sandi akun PanganKreatif kamu.
+        Klik tombol di bawah ini untuk membuat kata sandi baru:
+    </p>
+
+    <a href="${tautan}"
+        style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;
+                padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
+        Reset Kata Sandi
+    </a>
+
+    <p style="margin:24px 0 0;font-size:13px;color:#64748b;line-height:1.7;">
+        Tautan ini berlaku ${berlakuMenit} menit. Kalau kamu tidak merasa meminta perubahan kata sandi, abaikan saja email ini.
+    </p>
+    <p style="margin:8px 0 0;font-size:12px;color:#2563eb;word-break:break-all;">${tautan}</p>
+    `;
+
+    await getTransporter().sendMail({
+        from: PENGIRIM,
+        to: email,
+        subject: 'Permintaan Reset Kata Sandi PanganKreatif',
+        html: bungkus('Reset Kata Sandi Akun', isi),
+    });
+}
+
 async function ujiSambungan() {
     if (!terkonfigurasi()) {
         return { berhasil: false, pesan: 'SMTP_USER atau SMTP_PASS belum diisi di .env' };
@@ -140,4 +150,4 @@ async function ujiSambungan() {
     }
 }
 
-module.exports = { terkonfigurasi, kirimVerifikasi, kirimSelamatDatang, ujiSambungan };
+module.exports = { terkonfigurasi, kirimVerifikasi, kirimSelamatDatang, kirimResetPassword, ujiSambungan };

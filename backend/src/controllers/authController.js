@@ -12,12 +12,11 @@ const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['umkm', 'supplier']), // admin dibuat manual, bukan via register publik
+  role: z.enum(['umkm', 'supplier']),
   phone: z.string().optional(),
-  // profile fields
-  businessName: z.string().optional(), // umkm
-  businessType: z.string().optional(), // umkm
-  groupName: z.string().optional(), // supplier
+  businessName: z.string().optional(),
+  businessType: z.string().optional(),
+  groupName: z.string().optional(),
   city: z.string(),
   address: z.string(),
 });
@@ -37,8 +36,6 @@ function tautanVerifikasi(token) {
   const dasar = process.env.CLIENT_URL || 'http://localhost:3000';
   return `${dasar.replace(/\/$/, '')}/verifikasi?token=${token}`;
 }
-
-// ---------- register ----------
 
 async function register(req, res) {
   const parsed = registerSchema.safeParse(req.body);
@@ -89,8 +86,6 @@ async function register(req, res) {
     include: { umkmProfile: true, supplierProfile: true },
   });
 
-  // Akun sudah dibuat; kegagalan mengirim email tidak membatalkannya,
-  // pengguna tinggal meminta kirim ulang
   let emailTerkirim = false;
   let pesanEmail = null;
 
@@ -112,7 +107,6 @@ async function register(req, res) {
     console.warn('SMTP belum diatur, token verifikasi:', token);
   }
 
-  // Token tidak diberikan di sini — akun baru harus verifikasi dulu
   return res.status(201).json({
     perluVerifikasi: true,
     email: user.email,
@@ -174,8 +168,6 @@ async function verifikasiEmail(req, res) {
     return res.status(400).json({ error: 'Tautan verifikasi tidak dikenali' });
   }
 
-  // Sudah pernah diverifikasi, anggap berhasil supaya pengguna
-  // yang mengklik tautan dua kali tidak melihat pesan galat
   if (user.emailVerified) {
     return res.json({ berhasil: true, sudahPernah: true, email: user.email });
   }
@@ -206,10 +198,6 @@ async function verifikasiEmail(req, res) {
     tautanMasuk: `${dasar.replace(/\/$/, '')}/login`,
   });
 
-  // Tidak diberi token. Yang mengklik tautan di email belum tentu
-  // orang yang sama dengan pemilik peramban ini — misalnya email
-  // dibuka di komputer bersama. Verifikasi hanya mengaktifkan akun,
-  // masuknya tetap lewat halaman login.
   return res.json({
     berhasil: true,
     sudahPernah: false,
@@ -217,8 +205,6 @@ async function verifikasiEmail(req, res) {
     nama: diperbarui.name,
   });
 }
-
-// ---------- kirim ulang ----------
 
 const ulangSchema = z.object({ email: z.string().email() });
 
@@ -228,15 +214,12 @@ async function kirimUlangVerifikasi(req, res) {
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
 
-  // Jawaban dibuat sama untuk email yang ada maupun tidak, supaya
-  // halaman ini tidak bisa dipakai menebak alamat yang terdaftar
   const jawabanUmum = {
     pesan: 'Kalau email tersebut terdaftar dan belum terverifikasi, tautan baru sudah dikirim.',
   };
 
   if (!user || user.emailVerified) return res.json(jawabanUmum);
 
-  // Jeda supaya tombol kirim ulang tidak bisa ditekan berulang-ulang
   if (user.verifySentAt) {
     const selisih = (Date.now() - new Date(user.verifySentAt).getTime()) / 1000;
     if (selisih < JEDA_KIRIM_ULANG_DETIK) {
@@ -277,7 +260,95 @@ async function kirimUlangVerifikasi(req, res) {
   return res.json(jawabanUmum);
 }
 
-// ---------- me ----------
+const lupaSchema = z.object({ email: z.string().email() });
+
+async function lupaPassword(req, res) {
+  const parsed = lupaSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Email tidak valid' });
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+
+  const jawabanUmum = {
+    pesan: 'Jika email terdaftar, tautan pemulihan kata sandi telah dikirim.',
+  };
+
+  if (!user) return res.json(jawabanUmum);
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const hash = crypto.createHash('sha256').update(token).digest('hex');
+  const kedaluwarsa = new Date(Date.now() + 30 * 60_000);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetPasswordToken: hash,
+      resetPasswordExpires: kedaluwarsa,
+    },
+  });
+
+  if (!mailer.terkonfigurasi()) {
+    console.warn('SMTP belum diatur, token reset password:', token);
+    return res.status(503).json({ error: 'Pengiriman email belum dikonfigurasi di server.' });
+  }
+
+  try {
+    const dasar = process.env.CLIENT_URL || 'http://localhost:3000';
+    const tautan = `${dasar.replace(/\/$/, '')}/resetPassword?token=${token}&email=${user.email}`;
+
+    await mailer.kirimResetPassword({
+      email: user.email,
+      nama: user.name,
+      tautan,
+      berlakuMenit: 30,
+    });
+  } catch (err) {
+    console.error('Email reset password gagal dikirim:', err.message);
+    return res.status(502).json({ error: 'Email gagal dikirim. Coba beberapa saat lagi.' });
+  }
+
+  return res.json(jawabanUmum);
+}
+
+const resetSchema = z.object({
+  token: z.string().min(10),
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+async function resetPassword(req, res) {
+  const parsed = resetSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const { token, email, password } = parsed.data;
+  const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      resetPasswordToken: hash,
+      resetPasswordExpires: { gte: new Date() },
+    },
+  });
+
+  if (!user) {
+    return res.status(400).json({ error: 'Tautan tidak valid atau sudah kedaluwarsa.' });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    },
+  });
+
+  return res.json({ berhasil: true, pesan: 'Kata sandi berhasil diubah. Silakan masuk.' });
+}
 
 async function me(req, res) {
   const user = await prisma.user.findUnique({
@@ -297,8 +368,16 @@ function signToken(user) {
 }
 
 function sanitizeUser(user) {
-  const { passwordHash, verifyTokenHash, verifyTokenExpires, verifySentAt, ...rest } = user;
+  const { passwordHash, verifyTokenHash, verifyTokenExpires, verifySentAt, resetPasswordToken, resetPasswordExpires, ...rest } = user;
   return rest;
 }
 
-module.exports = { register, login, me, verifikasiEmail, kirimUlangVerifikasi };
+module.exports = {
+  register,
+  login,
+  me,
+  verifikasiEmail,
+  kirimUlangVerifikasi,
+  lupaPassword,
+  resetPassword,
+};

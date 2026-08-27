@@ -1,28 +1,45 @@
-import type { LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
-export function StatCard({
-    icon: Icon,
-    label,
-    value,
-    sub,
-    color = "text-brand-blue",
-}: {
+interface StatCardProps {
     icon: LucideIcon;
     label: string;
-    value: string;
-    sub?: string;
+    value: string; // contoh: "50,32 kg" atau "240 catatan"
+    sub: string;
     color?: string;
-}) {
+}
+
+export function StatCard({ icon: Icon, label, value, sub, color = "text-blue-600" }: StatCardProps) {
+    // Memisahkan angka dengan teks satuannya secara otomatis
+    const parts = value.split(" ");
+    const angka = parts[0] || "";
+    const satuan = parts.slice(1).join(" ") || "";
+
     return (
-        <div className="rounded-xl border border-ink/5 bg-white p-4 shadow-sm">
+        <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
             <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-soft">{label}</span>
-                <span className={`flex h-8 w-8 items-center justify-center rounded-lg bg-paper-soft ${color}`}>
-                    <Icon size={16} />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    {label}
                 </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 transition-colors group-hover:bg-blue-50 group-hover:text-blue-600">
+                    <Icon size={20} strokeWidth={2} />
+                </div>
             </div>
-            <div className={`mt-2 font-display text-2xl font-bold ${color}`}>{value}</div>
-            {sub && <div className="mt-0.5 text-xs text-ink-soft">{sub}</div>}
+
+            {/* Bagian Angka & Satuan dengan jarak/gap yang rapi */}
+            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+                <span className={`font-display text-3xl font-extrabold tracking-tight ${color}`}>
+                    {angka}
+                </span>
+                {satuan && (
+                    <span className="text-lg font-bold text-slate-700 tracking-normal">
+                        {satuan}
+                    </span>
+                )}
+            </div>
+
+            <div className="mt-2 text-xs font-medium text-slate-500">
+                {sub}
+            </div>
         </div>
     );
 }

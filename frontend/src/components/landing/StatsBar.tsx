@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Store, Sprout, Receipt, TrendingDown, MapPin } from "lucide-react";
-import { CountUp } from "@/components/ui/CountUp";
+import { CountUp } from "@/components/ui/CountUp"; // Pastikan path ini benar di proyekmu
 
 const target = [
   {
@@ -10,7 +10,7 @@ const target = [
     angka: 300,
     akhiran: "",
     label: "UMKM Kuliner",
-    sub: "Warung, kafe, dan katering mitra",
+    sub: "Warung, kafe, dan katering mitra perdana",
     color: "text-blue-400",
     bg: "bg-blue-400/15"
   },
@@ -19,16 +19,16 @@ const target = [
     angka: 20,
     akhiran: "",
     label: "Kelompok Tani",
-    sub: "Petani, nelayan, dan distributor",
+    sub: "Jejaring pemasok dan distributor lokal",
     color: "text-leaf",
     bg: "bg-leaf/15"
   },
   {
     icon: Receipt,
     angka: 2000,
-    akhiran: "",
-    label: "Transaksi",
-    sub: "Sepanjang dua belas bulan pertama",
+    akhiran: "+",
+    label: "Transaksi Kolektif",
+    sub: "Proyeksi transaksi di tahun pertama",
     color: "text-teal-400",
     bg: "bg-teal-400/15"
   },
@@ -37,7 +37,7 @@ const target = [
     angka: 25,
     akhiran: "%",
     label: "Efisiensi Biaya",
-    sub: "Penghematan belanja bahan baku",
+    sub: "Target penghematan operasional mitra",
     color: "text-leaf",
     bg: "bg-leaf/15"
   },
@@ -66,24 +66,23 @@ export function StatsBar() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/85">
-              Target Tahun Pertama
+            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/85 uppercase tracking-wider">
+              Roadmap & Proyeksi
             </span>
 
             <h2 className="mt-4 font-display text-2xl font-bold leading-tight md:text-4xl">
-              Yang ingin kami capai
+              Membangun ekosistem,
               <br className="hidden sm:block" />{" "}
-              <span className="text-leaf">dalam dua belas bulan</span>
+              <span className="text-leaf">menciptakan dampak nyata.</span>
             </h2>
 
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
-              Sasaran pertumbuhan yang dirancang untuk tahun pertama operasional di
-              Lhokseumawe dan kabupaten sekitarnya.
+              Jadilah bagian dari langkah pertama kami. Berikut adalah target pertumbuhan yang dirancang untuk tahun perdana PanganKreatif beroperasi.
             </p>
 
             <div className="mt-9 rounded-2xl bg-white/[0.07] p-5 backdrop-blur">
               <div className="text-xs font-medium text-white/60">
-                Pertumbuhan UMKM mitra per kuartal
+                Target Pertumbuhan UMKM Mitra (Tahap 1)
               </div>
 
               <div className="mt-4 flex items-end gap-3">
@@ -109,8 +108,10 @@ export function StatsBar() {
             </div>
 
             <div className="mt-5 flex items-center gap-2 text-xs text-white/50">
-              <MapPin size={13} />
-              Wilayah awal: Lhokseumawe, Aceh Utara, Bireuen, Pidie, Bener Meriah
+              <MapPin size={13} className="shrink-0 text-leaf" />
+              <span>
+                <strong className="text-white/80">Fokus Regional:</strong> Lhokseumawe, Aceh Utara, Bireuen, Pidie, dan Bener Meriah
+              </span>
             </div>
           </motion.div>
 
@@ -125,9 +126,9 @@ export function StatsBar() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.45, delay: i * 0.09 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition-colors hover:border-white/20 hover:bg-white/10 sm:p-6"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition-all hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-lg sm:p-6"
                 >
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${t.bg} ${t.color}`}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${t.bg} ${t.color} transition-transform group-hover:scale-110`}>
                     <Icon size={20} strokeWidth={1.75} />
                   </span>
 

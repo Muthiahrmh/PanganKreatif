@@ -42,31 +42,29 @@ enum PayoutStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
   passwordHash String   @map("password_hash")
-  role         Role
-  phone        String?
-  createdAt    DateTime @default(now()) @map("created_at")
+  role           Role
+  phone          String?
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  // Foto profil. avatarUrl dipakai untuk ditampilkan,
-  // avatarPath untuk menghapus file lama dari Supabase Storage saat diganti.
   avatarUrl    String?  @map("avatar_url")
   avatarPath   String?  @map("avatar_path")
 
-  // Verifikasi email. Akun lama diloloskan lewat SQL setelah migrasi,
-  // jadi hanya pendaftar baru yang perlu memverifikasi.
-  emailVerified      Boolean   @default(false) @map("email_verified")
-  emailVerifiedAt    DateTime? @map("email_verified_at")
-  // Token disimpan dalam bentuk hash, bukan apa adanya, supaya
-  // bocornya isi basis data tidak langsung berarti akun bisa diambil
-  verifyTokenHash    String?   @map("verify_token_hash")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  verifyTokenHash   String?   @map("verify_token_hash")
   verifyTokenExpires DateTime? @map("verify_token_expires")
-  verifySentAt       DateTime? @map("verify_sent_at")
+  verifySentAt      DateTime? @map("verify_sent_at")
 
-  umkmProfile     UmkmProfile?
-  supplierProfile SupplierProfile?
+  // Tambahan untuk Reset Password Mandiri
+  resetPasswordToken   String?   @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires")
+
+  umkmProfile       UmkmProfile?
+  supplierProfile   SupplierProfile?
 
   @@map("users")
 }

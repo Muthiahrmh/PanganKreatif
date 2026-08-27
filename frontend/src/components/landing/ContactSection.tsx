@@ -16,7 +16,8 @@ import {
 const KONTAK = {
     whatsapp: "6282165383828",
     whatsappTampil: "0821-6538-3828",
-    email: "pangankreatif@gmail.com",
+    // PERUBAHAN: Email sudah diubah menjadi pangankreatif08@gmail.com
+    email: "pangankreatif08@gmail.com",
     alamat: "Politeknik Negeri Lhokseumawe, Aceh Utara",
     jam: "Senin–Sabtu, 08.00–17.00 WIB",
 };
@@ -24,6 +25,9 @@ const KONTAK = {
 export function ContactSection() {
     const pesan = encodeURIComponent("Halo PanganKreatif, saya ingin bertanya tentang ");
     const waUrl = `https://wa.me/${KONTAK.whatsapp}?text=${pesan}`;
+
+    // URL Khusus untuk memancing Gmail Web (Compose)
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${KONTAK.email}`;
 
     return (
         <section id="kontak" className="bg-cream">
@@ -131,7 +135,9 @@ export function ContactSection() {
                             </a>
 
                             <a
-                                href={`mailto:${KONTAK.email}`}
+                                href={gmailUrl}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="group flex items-center gap-4 rounded-2xl bg-white/10 p-4 backdrop-blur transition hover:bg-white/15"
                             >
                                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal text-white">

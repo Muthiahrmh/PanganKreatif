@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Wallet, AlertTriangle, Check, Copy, Landmark, Upload, X } from "lucide-react";
+import { Wallet, AlertTriangle, Check, Copy, Landmark, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatRupiah } from "@/lib/format";
@@ -41,17 +41,8 @@ interface DataPayout {
     pemasok: BarisPemasok[];
 }
 
-/**
- * Pencatatan penerusan dana dari platform ke pemasok.
- *
- * Uang UMKM masuk lebih dulu ke rekening platform. Komisi tinggal
- * di platform, sisanya menjadi kewajiban yang harus diteruskan.
- * Halaman ini mencatat mana yang sudah dikirim.
- *
- * Pengirimannya masih dilakukan manual lewat mobile banking.
- * Pengiriman otomatis lewat layanan disbursement menyusul setelah
- * akun produksi terverifikasi.
- */
+const ITEMS_PER_PAGE = 5;
+
 export default function PayoutsPage() {
     const user = useAuthStore((s) => s.user);
 
@@ -61,6 +52,7 @@ export default function PayoutsPage() {
     const [error, setError] = useState<string | null>(null);
     const [tersalin, setTersalin] = useState<string | null>(null);
     const [sasaran, setSasaran] = useState<BarisPemasok | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const load = useCallback(async () => {
         try {
@@ -89,149 +81,167 @@ export default function PayoutsPage() {
         }
     }
 
-
-
     if (user && user.role !== "admin") {
-        return <p className="text-sm text-ink-soft">Halaman ini khusus untuk admin platform.</p>;
+        return <p className="text-sm font-medium text-slate-500 p-6">Halaman ini khusus untuk akun administrator platform.</p>;
     }
 
     const r = data?.ringkasan;
+    const pemasokList = data?.pemasok ?? [];
+
+    // Kalkulasi Pagination
+    const totalPages = Math.ceil(pemasokList.length / ITEMS_PER_PAGE);
+    const paginatedPemasok = pemasokList.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     return (
-        <div className="flex flex-col gap-5">
-            <p className="text-sm text-ink-soft">
-                Pembayaran UMKM ditampung di rekening platform. Komisi tinggal di PanganKreatif,
-                sisanya diteruskan ke pemasok. Halaman ini mencatat mana yang sudah dikirim.
-            </p>
+        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+            {/* Header Halaman */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100">
+                    Manajemen Keuangan & Kliring
+                </div>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Penerusan Dana (Payouts)
+                </h2>
+                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
+                    Pembayaran UMKM ditampung di rekening platform. Komisi platform dipotong otomatis, dan sisanya diteruskan ke rekening pemasok/tani.
+                </p>
+            </div>
 
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+            {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700 shadow-sm">
+                    {error}
+                </div>
+            )}
 
+            {/* Kotak Statistik Utama */}
             <div className="grid gap-4 sm:grid-cols-3">
                 <StatCard
                     icon={Wallet}
                     label={tab === "pending" ? "Perlu Diteruskan" : "Sudah Diteruskan"}
                     value={loading ? "..." : formatRupiah(r?.totalDiteruskan ?? 0)}
                     sub={`${r?.jumlahPemasok ?? 0} pemasok · ${r?.jumlahTransaksi ?? 0} transaksi`}
-                    color={tab === "pending" ? "text-amber-500" : "text-brand-green"}
+                    color={tab === "pending" ? "text-amber-500" : "text-emerald-600"}
                 />
                 <StatCard
                     icon={Landmark}
-                    label="Nilai Transaksi"
+                    label="Total Nilai Transaksi"
                     value={loading ? "..." : formatRupiah(r?.totalNilai ?? 0)}
-                    sub="Dibayar UMKM"
+                    sub="Dibayar lunas oleh UMKM"
                 />
                 <StatCard
                     icon={Check}
                     label="Komisi Platform"
                     value={loading ? "..." : formatRupiah(r?.totalKomisi ?? 0)}
-                    sub="Bagian PanganKreatif"
-                    color="text-brand-green"
+                    sub="Pendapatan PanganKreatif"
+                    color="text-emerald-600"
                 />
             </div>
 
             {tab === "pending" && (r?.tanpaRekening ?? 0) > 0 && (
-                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-semibold text-amber-900 shadow-sm">
+                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
                     <span>
-                        {r?.tanpaRekening} pemasok belum mencantumkan rekening. Dananya tidak bisa
-                        diteruskan sampai mereka melengkapi profil.
+                        Terdapat <strong className="text-amber-950">{r?.tanpaRekening} pemasok</strong> belum mencantumkan informasi rekening bank. Dana mereka tertahan sampai mereka melengkapi profil akun.
                     </span>
                 </div>
             )}
 
-            <div className="flex gap-2">
+            {/* Tab Navigasi Pending / Paid */}
+            <div className="flex gap-2 rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
                 {(["pending", "paid"] as const).map((t) => (
                     <button
                         key={t}
                         onClick={() => {
                             setTab(t);
                             setLoading(true);
+                            setCurrentPage(1);
                         }}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${tab === t
-                                ? "bg-brand-blue text-white"
-                                : "bg-paper-soft text-ink-soft hover:text-ink"
+                        className={`flex-1 rounded-xl px-5 py-2 text-xs font-bold transition-all ${tab === t
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-600 hover:text-slate-900"
                             }`}
                     >
-                        {t === "pending" ? "Perlu diteruskan" : "Sudah diteruskan"}
+                        {t === "pending" ? "Perlu Diteruskan" : "Sudah Diteruskan"}
                     </button>
                 ))}
             </div>
 
             {loading ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {[0, 1, 2].map((i) => (
-                        <div key={i} className="h-28 animate-pulse rounded-xl bg-slate-100" />
+                        <div key={i} className="h-32 animate-pulse rounded-3xl bg-slate-100" />
                     ))}
                 </div>
-            ) : (data?.pemasok.length ?? 0) === 0 ? (
-                <div className="rounded-xl border border-dashed border-ink/15 bg-white p-10 text-center">
-                    <Wallet size={26} className="mx-auto text-ink-soft" />
-                    <h3 className="mt-3 font-display text-base font-bold text-ink">
-                        {tab === "pending"
-                            ? "Tidak ada dana tertunda"
-                            : "Belum ada dana yang diteruskan"}
+            ) : pemasokList.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 text-slate-400 mb-4">
+                        <Wallet size={28} />
+                    </div>
+                    <h3 className="font-display text-lg font-bold text-slate-800">
+                        {tab === "pending" ? "Tidak ada dana tertunda saat ini" : "Belum ada riwayat dana yang diteruskan"}
                     </h3>
-                    <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500 leading-relaxed">
                         {tab === "pending"
-                            ? "Semua kewajiban ke pemasok sudah diselesaikan."
-                            : "Dana yang sudah diteruskan akan tercatat di sini."}
+                            ? "Semua kewajiban pencairan dana ke pemasok telah diselesaikan dengan baik."
+                            : "Catatan transfer yang sudah ditandai selesai akan muncul di sini."}
                     </p>
                 </div>
             ) : (
-                <div className="space-y-3">
-                    {data?.pemasok.map((p) => (
+                <div className="space-y-4">
+                    {paginatedPemasok.map((p) => (
                         <div
                             key={p.supplierId}
-                            className="rounded-xl border border-ink/5 bg-white p-5 shadow-sm"
+                            className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-[0_4px_20px_rgb(0,0,0,0.03)] transition-all hover:border-slate-300"
                         >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="min-w-0">
-                                    <h3 className="font-display text-base font-bold text-ink">
+                                    <h3 className="font-display text-lg font-extrabold text-slate-900">
                                         {p.groupName}
                                     </h3>
-                                    <p className="mt-0.5 text-xs text-ink-soft">
-                                        {p.city} · {p.jumlahTransaksi} transaksi
+                                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                                        {p.city} · <strong className="text-slate-700">{p.jumlahTransaksi} transaksi</strong>
                                         {p.transaksiTerakhir &&
-                                            ` · terakhir ${formatDate(p.transaksiTerakhir)}`}
+                                            ` · Transaksi terakhir ${formatDate(p.transaksiTerakhir)}`}
                                     </p>
                                 </div>
 
-                                <div className="text-right">
-                                    <div className="font-display text-lg font-bold text-brand-green">
+                                <div className="text-right shrink-0">
+                                    <div className="font-display text-2xl font-extrabold text-emerald-600">
                                         {formatRupiah(p.totalDiteruskan)}
                                     </div>
-                                    <div className="text-xs text-ink-soft">
-                                        dari {formatRupiah(p.totalNilai)} · komisi{" "}
-                                        {formatRupiah(p.totalKomisi)}
+                                    <div className="text-xs font-medium text-slate-400 mt-0.5">
+                                        Dari total {formatRupiah(p.totalNilai)} · Komisi {formatRupiah(p.totalKomisi)}
                                     </div>
                                 </div>
                             </div>
 
                             {p.rekening ? (
-                                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-paper-soft px-3 py-2.5 text-sm">
-                                    <span className="font-medium text-ink">{p.rekening.bank}</span>
-                                    <span className="font-data text-ink">{p.rekening.nomor}</span>
+                                <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm">
+                                    <span className="font-bold text-slate-900">{p.rekening.bank}</span>
+                                    <span className="font-mono font-bold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">{p.rekening.nomor}</span>
                                     <button
                                         onClick={() =>
                                             salin(p.rekening?.nomor ?? "", p.supplierId)
                                         }
-                                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-brand-blue transition hover:bg-blue-50"
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-slate-50"
                                     >
                                         {tersalin === p.supplierId ? (
-                                            <Check size={12} />
+                                            <Check size={14} className="text-emerald-600" />
                                         ) : (
-                                            <Copy size={12} />
+                                            <Copy size={14} />
                                         )}
-                                        {tersalin === p.supplierId ? "Tersalin" : "Salin"}
+                                        {tersalin === p.supplierId ? "Tersalin!" : "Salin Rekening"}
                                     </button>
-                                    <span className="text-xs text-ink-soft">
-                                        a.n. {p.rekening.atasNama}
+                                    <span className="text-xs font-semibold text-slate-500 ml-auto">
+                                        a.n. <strong className="text-slate-800">{p.rekening.atasNama}</strong>
                                     </span>
                                 </div>
                             ) : (
-                                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                    Rekening belum diisi pemasok. Minta mereka melengkapi profil
-                                    sebelum dana bisa dikirim.
+                                <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
+                                    ⚠️ Rekening belum diisi oleh pemasok. Harap instruksikan mereka untuk melengkapi profil sebelum pencairan dilakukan.
                                 </p>
                             )}
 
@@ -239,14 +249,14 @@ export default function PayoutsPage() {
                                 <button
                                     onClick={() => setSasaran(p)}
                                     disabled={!p.rekening}
-                                    className="mt-3 w-full rounded-lg bg-brand-green px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="mt-5 w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    Tandai sudah diteruskan
+                                    Tandai Sudah Diteruskan
                                 </button>
                             )}
 
                             {tab === "paid" && p.buktiTransaksiId && (
-                                <div className="mt-3">
+                                <div className="mt-5 pt-4 border-t border-slate-100">
                                     <TombolLihatBukti
                                         transactionId={p.buktiTransaksiId}
                                         jenis="payout"
@@ -255,12 +265,36 @@ export default function PayoutsPage() {
                             )}
                         </div>
                     ))}
+
+                    {/* Kontrol Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] mt-6">
+                            <div className="text-xs font-medium text-slate-500">
+                                Menampilkan halaman <strong className="text-slate-800">{currentPage}</strong> dari <strong className="text-slate-800">{totalPages}</strong>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronLeft size={14} /> Sebelumnya
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    Berikutnya <ChevronRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
-            <p className="text-xs text-ink-soft">
-                Pengiriman dana masih dilakukan manual lewat mobile banking, lalu dicatat di sini.
-                Pengiriman otomatis menyusul setelah akun payment gateway produksi terverifikasi.
+            <p className="text-xs font-medium text-slate-400 text-center leading-relaxed">
+                * Pengiriman dana saat ini dilakukan secara manual lewat *mobile banking* / m-banking, kemudian dicatat di sistem ini. Fitur transfer otomatis (*disbursement API*) akan aktif setelah integrasi payment gateway selesai sepenuhnya.
             </p>
 
             {sasaran && (
@@ -277,10 +311,6 @@ export default function PayoutsPage() {
     );
 }
 
-/**
- * Menandai penerusan dana harus disertai bukti transfer,
- * karena pemasok berhak memeriksanya di halaman mereka.
- */
 function ModalTandaiPayout({
     pemasok,
     onTutup,
@@ -298,7 +328,7 @@ function ModalTandaiPayout({
 
     async function kirim() {
         if (!berkas) {
-            setGalat("Unggah bukti transfer dulu.");
+            setGalat("Harap unggah bukti transfer terlebih dahulu.");
             return;
         }
 
@@ -321,57 +351,58 @@ function ModalTandaiPayout({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
             onClick={onTutup}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-label="Tandai penerusan dana"
-                className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+                className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl transition-all"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-display text-base font-bold text-ink">
-                        Tandai dana diteruskan
-                    </h3>
+                <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Konfirmasi Pencairan</div>
+                        <h3 className="font-display text-lg font-extrabold text-slate-900 mt-0.5">
+                            Tandai Dana Diteruskan
+                        </h3>
+                    </div>
                     <button
                         onClick={onTutup}
                         aria-label="Tutup"
-                        className="rounded-lg p-1 text-ink-soft transition hover:bg-paper-soft"
+                        className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                     >
                         <X size={18} />
                     </button>
                 </div>
 
-                <div className="mt-4 rounded-lg bg-paper-soft p-3">
-                    <div className="text-sm font-medium text-ink">{pemasok.groupName}</div>
-                    <div className="mt-1 font-display text-xl font-bold text-brand-green">
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="text-sm font-bold text-slate-900">{pemasok.groupName}</div>
+                    <div className="mt-1 font-display text-2xl font-extrabold text-emerald-600">
                         {formatRupiah(pemasok.totalDiteruskan)}
                     </div>
                     {pemasok.rekening && (
-                        <div className="mt-1 text-xs text-ink-soft">
-                            {pemasok.rekening.bank} {pemasok.rekening.nomor} a.n.{" "}
-                            {pemasok.rekening.atasNama}
+                        <div className="mt-1.5 text-xs font-semibold text-slate-500">
+                            {pemasok.rekening.bank} <span className="font-mono font-bold text-slate-700">{pemasok.rekening.nomor}</span> a.n. {pemasok.rekening.atasNama}
                         </div>
                     )}
                 </div>
 
-                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
-                    <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900 leading-relaxed">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
                     <span>
-                        Lakukan transfer lebih dulu lewat mobile banking, baru tandai di sini.
-                        Buktinya bisa dilihat pemasok di halaman Pembayaran mereka.
+                        Pastikan Anda telah melakukan transfer dana via m-banking sebelum menandainya di sini. Bukti transfer ini dapat dilihat langsung oleh pemasok.
                     </span>
                 </div>
 
-                <div className="mt-3">
+                <div className="mt-4">
                     <button
                         onClick={() => fileRef.current?.click()}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-ink/20 px-3 py-3 text-xs text-ink-soft transition hover:border-brand-blue hover:text-brand-blue"
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-4 py-3.5 text-xs font-bold text-slate-600 transition hover:border-blue-500 hover:bg-blue-50/30 hover:text-blue-600"
                     >
-                        <Upload size={14} />
-                        {berkas ? berkas.name : "Unggah bukti transfer"}
+                        <Upload size={16} />
+                        {berkas ? berkas.name : "Unggah Bukti Transfer (Foto/PDF)"}
                     </button>
 
                     <input
@@ -386,29 +417,29 @@ function ModalTandaiPayout({
                 <input
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
-                    placeholder="Catatan, misal nomor referensi transfer (opsional)"
-                    className="mt-3 w-full rounded-lg border border-ink/10 px-3 py-2 text-xs outline-none transition focus:border-brand-blue"
+                    placeholder="Catatan / Nomor Referensi Transfer (opsional)"
+                    className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                 />
 
                 {galat && (
-                    <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    <p className="mt-3 rounded-2xl bg-red-50 p-4 text-xs font-bold text-red-600">
                         {galat}
                     </p>
                 )}
 
-                <div className="mt-4 flex gap-3">
+                <div className="mt-6 flex gap-3 pt-4 border-t border-slate-100">
                     <button
                         onClick={onTutup}
-                        className="flex-1 rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-paper-soft"
+                        className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >
                         Batal
                     </button>
                     <button
                         onClick={kirim}
                         disabled={sibuk}
-                        className="flex-1 rounded-lg bg-brand-green px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark disabled:opacity-60"
+                        className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-60"
                     >
-                        {sibuk ? "Menyimpan..." : "Simpan"}
+                        {sibuk ? "Menyimpan..." : "Simpan & Tandai Selesai"}
                     </button>
                 </div>
             </div>

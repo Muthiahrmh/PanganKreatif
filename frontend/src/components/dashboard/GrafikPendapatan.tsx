@@ -51,13 +51,6 @@ interface DataPendapatan {
     };
 }
 
-/**
- * Grafik pendapatan pemasok.
- *
- * Batang menunjukkan dana bersih yang menjadi hak pemasok, garis
- * menunjukkan nilai transaksi sebelum potongan. Jaraknya membuat
- * besaran komisi dan margin platform terlihat, bukan disembunyikan.
- */
 export function GrafikPendapatan() {
     const [mode, setMode] = useState<Mode>("bulanan");
     const [tahun, setTahun] = useState<number | null>(null);
@@ -74,7 +67,6 @@ export function GrafikPendapatan() {
                 },
             });
             setData(res.data);
-            // Ikuti tahun yang dipilih server kalau belum ditentukan
             if (mode === "tahun" && !tahun && res.data.tahunDipilih) {
                 setTahun(res.data.tahunDipilih);
             }
@@ -93,7 +85,7 @@ export function GrafikPendapatan() {
 
     if (galat) {
         return (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm font-bold text-red-700 shadow-sm">
                 Grafik pendapatan gagal dimuat: {galat}
             </div>
         );
@@ -110,38 +102,40 @@ export function GrafikPendapatan() {
         mode === "tahun"
             ? `Total ${data?.tahunDipilih ?? ""}`
             : mode === "tahunan"
-                ? "Tahun ini"
-                : "Bulan ini";
+                ? "Tahun Ini"
+                : "Bulan Ini";
 
     const judulTotal =
         mode === "tahun"
-            ? "Rata-rata per bulan"
+            ? "Rata-rata Per Bulan"
             : mode === "tahunan"
-                ? "Total 5 tahun"
-                : "Total 12 bulan";
+                ? "Total 5 Tahun"
+                : "Total 12 Bulan";
 
     const nilaiTotal = mode === "tahun" ? (r?.rataRata ?? 0) : (r?.total ?? 0);
 
     return (
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                 <div>
-                    <h3 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-                        <Wallet size={17} className="text-brand-green" />
-                        Pendapatan
+                    <h3 className="flex items-center gap-2.5 font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
+                            <Wallet size={18} />
+                        </span>
+                        Tren Pendapatan
                     </h3>
-                    <p className="mt-0.5 text-sm text-ink-soft">
-                        Dana bersih yang menjadi hakmu setelah potongan platform.
+                    <p className="mt-2 text-sm font-medium text-slate-500">
+                        Dana bersih yang menjadi hakmu setelah dipotong margin platform.
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex rounded-lg bg-paper-soft p-1">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex rounded-xl bg-slate-100 p-1 shadow-inner">
                         {(
                             [
-                                ["bulanan", "12 bulan"],
-                                ["tahun", "Per tahun"],
-                                ["tahunan", "5 tahun"],
+                                ["bulanan", "12 Bulan"],
+                                ["tahun", "Per Tahun"],
+                                ["tahunan", "5 Tahun"],
                             ] as const
                         ).map(([nilai, label]) => (
                             <button
@@ -150,9 +144,9 @@ export function GrafikPendapatan() {
                                     setMode(nilai);
                                     setMemuat(true);
                                 }}
-                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${mode === nilai
-                                        ? "bg-white text-ink shadow-sm"
-                                        : "text-ink-soft hover:text-ink"
+                                className={`rounded-lg px-4 py-2 text-[13px] font-bold transition-all ${mode === nilai
+                                        ? "bg-white text-emerald-700 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-800"
                                     }`}
                             >
                                 {label}
@@ -168,7 +162,7 @@ export function GrafikPendapatan() {
                                 setMemuat(true);
                             }}
                             aria-label="Pilih tahun"
-                            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs outline-none transition focus:border-brand-green"
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-bold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                         >
                             {data?.tahunTersedia.map((t) => (
                                 <option key={t} value={t}>
@@ -181,107 +175,136 @@ export function GrafikPendapatan() {
             </div>
 
             {memuat ? (
-                <div className="mt-5 h-64 animate-pulse rounded-xl bg-slate-100" />
+                <div className="mt-8 h-80 animate-pulse rounded-3xl bg-slate-100" />
             ) : (
                 <>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-lg bg-paper-soft p-3">
-                            <div className="text-xs text-ink-soft">{judulPeriode}</div>
-                            <div className="mt-0.5 font-display text-lg font-bold text-brand-green">
+                    <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50/80 to-white p-5 shadow-sm">
+                            <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                                {judulPeriode}
+                            </div>
+                            <div className="mt-1 font-display text-2xl lg:text-3xl font-extrabold text-emerald-700">
                                 {formatRupiah(r?.periodeTerakhir ?? 0)}
                             </div>
 
                             {p?.persen !== null && p?.persen !== undefined ? (
                                 <div
-                                    className={`mt-0.5 inline-flex items-center gap-1 text-xs ${naik
-                                            ? "text-brand-green"
+                                    className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${naik
+                                            ? "bg-emerald-100 text-emerald-700"
                                             : turun
-                                                ? "text-amber-600"
-                                                : "text-ink-soft"
+                                                ? "bg-red-100 text-red-600"
+                                                : "bg-slate-100 text-slate-600"
                                         }`}
                                 >
                                     {naik ? (
-                                        <TrendingUp size={12} />
+                                        <TrendingUp size={12} strokeWidth={3} />
                                     ) : turun ? (
-                                        <TrendingDown size={12} />
+                                        <TrendingDown size={12} strokeWidth={3} />
                                     ) : (
-                                        <Minus size={12} />
+                                        <Minus size={12} strokeWidth={3} />
                                     )}
                                     {Math.abs(p.persen)}% {p.label}
                                 </div>
                             ) : (
-                                <div className="mt-0.5 text-xs text-ink-soft">
+                                <div className="mt-2 text-xs font-medium text-slate-400">
                                     Belum ada pembanding
                                 </div>
                             )}
                         </div>
 
-                        <div className="rounded-lg bg-paper-soft p-3">
-                            <div className="text-xs text-ink-soft">{judulTotal}</div>
-                            <div className="mt-0.5 font-display text-lg font-bold text-ink">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                {judulTotal}
+                            </div>
+                            <div className="mt-1 font-display text-2xl lg:text-3xl font-extrabold text-slate-900">
                                 {formatRupiah(nilaiTotal)}
                             </div>
-                            <div className="mt-0.5 text-xs text-ink-soft">
-                                {r?.jumlahTransaksi ?? 0} transaksi
+                            <div className="mt-2 text-xs font-semibold text-slate-500">
+                                Total {r?.jumlahTransaksi ?? 0} transaksi
                             </div>
                         </div>
 
-                        <div className="rounded-lg bg-paper-soft p-3">
-                            <div className="text-xs text-ink-soft">Belum diteruskan</div>
-                            <div className="mt-0.5 font-display text-lg font-bold text-amber-600">
+                        <div className="rounded-2xl border border-amber-100 bg-gradient-to-b from-amber-50/80 to-white p-5 shadow-sm">
+                            <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                                Belum Diteruskan
+                            </div>
+                            <div className="mt-1 font-display text-2xl lg:text-3xl font-extrabold text-amber-600">
                                 {formatRupiah(r?.belumDiteruskan ?? 0)}
                             </div>
-                            <div className="mt-0.5 text-xs text-ink-soft">
-                                Menunggu dikirim platform
+                            <div className="mt-2 text-xs font-semibold text-amber-700/80">
+                                Menunggu kliring platform
                             </div>
                         </div>
                     </div>
 
                     {p?.jenis === "tahun" && mode === "tahun" && (p.nilaiPembanding ?? 0) > 0 && (
-                        <p className="mt-3 rounded-lg bg-paper-soft px-3 py-2 text-xs text-ink-soft">
-                            Tahun {(data?.tahunDipilih ?? 0) - 1} pendapatanmu{" "}
-                            {formatRupiah(p.nilaiPembanding)}. Tahun {data?.tahunDipilih}{" "}
-                            {formatRupiah(r?.total ?? 0)}.
+                        <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-[13px] font-medium text-slate-600 leading-relaxed">
+                            Tahun {(data?.tahunDipilih ?? 0) - 1} pendapatanmu mencapai{" "}
+                            <strong className="text-slate-800">{formatRupiah(p.nilaiPembanding)}</strong>.
+                            Sedangkan tahun {data?.tahunDipilih} baru mencapai{" "}
+                            <strong className="text-slate-800">{formatRupiah(r?.total ?? 0)}</strong>.
                         </p>
                     )}
 
                     {adaIsi ? (
-                        <div className="mt-5 h-72 w-full">
+                        <div className="mt-8 h-[320px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={data?.seri ?? []}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                    <XAxis dataKey="label" fontSize={12} />
+                                <ComposedChart data={data?.seri ?? []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                    <XAxis
+                                        dataKey="label"
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={12}
+                                        stroke="#64748b"
+                                    />
                                     <YAxis
-                                        fontSize={12}
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        stroke="#64748b"
                                         tickFormatter={(v) => formatRupiahShort(v)}
                                     />
                                     <Tooltip
+                                        contentStyle={{
+                                            borderRadius: '16px',
+                                            border: 'none',
+                                            boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                                            padding: '12px 16px',
+                                            fontWeight: 'bold'
+                                        }}
                                         formatter={(value, name) => [
                                             formatRupiah(Number(value)),
                                             String(name),
                                         ]}
                                     />
-                                    <Legend />
+                                    <Legend
+                                        wrapperStyle={{ paddingTop: '24px', fontSize: '13px', fontWeight: 600, color: '#475569' }}
+                                        iconType="circle"
+                                    />
                                     <Bar
                                         dataKey="pendapatan"
-                                        name="Diterima bersih"
-                                        fill="#16A34A"
-                                        radius={[4, 4, 0, 0]}
+                                        name="Diterima Bersih"
+                                        fill="#10b981"
+                                        radius={[6, 6, 0, 0]}
+                                        maxBarSize={48}
                                     />
                                     <Line
                                         type="monotone"
                                         dataKey="nilaiTransaksi"
-                                        name="Nilai transaksi"
-                                        stroke="#2563EB"
-                                        strokeWidth={2}
+                                        name="Total Transaksi"
+                                        stroke="#3b82f6"
+                                        strokeWidth={3}
                                         dot={false}
+                                        activeDot={{ r: 6, fill: "#3b82f6", strokeWidth: 0 }}
                                     />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
                     ) : (
-                        <div className="mt-5 rounded-xl border border-dashed border-ink/15 p-8 text-center">
-                            <p className="text-sm text-ink-soft">
+                        <div className="mt-8 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center">
+                            <p className="text-[13px] font-medium text-slate-500">
                                 {mode === "tahun"
                                     ? `Belum ada pendapatan tercatat pada tahun ${data?.tahunDipilih}.`
                                     : "Belum ada pendapatan tercatat. Grafik terisi setelah ada pembayaran UMKM yang dikonfirmasi."}
@@ -290,10 +313,14 @@ export function GrafikPendapatan() {
                     )}
 
                     {adaIsi && (
-                        <p className="mt-3 text-xs text-ink-soft">
-                            Selisih garis dan batang adalah potongan platform, total{" "}
-                            {formatRupiah(r?.totalPotongan ?? 0)} pada periode ini.
-                        </p>
+                        <div className="mt-6 border-t border-slate-100 pt-4 flex items-center justify-between">
+                            <p className="text-[11px] font-semibold text-slate-400">
+                                Selisih antara garis biru dan batang hijau adalah potongan platform.
+                            </p>
+                            <p className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+                                Total Potongan: {formatRupiah(r?.totalPotongan ?? 0)}
+                            </p>
+                        </div>
                     )}
                 </>
             )}
