@@ -55,10 +55,6 @@ const UMUM: Tanya[] = [
         jawab: "Saat ini, satu akun (satu alamat email) hanya bisa digunakan untuk satu peran. Jika kamu memiliki usaha kuliner sekaligus menjadi distributor, silakan mendaftar menggunakan dua email yang berbeda.",
     },
     {
-        tanya: "Saya lupa password, bagaimana memulihkannya?",
-        jawab: "Untuk sekarang hubungi kami lewat WhatsApp dengan menyebutkan email yang terdaftar. Pemulihan password mandiri melalui email sedang dalam tahap pengembangan.",
-    },
-    {
         tanya: "Bisa dibuka dari HP?",
         jawab: "Bisa. Buka alamatnya di browser HP, lalu pasang ke layar utama — di Android akan muncul tawaran otomatis, di iPhone lewat tombol Share pilih Add to Home Screen. Tampilannya akan menyesuaikan secara responsif.",
     },
