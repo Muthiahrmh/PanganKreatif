@@ -111,77 +111,82 @@ export function PWARegister() {
     if (!tampil) return null;
 
     return (
-        <div className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm rounded-2xl border border-ink/10 bg-white p-4 shadow-xl sm:left-auto sm:right-6">
-            <div className="flex items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green/10 text-brand-green">
-                    <Download size={19} />
-                </span>
+        // Background overlay gelap dan blur
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-soil/60 p-4 backdrop-blur-sm transition-opacity">
+            {/* Modal Box */}
+            <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-7 text-center shadow-2xl sm:p-10">
 
-                <div className="min-w-0 flex-1">
-                    <div className="font-display text-sm font-bold text-ink">
-                        Pasang PanganKreatif
-                    </div>
-                    <p className="mt-0.5 text-xs text-ink-soft">
-                        Buka langsung dari layar utama tanpa perlu mengetik alamat.
-                    </p>
-                </div>
-
+                {/* Tombol Tutup (X) di pojok kanan atas */}
                 <button
                     onClick={tolak}
                     aria-label="Tutup tawaran pemasangan"
-                    className="rounded-lg p-1 text-ink-soft transition hover:bg-paper-soft"
+                    className="absolute right-5 top-5 rounded-full p-2 text-ink-soft transition hover:bg-paper-soft hover:text-ink"
                 >
-                    <X size={16} />
+                    <X size={22} />
                 </button>
-            </div>
 
-            {modeIOS ? (
-                <>
-                    {/* Safari tidak punya tombol pasang, jadi yang bisa
-                        diberikan hanyalah petunjuk langkahnya */}
-                    <ol className="mt-3 space-y-2 rounded-xl bg-paper-soft p-3 text-xs text-ink-soft">
-                        <li className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-ink">
-                                1
-                            </span>
-                            Tekan
-                            <Share size={13} className="shrink-0 text-brand-blue" />
-                            di bilah bawah Safari
-                        </li>
+                <div className="flex flex-col items-center">
+                    {/* Ikon besar di tengah */}
+                    <span className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-brand-green/15 text-brand-green shadow-sm ring-8 ring-brand-green/5">
+                        <Download size={36} strokeWidth={1.5} />
+                    </span>
 
-                        <li className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-ink">
-                                2
-                            </span>
-                            Gulir lalu pilih
-                            <SquarePlus size={13} className="shrink-0 text-brand-blue" />
-                            <span className="font-medium text-ink">Add to Home Screen</span>
-                        </li>
-                    </ol>
+                    <h2 className="font-display text-2xl font-bold text-soil sm:text-3xl">
+                        Pasang PanganKreatif
+                    </h2>
+                    <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
+                        Buka langsung dari layar utama HP kamu tanpa perlu repot mengetik alamat web lagi. Lebih cepat dan praktis!
+                    </p>
 
-                    <button
-                        onClick={tolak}
-                        className="mt-3 w-full rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-ink transition hover:bg-paper-soft"
-                    >
-                        Mengerti
-                    </button>
-                </>
-            ) : (
-                <div className="mt-3 flex gap-2">
-                    <button
-                        onClick={tolak}
-                        className="flex-1 rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-ink transition hover:bg-paper-soft"
-                    >
-                        Nanti saja
-                    </button>
-                    <button
-                        onClick={pasang}
-                        className="flex-1 rounded-lg bg-brand-green px-3 py-2 text-xs font-medium text-white transition hover:opacity-90"
-                    >
-                        Pasang
-                    </button>
+                    {modeIOS ? (
+                        <div className="mt-8 w-full rounded-2xl bg-paper-soft p-5 text-left text-sm text-ink-soft shadow-inner">
+                            <ol className="space-y-4">
+                                <li className="flex items-center gap-3">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-ink shadow-sm">
+                                        1
+                                    </span>
+                                    <span>
+                                        Tekan ikon <Share size={16} className="inline-block text-brand-blue" /> di bilah bawah Safari
+                                    </span>
+                                </li>
+
+                                <li className="flex items-center gap-3">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-ink shadow-sm">
+                                        2
+                                    </span>
+                                    <span>
+                                        Gulir ke bawah lalu pilih{" "}
+                                        <SquarePlus size={16} className="inline-block text-brand-blue" />{" "}
+                                        <span className="font-bold text-ink">Add to Home Screen</span>
+                                    </span>
+                                </li>
+                            </ol>
+
+                            <button
+                                onClick={tolak}
+                                className="mt-6 w-full rounded-full border border-ink/10 bg-white py-3.5 text-sm font-semibold text-ink transition hover:bg-gray-50"
+                            >
+                                Saya Mengerti
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="mt-8 flex w-full flex-col-reverse gap-3 sm:flex-row">
+                            <button
+                                onClick={tolak}
+                                className="w-full rounded-full border border-ink/10 py-3.5 text-[15px] font-semibold text-ink transition hover:bg-paper-soft"
+                            >
+                                Nanti Saja
+                            </button>
+                            <button
+                                onClick={pasang}
+                                className="w-full rounded-full bg-brand-green py-3.5 text-[15px] font-semibold text-white shadow-md transition hover:bg-brand-green/90 hover:shadow-lg"
+                            >
+                                Pasang Sekarang
+                            </button>
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

@@ -9,7 +9,7 @@
   --color-paper: #ffffff;
   --color-paper-soft: #f0f7ff;
 
-  /* Brand — biru & hijau */
+  /* Brand — biru & hijau. Dipakai di seluruh dashboard. */
   --color-brand-blue: #2563eb;
   --color-brand-blue-dark: #1e3a8a;
   --color-brand-green: #16a34a;
@@ -17,6 +17,34 @@
 
   /* Dashboard mockup */
   --color-navy: #0b1220;
+
+  /* ----------------------------------------------------------
+     Palet landing page, diturunkan dari warna logo.
+     Dipisah dari token brand di atas supaya tampilan dashboard
+     tidak ikut berubah.
+     ---------------------------------------------------------- */
+
+  /* Hijau daun */
+  --color-leaf: #5ca935;
+  --color-leaf-dark: #3e7d22;
+  --color-leaf-soft: #eef7e8;
+
+  /* Teal dari garis sirkuit pada logo */
+  --color-teal: #159b87;
+  --color-teal-dark: #0e7a6b;
+  --color-teal-soft: #e6f4f1;
+
+  /* Hijau kehitaman untuk bagian gelap, lebih hangat dari navy */
+  --color-soil: #16241b;
+  --color-soil-soft: #24382a;
+
+  /* Kuning panen sebagai aksen, dipakai hemat */
+  --color-harvest: #d98324;
+  --color-harvest-soft: #fdf3e6;
+
+  /* Latar krem, menggantikan putih kebiruan yang terasa dingin */
+  --color-cream: #fbf9f3;
+  --color-cream-soft: #f4f0e4;
 
   --font-display: var(--font-inter);
   --font-body: var(--font-inter);
@@ -28,11 +56,26 @@
   --color-ink-soft: var(--color-ink-soft);
   --color-paper: var(--color-paper);
   --color-paper-soft: var(--color-paper-soft);
+
   --color-brand-blue: var(--color-brand-blue);
   --color-brand-blue-dark: var(--color-brand-blue-dark);
   --color-brand-green: var(--color-brand-green);
   --color-brand-green-dark: var(--color-brand-green-dark);
   --color-navy: var(--color-navy);
+
+  --color-leaf: var(--color-leaf);
+  --color-leaf-dark: var(--color-leaf-dark);
+  --color-leaf-soft: var(--color-leaf-soft);
+  --color-teal: var(--color-teal);
+  --color-teal-dark: var(--color-teal-dark);
+  --color-teal-soft: var(--color-teal-soft);
+  --color-soil: var(--color-soil);
+  --color-soil-soft: var(--color-soil-soft);
+  --color-harvest: var(--color-harvest);
+  --color-harvest-soft: var(--color-harvest-soft);
+  --color-cream: var(--color-cream);
+  --color-cream-soft: var(--color-cream-soft);
+
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-data: var(--font-data);
@@ -44,13 +87,41 @@ body {
   font-family: var(--font-body);
 }
 
+html {
+  /* Navbar menempel di atas dengan tinggi sekitar 4rem. Tanpa ruang
+     ini, judul bagian tertutup navbar setiap kali tautan diklik. */
+  scroll-padding-top: 5rem;
+  scroll-behavior: smooth;
+}
+
+/* Pola titik halus untuk latar bagian tertentu.
+   Memberi tekstur tanpa perlu berkas gambar. */
+.bg-pola-tani {
+  background-color: var(--color-cream);
+  background-image: radial-gradient(var(--color-leaf) 0.5px, transparent 0.5px);
+  background-size: 22px 22px;
+}
+
+.bg-pola-tani-halus {
+  background-color: var(--color-cream);
+  background-image: radial-gradient(
+    rgba(92, 169, 53, 0.18) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 26px 26px;
+}
+
+/* Hormati pengguna yang mematikan animasi di pengaturan sistemnya */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }
-
-
