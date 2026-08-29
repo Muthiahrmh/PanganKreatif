@@ -26,8 +26,6 @@ export function UmkmDashboardHome() {
     useEffect(() => {
         if (user?.role !== "umkm") return;
 
-        // Tiap panggilan diberi catch sendiri supaya satu kegagalan
-        // tidak menjatuhkan seluruh dashboard
         api
             .get<SalesRecord[]>("/sales-records")
             .then((res) => {
@@ -52,7 +50,6 @@ export function UmkmDashboardHome() {
             )
             .catch(() => setActiveItems(0));
 
-        // Total rupiah yang dihemat berkat belanja kolektif
         api
             .get<UmkmTransaction[]>("/procurement/transactions/mine")
             .then((res) =>
@@ -65,8 +62,6 @@ export function UmkmDashboardHome() {
             .catch(() => setTotalHemat(0));
     }, [user]);
 
-    // Bandingkan prediksi dengan rata-rata 3 bulan terakhir bahan yang sama,
-    // supaya kalimat insight-nya mengikuti data, bukan teks tetap.
     const arahTren = useMemo(() => {
         if (!latestForecast || salesRecords.length === 0) return null;
 

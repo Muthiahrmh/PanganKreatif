@@ -51,13 +51,6 @@ interface DataPendapatan {
     };
 }
 
-/**
- * Grafik pendapatan pemasok.
- *
- * Batang menunjukkan dana bersih yang menjadi hak pemasok, garis
- * menunjukkan nilai transaksi sebelum potongan. Jaraknya membuat
- * besaran komisi dan margin platform terlihat, bukan disembunyikan.
- */
 export function GrafikPendapatan() {
     const [mode, setMode] = useState<Mode>("bulanan");
     const [tahun, setTahun] = useState<number | null>(null);

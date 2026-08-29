@@ -7,16 +7,6 @@ import { mulaiPembayaran, periksaStatusPembayaran, muatSnap } from "@/lib/paymen
 
 type Tahap = "diam" | "menyiapkan" | "membayar" | "memeriksa" | "berhasil" | "menunggu" | "gagal";
 
-/**
- * Pembayaran lewat Midtrans Snap.
- *
- * Satu jendela menutup GoPay, ShopeePay, QRIS, kartu kredit/debit,
- * virtual account, dan gerai ritel.
- *
- * Setelah jendela ditutup, status ditanyakan langsung ke Midtrans
- * lewat backend. Ini perlu karena selama backend masih di localhost,
- * webhook dari Midtrans belum bisa masuk.
- */
 export function TombolBayarMidtrans({
     itemId,
     jumlah,
@@ -50,7 +40,6 @@ export function TombolBayarMidtrans({
                 return;
             }
 
-            // QRIS dan virtual account butuh waktu, jadi dicoba beberapa kali
             if (percobaan < 3) {
                 window.setTimeout(() => tanyaStatus(transactionId, percobaan + 1), 3000);
                 return;

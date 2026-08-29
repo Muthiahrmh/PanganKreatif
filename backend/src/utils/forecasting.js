@@ -1,3 +1,6 @@
+const { bobotLiburBulan, tahunTersedia } = require('./harilibur');
+const { createNetwork, train, predict } = require('./neuralForecast');
+
 const pad = (n) => String(n).padStart(2, '0');
 
 /** "2026-03" -> jumlah bulan absolut sejak tahun 0, dipakai sebagai sumbu X */
@@ -137,6 +140,127 @@ function seasonalIndex(monthly) {
   return index;
 }
 
+const HOLIDAY_WEIGHT_STEP = 0.08;
+const HOLIDAY_FACTOR_CAP = 1.4;
+
+/** Faktor hari libur untuk bulan target, sesuai Bab II proposal ("musim, hari libur"). */
+function holidayAdjustment(targetPeriod) {
+  const { bobot, daftar } = bobotLiburBulan(targetPeriod);
+
+  if (bobot <= 0) {
+    return {
+      factor: 1,
+      applied: false,
+      list: [],
+      note: 'Tidak ada hari libur nasional yang berdampak pada bulan target.',
+    };
+  }
+
+  const factor = Math.min(1 + bobot * HOLIDAY_WEIGHT_STEP, HOLIDAY_FACTOR_CAP);
+  const catatanTahun = tahunTersedia(targetPeriod)
+    ? ''
+    : ' Tanggal hari raya bergerak untuk tahun ini masih perkiraan.';
+
+  return {
+    factor: Math.round(factor * 1000) / 1000,
+    applied: true,
+    list: daftar,
+    note: `Bulan target bertepatan dengan ${daftar.join(', ')}, permintaan diperkirakan naik.${catatanTahun}`,
+  };
+}
+
+// ---------- jaringan saraf tiruan ----------
+
+const MIN_SAMPLES_FOR_AI = 4; // butuh minimal 6 bulan data (indeks 2..5)
+const AI_HIDDEN_UNITS = 5;
+const AI_ENSEMBLE_SIZE = 3; // dilatih beberapa kali, hasilnya dirata-ratakan supaya lebih stabil
+const AI_EPOCHS = 500;
+const AI_LEARNING_RATE = 0.4;
+const AI_WEIGHT = 0.6; // porsi hasil jaringan saraf dalam prediksi akhir
+
+function pointInTimeFeatures(monthly, i) {
+  const dataSebelumnya = monthly.slice(0, i);
+  const nilaiSebelumnya = dataSebelumnya.map((m) => m.quantity);
+  const titikSebelumnya = dataSebelumnya.map((m) => ({
+    x: periodToIndex(m.period),
+    y: m.quantity,
+  }));
+  const targetX = periodToIndex(monthly[i].period);
+
+  const ma = movingAverage(nilaiSebelumnya, 3);
+  const trend = linearTrendAt(titikSebelumnya, targetX);
+
+  let seasonal = 1;
+  if (dataSebelumnya.length >= 6) {
+    const idx = seasonalIndex(dataSebelumnya);
+    const f = idx?.get(monthOf(monthly[i].period));
+    if (f && Number.isFinite(f)) seasonal = Math.min(Math.max(f, 0.7), 1.3);
+  }
+
+  const holiday = holidayAdjustment(monthly[i].period).factor;
+
+  return { ma, trend, seasonal, holiday };
+}
+
+function normalisasiFitur({ ma, trend, seasonal, holiday }, divisor) {
+  return [ma / divisor, trend / divisor, seasonal - 1, holiday - 1];
+}
+
+function clamp01(v) {
+  return Math.min(1, Math.max(0, v));
+}
+
+/**
+ * Melatih jaringan saraf kecil dari histori bulanan UMKM sendiri lalu
+ * memprediksi periode target. Setiap bulan dalam histori dipakai sebagai
+ * satu contoh latih: fiturnya dihitung dari bulan-bulan SEBELUM bulan itu,
+ * targetnya adalah kuantitas aktual bulan itu — persis meniru situasi
+ * "meramal masa depan" tapi dengan jawaban yang sudah diketahui.
+ */
+function aiAdjustment(monthly, targetPeriod) {
+  const contoh = [];
+  for (let i = 2; i < monthly.length; i++) {
+    contoh.push({ fitur: pointInTimeFeatures(monthly, i), target: monthly[i].quantity });
+  }
+
+  if (contoh.length < MIN_SAMPLES_FOR_AI) {
+    return { applied: false, prediction: null, samples: contoh.length };
+  }
+
+  const scale = Math.max(1, ...monthly.map((m) => m.quantity));
+  const divisor = scale * 1.5; // beri ruang untuk tren yang melebihi puncak historis
+
+  const dataLatih = contoh.map(({ fitur, target }) => ({
+    input: normalisasiFitur(fitur, divisor),
+    target: clamp01(target / divisor),
+  }));
+
+  // Fitur periode target dihitung dengan fungsi yang sama, dengan menambahkan
+  // periode target sebagai "titik semu" di ujung array — supaya rumusnya
+  // konsisten dengan yang dipakai saat melatih, satu sumber kebenaran.
+  const monthlyDenganTarget = [...monthly, { period: targetPeriod, quantity: 0 }];
+  const inputTarget = normalisasiFitur(
+    pointInTimeFeatures(monthlyDenganTarget, monthly.length),
+    divisor
+  );
+
+  const hasilEnsemble = [];
+  for (let e = 0; e < AI_ENSEMBLE_SIZE; e++) {
+    const net = createNetwork(4, AI_HIDDEN_UNITS);
+    train(net, dataLatih, { epochs: AI_EPOCHS, learningRate: AI_LEARNING_RATE });
+    hasilEnsemble.push(predict(net, inputTarget));
+  }
+
+  const rataRata = hasilEnsemble.reduce((a, b) => a + b, 0) / hasilEnsemble.length;
+
+  return {
+    applied: true,
+    prediction: Math.max(0, rataRata * divisor),
+    samples: contoh.length,
+    ensembleSize: AI_ENSEMBLE_SIZE,
+  };
+}
+
 // ---------- fungsi utama ----------
 
 const MIN_MONTHS_FOR_SEASONALITY = 24;
@@ -197,8 +321,21 @@ function generateForecast(salesRecords, options = {}) {
     }
   }
 
-  const predicted = base * seasonalFactor;
-  const predictedQuantity = Math.max(0, Math.round(predicted * 100) / 100);
+  const holiday = holidayAdjustment(targetPeriod);
+  if (holiday.applied) method += '+holiday';
+
+  const statistik = base * seasonalFactor * holiday.factor;
+
+  // Jaringan saraf tiruan dilatih dari histori UMKM sendiri; hasil statistik
+  // di atas tetap dipakai penuh kalau datanya belum cukup untuk melatih.
+  const ai = aiAdjustment(monthly, targetPeriod);
+  let final = statistik;
+  if (ai.applied) {
+    final = statistik * (1 - AI_WEIGHT) + ai.prediction * AI_WEIGHT;
+    method += '+neural_network';
+  }
+
+  const predictedQuantity = Math.max(0, Math.round(final * 100) / 100);
 
   return {
     predictedQuantity,
@@ -210,11 +347,20 @@ function generateForecast(salesRecords, options = {}) {
       linearTrend: Math.round(trend * 100) / 100,
       seasonalFactor: Math.round(seasonalFactor * 1000) / 1000,
       seasonalityApplied,
+      holidayFactor: holiday.factor,
+      holidayApplied: holiday.applied,
+      holidayList: holiday.list,
+      holidayNote: holiday.note,
+      statisticalPrediction: Math.round(statistik * 100) / 100,
+      aiApplied: ai.applied,
+      aiPrediction: ai.applied ? Math.round(ai.prediction * 100) / 100 : null,
+      aiSamples: ai.samples,
+      aiWeight: ai.applied ? AI_WEIGHT : 0,
       monthsOfData: monthly.length,
       lastDataPeriod: lastPeriod,
-      keterangan: seasonalityApplied
-        ? 'Prediksi memperhitungkan tren dan pola musiman bulanan.'
-        : `Pola musiman belum dihitung, butuh minimal ${MIN_MONTHS_FOR_SEASONALITY} bulan data (saat ini ${monthly.length}).`,
+      keterangan: ai.applied
+        ? `Prediksi hybrid: ${Math.round(AI_WEIGHT * 100)}% jaringan saraf tiruan (dilatih dari ${ai.samples} titik data) + ${Math.round((1 - AI_WEIGHT) * 100)}% model statistik.`
+        : `Model AI butuh minimal ${MIN_SAMPLES_FOR_AI + 2} bulan data untuk mulai belajar (saat ini ${monthly.length}), jadi masih pakai model statistik.`,
     },
   };
 }

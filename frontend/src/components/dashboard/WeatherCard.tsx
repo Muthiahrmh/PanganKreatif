@@ -12,11 +12,6 @@ const GAYA_RISIKO: Record<TingkatRisiko, string> = {
     tinggi: "bg-red-50 text-red-700",
 };
 
-/**
- * Komponen ikon dideklarasikan di level modul, bukan di dalam render.
- * Kalau komponennya dipilih saat render, React menganggapnya komponen
- * baru tiap kali dan state-nya ikut ter-reset.
- */
 function IkonCuaca({ deskripsi, size = 17 }: { deskripsi: string; size?: number }) {
     const d = deskripsi.toLowerCase();
 
@@ -41,11 +36,6 @@ function namaHari(tanggal: string) {
     return d.toLocaleDateString("id-ID", { weekday: "long" });
 }
 
-/**
- * Kartu cuaca sebagai konteks pengadaan.
- * Bukan bagian dari model prediksi kebutuhan — hanya peringatan
- * risiko panen dan pengiriman untuk beberapa hari ke depan.
- */
 export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" }) {
     const [data, setData] = useState<PrakiraanCuaca | null>(null);
     const [loading, setLoading] = useState(true);
@@ -69,8 +59,6 @@ export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" })
         return <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />;
     }
 
-    // Cuaca cuma pelengkap. Kalau tidak tersedia, kartunya disembunyikan
-    // supaya tidak jadi kotak error di tengah dashboard.
     if (!data?.tersedia) return null;
 
     const peringatan = data.peringatan;
@@ -113,7 +101,7 @@ export function WeatherCard({ peran = "umkm" }: { peran?: "umkm" | "supplier" })
             <p className="mt-4 text-xs text-ink-soft">
                 {peran === "supplier"
                     ? "Prakiraan ini membantu memperkirakan gangguan panen dan jadwal pengiriman."
-                    : "Prakiraan ini tidak mengubah angka prediksi kebutuhan, tapi membantu menentukan kapan sebaiknya memesan."}
+                    : "Prakiraan ini tidak mengubah angka prediksi AI, tapi kalau berisiko akan muncul sebagai saran buffer stok di halaman Prediksi AI dan Rekomendasi Pembelian."}
             </p>
 
             <p className="mt-2 text-[11px] text-ink-soft/70">

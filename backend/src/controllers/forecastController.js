@@ -2,6 +2,23 @@ const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { generateForecast: runModel, periodToDate } = require('../utils/forecasting');
 const { resolveUnitPrice, toNum } = require('../utils/pricing');
+const { prakiraanUntukKota } = require('../utils/bmkg');
+
+/**
+ * Persentase buffer stok yang disarankan kalau cuaca 3 hari ke depan
+ * berisiko mengganggu panen/pengiriman dari pemasok. Ini TIDAK mengubah
+ * angka prediksi AI Demand Forecasting — BMKG cuma menyediakan prakiraan
+ * 3 hari sementara target prediksi selalu bulan berikutnya, jadi tidak
+ * ada dasar statistik untuk menjadikannya faktor pengali seperti musim
+ * atau hari libur (lihat catatan di utils/bmkg.js). Buffer ini murni
+ * saran operasional di lapisan rekomendasi pembelian.
+ */
+const BUFFER_CUACA = { tinggi: 20, sedang: 10, rendah: 0, aman: 0 };
+
+function bufferUntukCuaca(cuaca) {
+  const tingkat = cuaca?.peringatan?.tingkat;
+  return BUFFER_CUACA[tingkat] ?? 0;
+}
 
 async function getMyUmkmProfile(userId) {
   return prisma.umkmProfile.findUnique({ where: { userId } });
@@ -45,6 +62,13 @@ async function generateForecast(req, res) {
     },
   });
 
+  const cuaca = await prakiraanUntukKota(umkmProfile.city);
+  const bufferPersen = bufferUntukCuaca(cuaca);
+  const jumlahDenganBuffer =
+    bufferPersen > 0
+      ? Math.round(result.predictedQuantity * (1 + bufferPersen / 100) * 100) / 100
+      : null;
+
   res.status(201).json({
     forecast,
     detail: {
@@ -56,6 +80,9 @@ async function generateForecast(req, res) {
       ...result.detail,
     },
     algoritma: result.method,
+    cuaca,
+    bufferPersen,
+    jumlahDenganBuffer,
   });
 }
 
@@ -91,6 +118,9 @@ async function getRekomendasi(req, res) {
   if (records.length === 0) {
     return res.json({ siap: false, alasan: 'belum_ada_penjualan', rekomendasi: [] });
   }
+
+  const cuaca = await prakiraanUntukKota(umkmProfile.city);
+  const bufferPersen = bufferUntukCuaca(cuaca);
 
   // Kelompokkan per bahan baku, ambil yang volumenya paling besar
   const perBahan = new Map();
@@ -192,6 +222,8 @@ async function getRekomendasi(req, res) {
       bahan: bahan.nama,
       satuan: termurah.unit,
       prediksi,
+      jumlahDenganBuffer:
+        bufferPersen > 0 ? Math.round(prediksi * (1 + bufferPersen / 100) * 100) / 100 : null,
       periode: hasil.period,
       rataRata: Math.round(rata * 10) / 10,
       arah,
@@ -213,7 +245,7 @@ async function getRekomendasi(req, res) {
   const urutan = { gabung: 0, cari_pemasok: 1, sudah_gabung: 2, pantau: 3 };
   rekomendasi.sort((a, b) => urutan[a.tindakan] - urutan[b.tindakan]);
 
-  res.json({ siap: true, rekomendasi });
+  res.json({ siap: true, cuaca, bufferPersen, rekomendasi });
 }
 
 module.exports = { generateForecast, listForecasts, getRekomendasi };

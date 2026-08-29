@@ -48,8 +48,6 @@ export default function LoginPage() {
             const pesan = getApiErrorMessage(err);
             setServerError(pesan);
 
-            // Akun yang belum diverifikasi butuh jalan keluar, bukan
-            // sekadar pesan galat — arahkan ke halaman kirim ulang
             if (pesan.toLowerCase().includes("verifikasi")) {
                 setPerluVerifikasi(true);
             }

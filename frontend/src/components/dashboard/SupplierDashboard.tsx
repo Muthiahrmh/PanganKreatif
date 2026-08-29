@@ -62,7 +62,6 @@ export function SupplierDashboard() {
 
     const groupName = user?.supplierProfile?.groupName ?? user?.name ?? "Mitra";
 
-    // Lima kontribusi UMKM terbaru dari seluruh order
     const recentContributions = orders
         .flatMap((o) => o.items.map((it) => ({ ...it, product: o.product, order: o })))
         .slice(0, 5);

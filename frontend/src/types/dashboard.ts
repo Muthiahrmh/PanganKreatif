@@ -1,3 +1,5 @@
+import type { PrakiraanCuaca } from "@/types/weather";
+
 export interface SalesRecord {
     id: string;
     productName: string;
@@ -25,11 +27,20 @@ export interface ForecastDetail {
         holidayApplied?: boolean;
         holidayNote?: string;
         holidayList?: string[];
+        statisticalPrediction?: number;
+        aiApplied?: boolean;
+        aiPrediction?: number | null;
+        aiSamples?: number;
+        aiWeight?: number;
         monthsOfData?: number;
         lastDataPeriod?: string;
         keterangan?: string;
     };
     algoritma: string;
+    cuaca?: PrakiraanCuaca;
+    /** Persentase buffer stok yang disarankan kalau cuaca berisiko — tidak mengubah angka prediksi AI */
+    bufferPersen?: number;
+    jumlahDenganBuffer?: number | null;
 }
 
 /** Status harga grosir untuk satu pesanan kolektif */

@@ -4,13 +4,6 @@ import { useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 
-/**
- * Membuka bukti transfer.
- *
- * Berkasnya disimpan di bucket privat, jadi tautannya tidak bisa
- * ditempel langsung di halaman. Tombol ini meminta tautan bertanda
- * tangan berumur lima menit, lalu membukanya di tab baru.
- */
 export function TombolLihatBukti({
     transactionId,
     jenis = "bayar",

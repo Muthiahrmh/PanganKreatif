@@ -8,10 +8,19 @@
  * Koordinat memakai titik pusat kabupaten/kota, jadi jaraknya
  * perkiraan antarwilayah — bukan jarak alamat ke alamat. Untuk
  * pengadaan bahan baku antarkabupaten, ketelitian ini memadai.
+ *
+ * Cakupan sengaja dua lapis: kabupaten/kota di Aceh dilengkapi penuh
+ * karena itu basis operasional tahun pertama (Tabel 3.1 proposal),
+ * sedangkan wilayah lain dilengkapi sampai level ibu kota
+ * provinsi/kota besar — cukup untuk perbandingan pemasok lintas
+ * provinsi begitu ekspansi ke luar Aceh dimulai (target Executive
+ * Summary: lima kota besar dalam tiga tahun), tanpa bergantung pada
+ * API peta eksternal yang menambah risiko latensi/rate-limit pada
+ * halaman katalog yang sering diakses.
  */
 
-/** Titik pusat kabupaten/kota di Aceh dan sekitarnya */
-const KOORDINAT = {
+/** Titik pusat kabupaten/kota di Aceh — basis operasional tahun pertama */
+const KOORDINAT_ACEH = {
     Lhokseumawe: { lat: 5.1801, lon: 97.1507 },
     'Aceh Utara': { lat: 5.0553, lon: 97.3186 },
     Bireuen: { lat: 5.203, lon: 96.7009 },
@@ -35,6 +44,68 @@ const KOORDINAT = {
     'Aceh Singkil': { lat: 2.2833, lon: 97.7833 },
     Simeulue: { lat: 2.6167, lon: 96.0833 },
 };
+
+/** Kota besar/ibu kota provinsi di luar Aceh, untuk ekspansi antarwilayah */
+const KOORDINAT_NASIONAL = {
+    // Sumatera
+    Medan: { lat: 3.5952, lon: 98.6722 },
+    Pekanbaru: { lat: 0.5071, lon: 101.4478 },
+    Batam: { lat: 1.0456, lon: 104.0305 },
+    'Tanjung Pinang': { lat: 0.9186, lon: 104.4562 },
+    Padang: { lat: -0.9471, lon: 100.4172 },
+    Jambi: { lat: -1.6101, lon: 103.6131 },
+    Palembang: { lat: -2.9761, lon: 104.7754 },
+    Bengkulu: { lat: -3.7928, lon: 102.2608 },
+    'Bandar Lampung': { lat: -5.4292, lon: 105.261 },
+    'Pangkal Pinang': { lat: -2.1316, lon: 106.1169 },
+
+    // Jawa & sekitarnya
+    Jakarta: { lat: -6.2088, lon: 106.8456 },
+    'DKI Jakarta': { lat: -6.2088, lon: 106.8456 },
+    Bogor: { lat: -6.5971, lon: 106.806 },
+    Depok: { lat: -6.4025, lon: 106.7942 },
+    Tangerang: { lat: -6.1783, lon: 106.6319 },
+    Bekasi: { lat: -6.2383, lon: 106.9756 },
+    Serang: { lat: -6.1149, lon: 106.1503 },
+    Bandung: { lat: -6.9175, lon: 107.6191 },
+    Semarang: { lat: -6.9932, lon: 110.4203 },
+    Surakarta: { lat: -7.5755, lon: 110.8243 },
+    Solo: { lat: -7.5755, lon: 110.8243 },
+    Yogyakarta: { lat: -7.7956, lon: 110.3695 },
+    Jogja: { lat: -7.7956, lon: 110.3695 },
+    Surabaya: { lat: -7.2575, lon: 112.7521 },
+    Malang: { lat: -7.9666, lon: 112.6326 },
+
+    // Bali & Nusa Tenggara
+    Denpasar: { lat: -8.6705, lon: 115.2126 },
+    Mataram: { lat: -8.5833, lon: 116.1167 },
+    Kupang: { lat: -10.1772, lon: 123.607 },
+
+    // Kalimantan
+    Pontianak: { lat: -0.0263, lon: 109.3425 },
+    Palangkaraya: { lat: -2.2096, lon: 113.9213 },
+    Banjarmasin: { lat: -3.3186, lon: 114.5944 },
+    Samarinda: { lat: -0.5022, lon: 117.1536 },
+    Balikpapan: { lat: -1.2379, lon: 116.8529 },
+    'Tanjung Selor': { lat: 2.8385, lon: 117.3616 },
+
+    // Sulawesi
+    Manado: { lat: 1.4748, lon: 124.8421 },
+    Palu: { lat: -0.8917, lon: 119.8707 },
+    Makassar: { lat: -5.1477, lon: 119.4327 },
+    Kendari: { lat: -3.9985, lon: 122.5127 },
+    Gorontalo: { lat: 0.5435, lon: 123.0568 },
+    Mamuju: { lat: -2.6748, lon: 118.8885 },
+
+    // Maluku & Papua
+    Ambon: { lat: -3.6954, lon: 128.1814 },
+    Ternate: { lat: 0.7833, lon: 127.3667 },
+    Jayapura: { lat: -2.5337, lon: 140.7181 },
+    Manokwari: { lat: -0.8615, lon: 134.062 },
+    Sorong: { lat: -0.8762, lon: 131.2558 },
+};
+
+const KOORDINAT = { ...KOORDINAT_ACEH, ...KOORDINAT_NASIONAL };
 
 const RAD = Math.PI / 180;
 
@@ -81,7 +152,9 @@ function estimasiKirim(km) {
     if (km <= 60) return { hari: 1, label: '1 hari', catatan: 'Kabupaten tetangga' };
     if (km <= 150) return { hari: 2, label: '1-2 hari', catatan: 'Lintas kabupaten' };
     if (km <= 300) return { hari: 3, label: '2-3 hari', catatan: 'Lintas wilayah' };
-    return { hari: 4, label: '3-4 hari', catatan: 'Jarak jauh' };
+    if (km <= 750) return { hari: 5, label: '3-5 hari', catatan: 'Lintas provinsi' };
+    if (km <= 1500) return { hari: 7, label: '5-7 hari', catatan: 'Lintas pulau' };
+    return { hari: 14, label: '7-14 hari', catatan: 'Lintas pulau jauh' };
 }
 
 /**

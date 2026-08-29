@@ -1,16 +1,5 @@
 import type { Role } from "@/types/auth";
 
-/**
- * Tema warna per peran.
- *
- * Ketiga peran punya tugas yang sangat berbeda — UMKM membeli,
- * pemasok menjual, admin mengelola platform. Warna yang berbeda
- * membuat pengguna langsung sadar sedang berada di sisi mana,
- * terutama saat berpindah akun waktu demo.
- *
- * Nilainya berupa hex dan diterapkan lewat atribut style, bukan
- * kelas Tailwind, supaya tidak terpangkas saat proses build.
- */
 export interface TemaPeran {
     label: string;
     /** Latar sidebar dan laci navigasi */
@@ -28,7 +17,7 @@ export interface TemaPeran {
 const TEMA: Record<Role, TemaPeran> = {
     umkm: {
         label: "UMKM Kuliner",
-        sidebar: "#0B1220",
+        sidebar: "#18200b",
         aktif: "#2563EB",
         aksen: "#2563EB",
         latar: "#F5F9FF",

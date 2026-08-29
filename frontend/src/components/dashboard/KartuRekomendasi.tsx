@@ -12,9 +12,11 @@ import {
     Check,
     Users,
     Clock,
+    CloudRain,
 } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatNumber, formatRupiah, relativeDeadline } from "@/lib/format";
+import type { PrakiraanCuaca } from "@/types/weather";
 
 type Arah = "naik" | "turun" | "stabil";
 type Tindakan = "gabung" | "cari_pemasok" | "sudah_gabung" | "pantau";
@@ -41,6 +43,7 @@ interface Rekomendasi {
     bahan: string;
     satuan: string;
     prediksi: number;
+    jumlahDenganBuffer: number | null;
     periode: string;
     rataRata: number;
     arah: Arah;
@@ -84,14 +87,21 @@ export function KartuRekomendasi() {
     const [siap, setSiap] = useState(true);
     const [loading, setLoading] = useState(true);
     const [galat, setGalat] = useState<string | null>(null);
+    const [cuaca, setCuaca] = useState<PrakiraanCuaca | undefined>(undefined);
+    const [bufferPersen, setBufferPersen] = useState(0);
 
     const muat = useCallback(async () => {
         try {
-            const res = await api.get<{ siap: boolean; rekomendasi: Rekomendasi[] }>(
-                "/forecasts/rekomendasi"
-            );
+            const res = await api.get<{
+                siap: boolean;
+                rekomendasi: Rekomendasi[];
+                cuaca?: PrakiraanCuaca;
+                bufferPersen?: number;
+            }>("/forecasts/rekomendasi");
             setSiap(res.data.siap);
             setData(res.data.rekomendasi ?? []);
+            setCuaca(res.data.cuaca);
+            setBufferPersen(res.data.bufferPersen ?? 0);
             setGalat(null);
         } catch (err) {
             setGalat(getApiErrorMessage(err));
@@ -157,6 +167,16 @@ export function KartuRekomendasi() {
                 )}
             </div>
 
+            {bufferPersen > 0 && cuaca?.peringatan?.ada && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber-50 p-3.5 text-sm text-amber-800">
+                    <CloudRain size={16} className="mt-0.5 shrink-0" />
+                    <span>
+                        {cuaca.peringatan.pesan} Jumlah "dengan buffer" di bawah menambahkan{" "}
+                        {bufferPersen}% cadangan untuk jaga-jaga.
+                    </span>
+                </div>
+            )}
+
             <div className="mt-5 space-y-3">
                 {data.map((r) => (
                     <BarisRekomendasi key={r.bahan} r={r} />
@@ -196,6 +216,12 @@ function BarisRekomendasi({ r }: { r: Rekomendasi }) {
                     <div className="font-display text-lg font-bold text-brand-blue">
                         {formatNumber(r.prediksi)} {r.satuan}
                     </div>
+                    {r.jumlahDenganBuffer != null && (
+                        <div className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+                            <CloudRain size={11} />
+                            dengan buffer: {formatNumber(r.jumlahDenganBuffer)} {r.satuan}
+                        </div>
+                    )}
                     <div className="text-xs text-ink-soft">
                         termurah {formatRupiah(r.pemasokTermurah.harga)}/{r.satuan}
                     </div>

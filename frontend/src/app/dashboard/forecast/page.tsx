@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Info } from "lucide-react";
+import { Sparkles, Info, CloudRain } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import type { SalesRecord, ForecastResult, ForecastDetail } from "@/types/dashboard";
@@ -144,6 +144,23 @@ export default function ForecastPage() {
                         )}
                     </div>
                 )}
+
+                {result && (result.bufferPersen ?? 0) > 0 && (
+                    <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber-50 p-3.5 text-sm text-amber-800">
+                        <CloudRain size={16} className="mt-0.5 shrink-0" />
+                        <div>
+                            <span className="font-semibold">
+                                Cuaca {result.cuaca?.kota ?? "wilayahmu"} berisiko dalam beberapa hari
+                                ke depan.
+                            </span>{" "}
+                            {result.cuaca?.peringatan?.pesan}{" "}
+                            Disarankan tambah buffer {result.bufferPersen}% jadi sekitar{" "}
+                            <span className="font-semibold">{result.jumlahDenganBuffer}</span> —
+                            angka prediksi AI di atas tidak berubah, ini cuma saran jaga-jaga kalau
+                            pasokan dari pemasok berpotensi telat.
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Cara perhitungan — supaya prediksinya bisa ditelusuri, bukan kotak hitam */}
@@ -156,13 +173,14 @@ export default function ForecastPage() {
                                 Cara Perhitungan
                             </h3>
                             <p className="mt-1 text-xs text-ink-soft">
-                                Metode deret waktu statistik. Setiap komponen di bawah bisa
-                                ditelusuri dari data penjualan yang tercatat.
+                                {result.detail.aiApplied
+                                    ? "Model hybrid: jaringan saraf tiruan yang dilatih dari histori penjualanmu sendiri, digabung dengan model statistik. Setiap komponen di bawah bisa ditelusuri dari data penjualan yang tercatat."
+                                    : "Metode deret waktu statistik. Setiap komponen di bawah bisa ditelusuri dari data penjualan yang tercatat."}
                             </p>
                         </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                         <Komponen
                             label="Rata-rata bergerak"
                             nilai={result.detail.movingAverage}
@@ -189,6 +207,17 @@ export default function ForecastPage() {
                                 result.detail.holidayApplied
                                     ? result.detail.holidayList?.join(", ") || "hari libur nasional"
                                     : "belum aktif"
+                            }
+                        />
+                        <Komponen
+                            label="Model AI (neural network)"
+                            nilai={result.detail.aiPrediction ?? undefined}
+                            catatan={
+                                result.detail.aiApplied
+                                    ? `dilatih dari ${result.detail.aiSamples} titik data, bobot ${Math.round(
+                                          (result.detail.aiWeight ?? 0) * 100
+                                      )}%`
+                                    : `belum aktif, butuh minimal 6 bulan data (saat ini ${result.detail.monthsOfData ?? 0})`
                             }
                         />
                     </div>
