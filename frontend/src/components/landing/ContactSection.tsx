@@ -30,7 +30,7 @@ export function ContactSection() {
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${KONTAK.email}`;
 
     return (
-        <section id="kontak" className="bg-cream">
+        <section id="kontak" className="bg-pola-tani-halus">
             <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -51,8 +51,7 @@ export function ContactSection() {
                             </h2>
 
                             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base">
-                                Mendaftar tidak dipungut biaya. Catat penjualan, lihat perkiraan kebutuhan
-                                bulan depan, lalu gabung belanja kolektif bersama UMKM lain di sekitarmu.
+                                Gratis mendaftar, tanpa biaya tersembunyi.
                             </p>
 
                             <div className="mt-8 grid gap-3 sm:grid-cols-2">

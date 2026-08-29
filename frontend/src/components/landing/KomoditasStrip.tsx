@@ -30,7 +30,7 @@ export function KomoditasStrip() {
 
     return (
         <div className="overflow-hidden border-y border-leaf/10 bg-leaf-soft py-3">
-            <div className="flex w-max animate-[jalan_38s_linear_infinite] gap-8">
+            <div className="strip-jalan flex w-max gap-8">
                 {daftar.map((k, i) => (
                     <span
                         key={`${k}-${i}`}
@@ -43,6 +43,14 @@ export function KomoditasStrip() {
             </div>
 
             <style jsx>{`
+                /* Class polos (bukan animate-[...] arbitrary Tailwind) supaya
+                   "infinite"-nya pasti kebaca browser, tidak tergantung
+                   parsing bracket Tailwind v4 yang kadang meleset. */
+                .strip-jalan {
+                    animation: jalan 38s linear infinite;
+                    will-change: transform;
+                }
+
                 @keyframes jalan {
                     from {
                         transform: translateX(0);
@@ -54,7 +62,7 @@ export function KomoditasStrip() {
 
                 /* Hormati pengguna yang mematikan animasi */
                 @media (prefers-reduced-motion: reduce) {
-                    div :global(.animate-\\[jalan_38s_linear_infinite\\]) {
+                    .strip-jalan {
                         animation: none;
                     }
                 }

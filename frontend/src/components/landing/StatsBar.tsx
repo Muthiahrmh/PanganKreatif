@@ -77,7 +77,7 @@ export function StatsBar() {
             </h2>
 
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
-              Jadilah bagian dari langkah pertama kami. Berikut adalah target pertumbuhan yang dirancang untuk tahun perdana PanganKreatif beroperasi.
+              Target pertumbuhan mitra di tahun pertama PanganKreatif beroperasi.
             </p>
 
             <div className="mt-9 rounded-2xl bg-white/[0.07] p-5 backdrop-blur">

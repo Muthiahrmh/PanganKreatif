@@ -75,7 +75,7 @@ export function HowItWorks() {
     };
 
     return (
-        <section id="cara-kerja" className="bg-cream">
+        <section id="cara-kerja" className="bg-pola-tani-halus">
             {/* PERBAIKAN: Padding HP lebih kecil (py-16), Desktop tetap (lg:py-20) */}
             <div className="mx-auto w-full max-w-[1700px] px-6 py-16 sm:px-8 lg:px-16 lg:py-20">
                 <motion.div

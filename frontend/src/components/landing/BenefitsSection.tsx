@@ -101,7 +101,7 @@ export function BenefitsSection() {
     const IkonPeran = d.icon;
 
     return (
-        <section id="manfaat" className="bg-cream">
+        <section id="manfaat" className="bg-pola-tani-halus">
             <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}

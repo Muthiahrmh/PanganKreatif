@@ -20,21 +20,21 @@ const cerita = [
     {
         icon: Target,
         judul: "Masalah yang kami temukan",
-        desc: "Pemilik warung menebak kebutuhan bahan baku dari ingatan, lalu membeli satuan dengan harga jauh di atas harga grosir. Di sisi lain, kelompok tani menjual kecil-kecil ke banyak pembeli terpisah, dan ongkos kirimnya menggerus keuntungan.",
+        desc: "Pemilik warung menebak stok dari ingatan dan beli satuan mahal, sementara petani jual kecil-kecil dengan ongkos kirim yang menggerus untung.",
         warna: "#2563EB", // Biru lembut
         latar: "#EFF6FF",
     },
     {
         icon: Lightbulb,
         judul: "Cara kami menjawabnya",
-        desc: "Riwayat penjualan diolah jadi perkiraan kebutuhan, lalu beberapa UMKM digabungkan dalam satu pesanan supaya kuota grosir tercapai. Satu pengiriman melayani banyak pembeli, dan harga per satuan turun untuk semua.",
+        desc: "AI memperkirakan kebutuhan bahan baku, lalu beberapa UMKM digabung jadi satu pesanan besar — harga per satuan pun turun.",
         warna: "#159B87", // Teal
         latar: "#E6F4F1",
     },
     {
         icon: MapPin,
         judul: "Kenapa mulai dari Aceh",
-        desc: "Kami tinggal di Lhokseumawe dan melihat sendiri masalahnya. Model prediksinya pun memperhitungkan hal yang khas di sini sepeti lonjakan menjelang Meugang, musim kopi di dataran tinggi Gayo, dan cuaca yang memengaruhi hasil tangkapan.",
+        desc: "Kami tinggal di Lhokseumawe dan melihat masalah ini sendiri, jadi prediksinya ikut memperhitungkan pola musiman khas Aceh seperti Meugang.",
         warna: "#5CA935", // Hijau
         latar: "#EEF7E8",
     },

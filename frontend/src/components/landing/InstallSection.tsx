@@ -8,7 +8,7 @@ import { Download, Smartphone, Zap, ShieldCheck } from "lucide-react";
  */
 export function InstallSection() {
     return (
-        <section id="pasang" className="bg-cream py-16 lg:py-24">
+        <section id="pasang" className="bg-pola-tani-halus py-16 lg:py-24">
             <div className="mx-auto w-full max-w-[1700px] px-6 sm:px-8 lg:px-16">
 
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-8 text-white shadow-xl sm:p-12 lg:p-16">
