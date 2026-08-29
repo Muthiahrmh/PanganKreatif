@@ -74,14 +74,24 @@ export default function LoginPage() {
                     {...register("email")}
                 />
 
-                <TextField
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    error={errors.password?.message}
-                    {...register("password")}
-                />
+                <div>
+                    <TextField
+                        label="Password"
+                        type="password"
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        error={errors.password?.message}
+                        {...register("password")}
+                    />
+                    <div className="mt-1.5 flex justify-end">
+                        <Link
+                            href="/lupaPassword"
+                            className="text-xs font-semibold text-blue-600 hover:underline"
+                        >
+                            Lupa kata sandi?
+                        </Link>
+                    </div>
+                </div>
 
                 {serverError && (
                     <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 shadow-sm">
@@ -102,7 +112,6 @@ export default function LoginPage() {
                     </div>
                 )}
 
-                {/* Tombol masuk dibuat rounded-full ala kapsul */}
                 <Button
                     type="submit"
                     loading={loading}
@@ -112,14 +121,12 @@ export default function LoginPage() {
                 </Button>
             </form>
 
-            {/* Pemisah sebelum ajakan mendaftar */}
             <div className="mt-10 flex items-center gap-3 opacity-80">
                 <span className="h-px flex-1 bg-ink/10" />
                 <span className="text-xs font-medium uppercase tracking-wider text-ink-soft">Belum punya akun?</span>
                 <span className="h-px flex-1 bg-ink/10" />
             </div>
 
-            {/* Desain Card Modern untuk pilihan daftar */}
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <Link
                     href="/register?role=umkm"

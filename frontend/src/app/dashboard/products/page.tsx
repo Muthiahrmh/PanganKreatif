@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Package, Layers, ChevronLeft, ChevronRight } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { TextField } from "@/components/ui/TextField";
@@ -13,7 +13,6 @@ import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
 import { fetchMyProducts } from "@/lib/supplier";
 import type { SupplierProduct } from "@/types/supplier";
 
-// Field opsional: string kosong berarti "tidak diisi", bukan 0
 const optionalNumber = z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
     z.number().positive("Harus lebih dari 0").optional()
@@ -41,6 +40,8 @@ const schema = z
 type FormInput = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
+const ITEMS_PER_PAGE = 5;
+
 export default function SupplierProductsPage() {
     const user = useAuthStore((s) => s.user);
     const [products, setProducts] = useState<SupplierProduct[]>([]);
@@ -50,6 +51,9 @@ export default function SupplierProductsPage() {
     const [showForm, setShowForm] = useState(false);
     const [hapusTarget, setHapusTarget] = useState<SupplierProduct | null>(null);
     const [menghapus, setMenghapus] = useState(false);
+
+    // State untuk Pagination
+    const [currentPage, setCurrentPage] = useState(1);
 
     const {
         register,
@@ -61,7 +65,6 @@ export default function SupplierProductsPage() {
     async function loadProducts() {
         setLoading(true);
         try {
-            // Endpoint ini sudah difilter di server, jadi cuma produk milik sendiri
             setProducts(await fetchMyProducts());
         } catch (err) {
             setError(getApiErrorMessage(err));
@@ -106,7 +109,6 @@ export default function SupplierProductsPage() {
     async function onSubmit(data: FormOutput) {
         setError(null);
         try {
-            // Kirim null kalau kosong, supaya harga grosir bisa dihapus
             const payload = {
                 ...data,
                 bulkPrice: data.bulkPrice ?? null,
@@ -139,66 +141,98 @@ export default function SupplierProductsPage() {
         }
     }
 
+    // Kalkulasi Pagination
+    const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+    const paginatedProducts = products.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    if (user && user.role !== "supplier") {
+        return <p className="text-sm font-medium text-slate-500 p-6">Halaman ini khusus untuk akun pemasok / tani.</p>;
+    }
+
     return (
-        <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+            {/* Header Halaman */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <div>
-                    <h2 className="font-display text-xl font-bold text-ink">Produk Saya</h2>
-                    <p className="mt-1 text-sm text-ink-soft">Kelola katalog bahan baku yang kamu jual.</p>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 mb-2 border border-emerald-100">
+                        Manajemen Inventaris & Katalog
+                    </div>
+                    <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Katalog Produk Saya
+                    </h2>
+                    <p className="mt-1 text-sm font-medium text-slate-500 max-w-xl">
+                        Kelola daftar bahan baku dan atur penawaran harga grosir khusus untuk pesanan kolektif UMKM.
+                    </p>
                 </div>
-                <Button onClick={openAddForm}>
-                    <Plus size={16} /> Tambah Produk
+
+                <Button onClick={openAddForm} className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold shadow-md hover:bg-emerald-700 shrink-0">
+                    <Plus size={18} strokeWidth={2.5} /> Tambah Produk Baru
                 </Button>
             </div>
 
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+            {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700 shadow-sm">
+                    {error}
+                </div>
+            )}
 
+            {/* Form Tambah / Edit Produk */}
             {showForm && (
                 <form
                     onSubmit={handleSubmit(onSubmit)}
-                    className="grid gap-4 rounded-xl border border-ink/5 bg-white p-5 sm:grid-cols-2"
+                    className="grid gap-5 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:grid-cols-2"
                 >
-                    <div className="flex items-center justify-between sm:col-span-2">
-                        <h3 className="font-display text-sm font-bold text-ink">
-                            {editingId ? "Edit Produk" : "Produk Baru"}
-                        </h3>
+                    <div className="flex items-center justify-between sm:col-span-2 pb-4 border-b border-slate-100">
+                        <div>
+                            <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Formulir Katalog</div>
+                            <h3 className="font-display text-lg font-extrabold text-slate-900 mt-0.5">
+                                {editingId ? "Ubah Informasi Produk" : "Daftarkan Produk Baru"}
+                            </h3>
+                        </div>
                         <button
                             type="button"
                             onClick={() => setShowForm(false)}
-                            className="text-ink-soft hover:text-ink"
+                            aria-label="Tutup"
+                            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                         >
                             <X size={18} />
                         </button>
                     </div>
-                    <TextField label="Nama produk" placeholder="Cabai Merah" {...register("name")} />
-                    <TextField label="Kategori" placeholder="Sayuran" {...register("category")} />
-                    <TextField label="Satuan" placeholder="kg" {...register("unit")} />
+
+                    <TextField label="Nama Produk" placeholder="Misal: Cabai Merah Keriting" {...register("name")} />
+                    <TextField label="Kategori" placeholder="Misal: Sayuran / Rempah" {...register("category")} />
+                    <TextField label="Satuan Unit" placeholder="Misal: kg / liter / ikat" {...register("unit")} />
                     <TextField
-                        label="Harga per satuan (Rp)"
+                        label="Harga Normal per Satuan (Rp)"
                         type="number"
                         placeholder="28000"
                         {...register("price")}
                     />
-                    <TextField label="Stok" type="number" placeholder="100" {...register("stock")} />
+                    <TextField label="Stok Tersedia" type="number" placeholder="100" {...register("stock")} />
 
-                    <div className="rounded-lg bg-paper-soft p-4 sm:col-span-2">
-                        <h4 className="text-sm font-semibold text-ink">
-                            Harga grosir (opsional)
-                        </h4>
-                        <p className="mt-1 text-xs text-ink-soft">
-                            Kalau total pesanan kolektif mencapai jumlah minimal, semua UMKM yang
-                            ikut otomatis dapat harga ini. Kosongkan kalau belum mau pakai.
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 sm:col-span-2 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Layers size={16} className="text-emerald-600" />
+                            <h4 className="text-sm font-bold text-slate-900">
+                                Pengaturan Harga Grosir (Opsional)
+                            </h4>
+                        </div>
+                        <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                            Jika total pesanan kolektif dari berbagai UMKM mencapai kuota minimal, sistem akan otomatis menerapkan harga grosir ini untuk semua peserta.
                         </p>
 
-                        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-2 pt-2">
                             <TextField
-                                label="Harga grosir (Rp)"
+                                label="Harga Diskon Grosir (Rp)"
                                 type="number"
                                 placeholder="25000"
                                 {...register("bulkPrice")}
                             />
                             <TextField
-                                label="Minimal total pesanan"
+                                label="Minimal Total Kuota Pesanan"
                                 type="number"
                                 placeholder="100"
                                 {...register("bulkMinQty")}
@@ -206,129 +240,132 @@ export default function SupplierProductsPage() {
                         </div>
                     </div>
 
-                    <div className="sm:col-span-2">
-                        <Button type="submit" loading={isSubmitting}>
-                            {editingId ? "Simpan Perubahan" : "Tambah Produk"}
+                    <div className="sm:col-span-2 pt-2">
+                        <Button type="submit" loading={isSubmitting} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold shadow-md hover:bg-emerald-700">
+                            {editingId ? "Simpan Perubahan" : "Tambahkan ke Katalog"}
                         </Button>
                     </div>
                 </form>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-ink/5 bg-white p-5">
+            {/* Daftar Produk */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 {loading ? (
-                    <p className="text-sm text-ink-soft">Memuat produk...</p>
+                    <div className="py-12 text-center text-sm font-medium text-slate-400">Memuat katalog produk...</div>
                 ) : products.length === 0 ? (
-                    <p className="text-sm text-ink-soft">Belum ada produk. Tambah produk pertama kamu.</p>
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
+                        <Package size={32} className="mx-auto text-slate-400 mb-3" />
+                        <h3 className="font-display text-base font-bold text-slate-800">Katalog masih kosong</h3>
+                        <p className="mt-1 text-sm text-slate-500">Belum ada produk yang terdaftar. Tambahkan produk pertamamu sekarang.</p>
+                    </div>
                 ) : (
                     <>
-                        <table className="hidden w-full text-left text-sm md:table">
-                            <thead>
-                                <tr className="border-b border-ink/10 text-xs text-ink-soft">
-                                    <th className="pb-2 font-medium">Nama</th>
-                                    <th className="pb-2 font-medium">Kategori</th>
-                                    <th className="pb-2 font-medium">Harga</th>
-                                    <th className="pb-2 font-medium">Stok</th>
-                                    <th className="pb-2 font-medium">Pesanan</th>
-                                    <th className="pb-2 text-right font-medium">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map((p) => (
-                                    <tr key={p.id} className="border-b border-ink/5 last:border-0">
-                                        <td className="py-2.5 font-medium text-ink">{p.name}</td>
-                                        <td className="py-2.5 text-ink-soft">{p.category}</td>
-                                        <td className="py-2.5 text-ink-soft">
-                                            Rp{Number(p.price).toLocaleString("id-ID")}/{p.unit}
-                                            {p.bulkPrice != null && p.bulkMinQty != null && (
-                                                <div className="text-xs text-brand-green">
-                                                    grosir Rp
-                                                    {Number(p.bulkPrice).toLocaleString("id-ID")} min{" "}
-                                                    {p.bulkMinQty} {p.unit}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="py-2.5">
-                                            <span className={p.stock <= 10 ? "font-medium text-amber-600" : "text-ink-soft"}>
-                                                {p.stock}
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 text-ink-soft">{p.orderCount}</td>
-                                        <td className="py-2.5">
-                                            <div className="flex justify-end gap-3">
-                                                <button onClick={() => openEditForm(p)} className="text-brand-blue hover:opacity-70">
-                                                    <Pencil size={15} />
-                                                </button>
-                                                <button onClick={() => setHapusTarget(p)} className="text-red-500 hover:opacity-70">
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
-                                        </td>
+                        <div className="overflow-x-auto hidden md:block">
+                            <table className="w-full text-left text-sm">
+                                <thead>
+                                    <tr className="border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        <th className="pb-3 px-4">Nama Produk</th>
+                                        <th className="pb-3 px-4">Kategori</th>
+                                        <th className="pb-3 px-4">Harga Normal / Grosir</th>
+                                        <th className="pb-3 px-4">Stok Gudang</th>
+                                        <th className="pb-3 px-4">Pesanan Aktif</th>
+                                        <th className="pb-3 px-4 text-right">Aksi</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {paginatedProducts.map((p) => (
+                                        <tr key={p.id} className="transition hover:bg-slate-50/80">
+                                            <td className="py-4 px-4 font-bold text-slate-900">{p.name}</td>
+                                            <td className="py-4 px-4 font-medium text-slate-600">{p.category}</td>
+                                            <td className="py-4 px-4 font-semibold text-slate-800">
+                                                Rp{Number(p.price).toLocaleString("id-ID")}/{p.unit}
+                                                {p.bulkPrice != null && p.bulkMinQty != null && (
+                                                    <div className="text-xs font-bold text-emerald-600 mt-0.5">
+                                                        Grosir: Rp{Number(p.bulkPrice).toLocaleString("id-ID")} (min {p.bulkMinQty} {p.unit})
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-4 font-bold">
+                                                <span className={p.stock <= 10 ? "text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 text-xs" : "text-slate-700"}>
+                                                    {p.stock} {p.unit}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 font-semibold text-slate-600">{p.orderCount} sesi</td>
+                                            <td className="py-4 px-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => openEditForm(p)} className="rounded-xl border border-slate-200 bg-white p-2 text-blue-600 shadow-sm transition hover:bg-slate-50" title="Edit">
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button onClick={() => setHapusTarget(p)} className="rounded-xl border border-slate-200 bg-white p-2 text-red-500 shadow-sm transition hover:bg-slate-50" title="Hapus">
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
-                        {/* Kartu bertumpuk untuk layar kecil */}
-                        <div className="divide-y divide-ink/5 md:hidden">
-                            {products.map((p) => (
-                                <div key={p.id} className="py-3 first:pt-0 last:pb-0">
+                        {/* Tampilan kartu untuk layar kecil */}
+                        <div className="space-y-3 md:hidden">
+                            {paginatedProducts.map((p) => (
+                                <div key={p.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
                                     <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <div className="truncate font-medium text-ink">
-                                                {p.name}
-                                            </div>
-                                            <div className="truncate text-xs text-ink-soft">
-                                                {p.category} · {p.orderCount} pesanan
-                                            </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-base">{p.name}</h4>
+                                            <span className="text-xs font-semibold text-slate-500">{p.category} · {p.orderCount} pesanan aktif</span>
                                         </div>
-
-                                        <div className="flex shrink-0 gap-1">
-                                            <button
-                                                onClick={() => openEditForm(p)}
-                                                aria-label={`Ubah ${p.name}`}
-                                                className="rounded-lg p-2 text-brand-blue hover:opacity-70"
-                                            >
+                                        <div className="flex gap-1">
+                                            <button onClick={() => openEditForm(p)} className="rounded-xl bg-white border border-slate-200 p-2 text-blue-600 shadow-sm">
                                                 <Pencil size={15} />
                                             </button>
-                                            <button
-                                                onClick={() => setHapusTarget(p)}
-                                                aria-label={`Hapus ${p.name}`}
-                                                className="rounded-lg p-2 text-red-500 hover:opacity-70"
-                                            >
+                                            <button onClick={() => setHapusTarget(p)} className="rounded-xl bg-white border border-slate-200 p-2 text-red-500 shadow-sm">
                                                 <Trash2 size={15} />
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
-                                        <span className="font-semibold text-ink">
-                                            Rp{Number(p.price).toLocaleString("id-ID")}
-                                            <span className="font-normal text-ink-soft">
-                                                /{p.unit}
-                                            </span>
-                                        </span>
-
-                                        <span
-                                            className={
-                                                p.stock <= 10
-                                                    ? "text-xs font-medium text-amber-600"
-                                                    : "text-xs text-ink-soft"
-                                            }
-                                        >
-                                            stok {p.stock} {p.unit}
+                                    <div className="mt-3 flex items-center justify-between text-xs font-bold pt-3 border-t border-slate-200">
+                                        <span className="text-slate-800">Rp{Number(p.price).toLocaleString("id-ID")}/{p.unit}</span>
+                                        <span className={p.stock <= 10 ? "text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md" : "text-slate-600"}>
+                                            Stok: {p.stock} {p.unit}
                                         </span>
                                     </div>
 
                                     {p.bulkPrice != null && p.bulkMinQty != null && (
-                                        <div className="mt-1 text-xs text-brand-green">
-                                            grosir Rp
-                                            {Number(p.bulkPrice).toLocaleString("id-ID")} min{" "}
-                                            {p.bulkMinQty} {p.unit}
+                                        <div className="mt-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                            Grosir: Rp{Number(p.bulkPrice).toLocaleString("id-ID")} (min {p.bulkMinQty} {p.unit})
                                         </div>
                                     )}
                                 </div>
                             ))}
                         </div>
+
+                        {/* Kontrol Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between border-t border-slate-200 pt-6 mt-6">
+                                <div className="text-xs font-medium text-slate-500">
+                                    Menampilkan halaman <strong className="text-slate-800">{currentPage}</strong> dari <strong className="text-slate-800">{totalPages}</strong>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+                                    >
+                                        <ChevronLeft size={14} /> Sebelumnya
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+                                    >
+                                        Berikutnya <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </div>
@@ -340,15 +377,15 @@ export default function SupplierProductsPage() {
                 judul="Hapus produk dari katalog?"
                 pesan={
                     hapusTarget
-                        ? `${hapusTarget.name} akan dihapus dan tidak bisa dipesan UMKM lagi.`
+                        ? `${hapusTarget.name} akan dihapus dan tidak dapat dipesan kembali oleh UMKM.`
                         : ""
                 }
                 keterangan={
                     hapusTarget && hapusTarget.orderCount > 0
-                        ? `Produk ini dipakai di ${hapusTarget.orderCount} pesanan kolektif. Pesanan tersebut ikut terhapus beserta riwayat transaksinya.`
-                        : "Tindakan ini tidak bisa dibatalkan."
+                        ? `Produk ini sedang terikat pada ${hapusTarget.orderCount} sesi pesanan kolektif aktif. Pesanan tersebut juga akan terpengaruh.`
+                        : "Tindakan ini permanen dan tidak dapat dibatalkan."
                 }
-                labelYa="Hapus produk"
+                labelYa="Hapus Produk"
                 onBatal={() => setHapusTarget(null)}
                 onYa={() => {
                     if (hapusTarget) handleDelete(hapusTarget.id);

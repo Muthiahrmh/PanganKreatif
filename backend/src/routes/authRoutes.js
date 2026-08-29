@@ -6,6 +6,8 @@ const {
     me,
     verifikasiEmail,
     kirimUlangVerifikasi,
+    lupaPassword,
+    resetPassword,
 } = require('../controllers/authController');
 const {
     getProfile,
@@ -32,6 +34,10 @@ router.get('/me', authenticate, me);
 // Verifikasi email — terbuka, karena dipanggil sebelum bisa masuk
 router.post('/verify', verifikasiEmail);
 router.post('/verify/resend', kirimUlangVerifikasi);
+
+// Lupa & Reset Password Mandiri (Terbuka untuk umum tanpa auth)
+router.post('/lupaPassword', lupaPassword);
+router.post('/resetPassword', resetPassword);
 
 // Profil
 router.get('/profile', authenticate, getProfile);

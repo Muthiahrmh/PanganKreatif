@@ -119,7 +119,7 @@ export function RegisterForm() {
     const umkm = role === "umkm";
     const gambar = umkm
         ? "/images/umkmlogin.png"
-        : "/images/walpaper_regis_supplier.png";
+        : "/images/taniregistrasi.png";
 
     if (terdaftar) {
         return (

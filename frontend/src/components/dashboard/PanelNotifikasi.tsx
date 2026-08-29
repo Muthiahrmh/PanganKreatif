@@ -28,7 +28,6 @@ export function PanelNotifikasi({ aksen }: { aksen: string }) {
     }, []);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         muat();
     }, [muat, pathname]);
 
@@ -38,14 +37,14 @@ export function PanelNotifikasi({ aksen }: { aksen: string }) {
         <Link
             href="/dashboard/notifikasi"
             aria-label={`Notifikasi${lencana > 0 ? `, ${lencana} baru` : ""}`}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-paper-soft text-ink-soft transition hover:bg-slate-100"
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
         >
-            <Bell size={18} />
+            <Bell size={18} className={lencana > 0 ? "animate-pulse" : ""} />
 
             {lencana > 0 && (
                 <span
-                    className="absolute -right-0.5 -top-0.5 flex h-4.5 min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                    style={{ backgroundColor: adaPerluTindakanBaru ? "#D97706" : aksen }}
+                    className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white px-1 text-[9px] font-extrabold text-white shadow-sm"
+                    style={{ backgroundColor: adaPerluTindakanBaru ? "#EF4444" : aksen }}
                 >
                     {lencana > 9 ? "9+" : lencana}
                 </span>

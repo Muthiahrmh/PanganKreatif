@@ -25,23 +25,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     if (!hydrated) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-ink/10 border-t-brand-green" />
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
             </div>
         );
     }
 
     if (!user) return null;
 
-    const tema = temaPeran(user.role);
+    // Menghindari error jika role tidak terdefinisi di temaPeran
+    const tema = user.role ? temaPeran(user.role) : { latar: "#f8fafc" };
 
     return (
-        <div className="flex min-h-screen" style={{ backgroundColor: tema.latar }}>
+        <div className="flex min-h-screen" style={{ backgroundColor: tema?.latar ?? "#f8fafc" }}>
             <DashboardSidebar />
 
             <div className="flex min-w-0 flex-1 flex-col">
                 <DashboardTopbar />
-                <main className="flex-1 p-4 sm:p-6">{children}</main>
+                <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
             </div>
         </div>
     );

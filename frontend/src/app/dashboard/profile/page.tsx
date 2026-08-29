@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Trash2, Check, KeyRound } from "lucide-react";
+import { Camera, Trash2, Check, KeyRound, User, Building, ShieldCheck, Landmark } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { getApiErrorMessage } from "@/lib/api";
 import {
@@ -81,7 +81,6 @@ export default function ProfilePage() {
         setSaving(true);
         setError(null);
         try {
-            // Kirim hanya field yang relevan dengan role
             const payload: ProfilePayload = {
                 name: form.name,
                 phone: form.phone || null,
@@ -102,7 +101,7 @@ export default function ProfilePage() {
 
             const updated = await updateProfile(payload);
             updateUser(updated);
-            flash("Profil berhasil disimpan");
+            flash("Profil berhasil diperbarui dan disimpan");
         } catch (err) {
             setError(getApiErrorMessage(err));
         } finally {
@@ -119,7 +118,7 @@ export default function ProfilePage() {
         try {
             const updated = await uploadAvatar(file);
             updateUser(updated);
-            flash("Foto profil diperbarui");
+            flash("Foto profil berhasil diperbarui");
         } catch (err) {
             setError(getApiErrorMessage(err));
         } finally {
@@ -129,12 +128,12 @@ export default function ProfilePage() {
     }
 
     async function handleDeletePhoto() {
-        if (!window.confirm("Hapus foto profil?")) return;
+        if (!window.confirm("Apakah Anda yakin ingin menghapus foto profil?")) return;
         setUploading(true);
         try {
             const updated = await deleteAvatar();
             updateUser(updated);
-            flash("Foto profil dihapus");
+            flash("Foto profil berhasil dihapus");
         } catch (err) {
             setError(getApiErrorMessage(err));
         } finally {
@@ -147,254 +146,269 @@ export default function ProfilePage() {
     const initial = (user.name ?? "U").charAt(0).toUpperCase();
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6 md:gap-8 pb-10">
             {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 shadow-sm">
+                    {error}
+                </div>
             )}
             {success && (
-                <p className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-                    <Check size={15} /> {success}
-                </p>
+                <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-800 shadow-sm">
+                    <Check size={16} className="text-emerald-600 shrink-0" /> {success}
+                </div>
             )}
 
-            <div className="grid items-start gap-5 lg:grid-cols-[400px_1fr]">
-                {/* Kolom kiri: foto profil + keamanan */}
-                <div className="flex flex-col gap-5">
-            <div className="rounded-xl border border-ink/5 bg-white p-6">
-                <h3 className="font-display text-base font-bold text-ink">Foto Profil</h3>
-
-                <div className="mt-4 flex flex-col items-center gap-4 text-center">
-                    <div className="relative">
-                        {user.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={user.avatarUrl}
-                                alt="Foto profil"
-                                className="h-44 w-44 rounded-full object-cover ring-4 ring-ink/5"
-                            />
-                        ) : (
-                            <div className="flex h-44 w-44 items-center justify-center rounded-full bg-brand-blue font-display text-5xl font-bold text-white">
-                                {initial}
-                            </div>
-                        )}
-
-                        {uploading && (
-                            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-ink/40">
-                                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="w-full">
-                        <div className="flex flex-wrap justify-center gap-2">
-                            <button
-                                onClick={() => fileRef.current?.click()}
-                                disabled={uploading}
-                                className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-                            >
-                                <Camera size={15} />
-                                {user.avatarUrl ? "Ganti foto" : "Unggah foto"}
-                            </button>
-
-                            {user.avatarUrl && (
-                                <button
-                                    onClick={handleDeletePhoto}
-                                    disabled={uploading}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-ink transition hover:bg-paper-soft disabled:opacity-60"
-                                >
-                                    <Trash2 size={15} /> Hapus
-                                </button>
-                            )}
+            <div className="grid items-start gap-6 lg:grid-cols-[380px_1fr]">
+                {/* Kolom kiri: Foto Profil & Keamanan */}
+                <div className="flex flex-col gap-6">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-4">
+                            <User size={15} /> Identitas Visual
                         </div>
+                        <h3 className="font-display text-lg font-extrabold text-slate-900">Foto Profil</h3>
 
-                        <p className="mt-2 text-xs text-ink-soft">
-                            Format JPG, PNG, atau WEBP. Ukuran maksimal 2 MB.
-                        </p>
+                        <div className="mt-6 flex flex-col items-center gap-5 text-center">
+                            <div className="relative">
+                                {user.avatarUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt="Foto profil"
+                                        className="h-36 w-36 rounded-full object-cover ring-4 ring-slate-100 shadow-md"
+                                    />
+                                ) : (
+                                    <div className="flex h-36 w-36 items-center justify-center rounded-full bg-blue-600 font-display text-4xl font-extrabold text-white shadow-md">
+                                        {initial}
+                                    </div>
+                                )}
+
+                                {uploading && (
+                                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/40 backdrop-blur-sm">
+                                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="w-full">
+                                <div className="flex flex-wrap justify-center gap-2.5">
+                                    <button
+                                        onClick={() => fileRef.current?.click()}
+                                        disabled={uploading}
+                                        className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
+                                    >
+                                        <Camera size={15} />
+                                        {user.avatarUrl ? "Ganti Foto" : "Unggah Foto"}
+                                    </button>
+
+                                    {user.avatarUrl && (
+                                        <button
+                                            onClick={handleDeletePhoto}
+                                            disabled={uploading}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+                                        >
+                                            <Trash2 size={15} /> Hapus
+                                        </button>
+                                    )}
+                                </div>
+
+                                <p className="mt-3 text-[11px] font-medium text-slate-400">
+                                    Format JPG, PNG, atau WEBP. Maksimal ukuran berkas 2 MB.
+                                </p>
+                            </div>
+
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleFile}
+                                className="hidden"
+                            />
+                        </div>
                     </div>
-
-                    <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleFile}
-                        className="hidden"
-                    />
-                </div>
-            </div>
 
                     <PasswordCard onDone={flash} onError={setError} />
                 </div>
 
-                {/* Kolom kanan: data usaha */}
-            <div className="rounded-xl border border-ink/5 bg-white p-6">
-                <h3 className="font-display text-base font-bold text-ink">
-                    {isAdmin ? "Data Akun" : "Data Usaha"}
-                </h3>
-
-                {loading ? (
-                    <div className="mt-4 space-y-3">
-                        {[0, 1, 2].map((i) => (
-                            <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
-                        ))}
-                    </div>
-                ) : (
-                    <>
-                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <Field label="Nama lengkap">
-                                <input
-                                    value={form.name ?? ""}
-                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </Field>
-
-                            <Field label="Email" hint="Email tidak bisa diubah">
-                                <input
-                                    value={user.email}
-                                    disabled
-                                    className={`${inputClass} cursor-not-allowed bg-paper-soft text-ink-soft`}
-                                />
-                            </Field>
-
-                            <Field label="No. HP">
-                                <input
-                                    value={form.phone ?? ""}
-                                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                    placeholder="08xxxxxxxxxx"
-                                    className={inputClass}
-                                />
-                            </Field>
-
-                            {!isAdmin && (
-                                <>
-                                    <Field label={isSupplier ? "Nama kelompok / distributor" : "Nama usaha"}>
-                                        <input
-                                            value={
-                                                (isSupplier ? form.groupName : form.businessName) ?? ""
-                                            }
-                                            onChange={(e) =>
-                                                setForm(
-                                                    isSupplier
-                                                        ? { ...form, groupName: e.target.value }
-                                                        : { ...form, businessName: e.target.value }
-                                                )
-                                            }
-                                            className={inputClass}
-                                        />
-                                    </Field>
-
-                                    {!isSupplier && (
-                                        <Field label="Jenis usaha">
-                                            <input
-                                                value={form.businessType ?? ""}
-                                                onChange={(e) =>
-                                                    setForm({ ...form, businessType: e.target.value })
-                                                }
-                                                placeholder="Katering, Warung, Kafe"
-                                                className={inputClass}
-                                            />
-                                        </Field>
-                                    )}
-
-                                    <Field label="Kota">
-                                        <input
-                                            value={form.city ?? ""}
-                                            onChange={(e) => setForm({ ...form, city: e.target.value })}
-                                            className={inputClass}
-                                        />
-                                    </Field>
-
-                                    <div className="sm:col-span-2">
-                                        <Field label="Alamat">
-                                            <textarea
-                                                value={form.address ?? ""}
-                                                onChange={(e) =>
-                                                    setForm({ ...form, address: e.target.value })
-                                                }
-                                                rows={2}
-                                                className={inputClass}
-                                            />
-                                        </Field>
-                                    </div>
-                                </>
-                            )}
+                {/* Kolom kanan: Data Usaha */}
+                <div className="flex flex-col gap-6">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">
+                            <Building size={15} /> Informasi Akun & Operasional
                         </div>
-
-                        <div className="mt-5 flex items-center gap-3">
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="rounded-lg bg-brand-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark disabled:opacity-60"
-                            >
-                                {saving ? "Menyimpan..." : "Simpan perubahan"}
-                            </button>
-
-                            {user.createdAt && (
-                                <span className="text-xs text-ink-soft">
-                                    Bergabung {formatDate(user.createdAt)}
-                                </span>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {isSupplier && (
-                    <div className="rounded-xl border border-ink/5 bg-white p-6">
-                        <h3 className="font-display text-base font-bold text-ink">
-                            Rekening Penerimaan Dana
+                        <h3 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                            {isAdmin ? "Data Akun Administrator" : "Data Profil Usaha"}
                         </h3>
-                        <p className="mt-1 text-sm text-ink-soft">
-                            Pembayaran UMKM masuk lebih dulu ke rekening platform, lalu diteruskan
-                            ke rekening ini setelah dipotong komisi. UMKM yang membayar manual juga
-                            melihat rekening ini sebagai tujuan transfer.
+                        <p className="mt-1 text-sm font-medium text-slate-500">
+                            Perbarui informasi kontak dan alamat operasional Anda di sini.
                         </p>
 
-                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <Field label="Nama bank">
-                                <input
-                                    value={form.bankName ?? ""}
-                                    onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-                                    placeholder="Bank Aceh Syariah"
-                                    className={inputClass}
-                                />
-                            </Field>
-
-                            <Field label="Nomor rekening">
-                                <input
-                                    value={form.bankAccountNumber ?? ""}
-                                    onChange={(e) =>
-                                        setForm({ ...form, bankAccountNumber: e.target.value })
-                                    }
-                                    placeholder="0102030405"
-                                    className={inputClass}
-                                />
-                            </Field>
-
-                            <div className="sm:col-span-2">
-                                <Field label="Atas nama">
-                                    <input
-                                        value={form.bankAccountHolder ?? ""}
-                                        onChange={(e) =>
-                                            setForm({ ...form, bankAccountHolder: e.target.value })
-                                        }
-                                        placeholder="Kelompok Tani Makmur"
-                                        className={inputClass}
-                                    />
-                                </Field>
+                        {loading ? (
+                            <div className="mt-6 space-y-4">
+                                {[0, 1, 2, 3].map((i) => (
+                                    <div key={i} className="h-12 animate-pulse rounded-2xl bg-slate-100" />
+                                ))}
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                                    <Field label="Nama Lengkap">
+                                        <input
+                                            value={form.name ?? ""}
+                                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                            className={inputClass}
+                                        />
+                                    </Field>
 
+                                    <Field label="Alamat Email (Akun)" hint="Email terdaftar tidak dapat diubah">
+                                        <input
+                                            value={user.email}
+                                            disabled
+                                            className={`${inputClass} cursor-not-allowed bg-slate-100 text-slate-500`}
+                                        />
+                                    </Field>
+
+                                    <Field label="Nomor Telepon / WhatsApp">
+                                        <input
+                                            value={form.phone ?? ""}
+                                            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                            placeholder="08xxxxxxxxxx"
+                                            className={inputClass}
+                                        />
+                                    </Field>
+
+                                    {!isAdmin && (
+                                        <>
+                                            <Field label={isSupplier ? "Nama Kelompok Tani / Distributor" : "Nama Bisnis / Usaha"}>
+                                                <input
+                                                    value={
+                                                        (isSupplier ? form.groupName : form.businessName) ?? ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        setForm(
+                                                            isSupplier
+                                                                ? { ...form, groupName: e.target.value }
+                                                                : { ...form, businessName: e.target.value }
+                                                        )
+                                                    }
+                                                    className={inputClass}
+                                                />
+                                            </Field>
+
+                                            {!isSupplier && (
+                                                <Field label="Jenis Usaha UMKM">
+                                                    <input
+                                                        value={form.businessType ?? ""}
+                                                        onChange={(e) =>
+                                                            setForm({ ...form, businessType: e.target.value })
+                                                        }
+                                                        placeholder="Katering, Warung Nasi, Kafe"
+                                                        className={inputClass}
+                                                    />
+                                                </Field>
+                                            )}
+
+                                            <Field label="Kota / Kabupaten">
+                                                <input
+                                                    value={form.city ?? ""}
+                                                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                                                    className={inputClass}
+                                                />
+                                            </Field>
+
+                                            <div className="sm:col-span-2">
+                                                <Field label="Alamat Lengkap">
+                                                    <textarea
+                                                        value={form.address ?? ""}
+                                                        onChange={(e) =>
+                                                            setForm({ ...form, address: e.target.value })
+                                                        }
+                                                        rows={3}
+                                                        className={inputClass}
+                                                    />
+                                                </Field>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-100">
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-60"
+                                    >
+                                        {saving ? "Menyimpan Perubahan..." : "Simpan Perubahan Profil"}
+                                    </button>
+
+                                    {user.createdAt && (
+                                        <span className="text-xs font-semibold text-slate-400">
+                                            Bergabung sejak {formatDate(user.createdAt)}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Khusus Supplier: Rekening Pencairan (Dipindah ke Luar Grid Biar Full Width & Balance) */}
+            {isSupplier && !loading && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
+                        <Landmark size={15} /> Pengaturan Finansial
+                    </div>
+                    <h3 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                        Rekening Penerimaan Dana
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500 leading-relaxed max-w-3xl">
+                        Pembayaran dari UMKM ditampung di rekening platform, lalu diteruskan ke rekening ini setelah dipotong komisi layanan. UMKM yang membayar manual juga melihat rekening ini sebagai tujuan transfer.
+                    </p>
+
+                    <div className="mt-6 grid gap-5 sm:grid-cols-3">
+                        <Field label="Nama Bank">
+                            <input
+                                value={form.bankName ?? ""}
+                                onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                                placeholder="Misal: Bank Mandiri / BCA / BSI"
+                                className={inputClass}
+                            />
+                        </Field>
+
+                        <Field label="Nomor Rekening">
+                            <input
+                                value={form.bankAccountNumber ?? ""}
+                                onChange={(e) =>
+                                    setForm({ ...form, bankAccountNumber: e.target.value })
+                                }
+                                placeholder="0102030405"
+                                className={inputClass}
+                            />
+                        </Field>
+
+                        <Field label="Nama Pemilik Rekening (Atas Nama)">
+                            <input
+                                value={form.bankAccountHolder ?? ""}
+                                onChange={(e) =>
+                                    setForm({ ...form, bankAccountHolder: e.target.value })
+                                }
+                                placeholder="Kelompok Tani Makmur"
+                                className={inputClass}
+                            />
+                        </Field>
+                    </div>
+
+                    <div className="mt-8 flex pt-6 border-t border-slate-100">
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="mt-5 rounded-lg bg-brand-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand-green-dark disabled:opacity-60"
+                            className="rounded-2xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:opacity-60"
                         >
-                            {saving ? "Menyimpan..." : "Simpan rekening"}
+                            {saving ? "Menyimpan..." : "Simpan Rekening Pemasok"}
                         </button>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -414,7 +428,7 @@ function PasswordCard({
 
     async function submit() {
         if (next !== confirm) {
-            onError("Konfirmasi password tidak cocok");
+            onError("Konfirmasi password baru tidak cocok.");
             return;
         }
         setSaving(true);
@@ -424,7 +438,7 @@ function PasswordCard({
             setNext("");
             setConfirm("");
             setOpen(false);
-            onDone("Password berhasil diubah");
+            onDone("Password berhasil diubah dengan aman");
         } catch (err) {
             onError(getApiErrorMessage(err));
         } finally {
@@ -433,22 +447,23 @@ function PasswordCard({
     }
 
     return (
-        <div className="rounded-xl border border-ink/5 bg-white p-6">
-            <div>
-                <h3 className="font-display text-base font-bold text-ink">Keamanan</h3>
-                <p className="mt-1 text-sm text-ink-soft">Ubah password akun kamu.</p>
-
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-ink transition hover:bg-paper-soft"
-                >
-                    <KeyRound size={15} /> {open ? "Tutup" : "Ubah password"}
-                </button>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">
+                <ShieldCheck size={15} /> Keamanan Akun
             </div>
+            <h3 className="font-display text-lg font-extrabold text-slate-900">Ubah Kata Sandi</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">Amankan akun Anda dengan kata sandi yang kuat.</p>
+
+            <button
+                onClick={() => setOpen(!open)}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+            >
+                <KeyRound size={16} /> {open ? "Tutup Formulir" : "Ubah Kata Sandi"}
+            </button>
 
             {open && (
-                <div className="mt-5 grid gap-4">
-                    <Field label="Password saat ini">
+                <div className="mt-6 space-y-4 pt-4 border-t border-slate-100">
+                    <Field label="Kata Sandi Saat Ini">
                         <input
                             type="password"
                             value={current}
@@ -456,7 +471,7 @@ function PasswordCard({
                             className={inputClass}
                         />
                     </Field>
-                    <Field label="Password baru">
+                    <Field label="Kata Sandi Baru">
                         <input
                             type="password"
                             value={next}
@@ -464,7 +479,7 @@ function PasswordCard({
                             className={inputClass}
                         />
                     </Field>
-                    <Field label="Ulangi password baru">
+                    <Field label="Ulangi Kata Sandi Baru">
                         <input
                             type="password"
                             value={confirm}
@@ -473,13 +488,13 @@ function PasswordCard({
                         />
                     </Field>
 
-                    <div>
+                    <div className="pt-2">
                         <button
                             onClick={submit}
                             disabled={saving || !current || !next}
-                            className="rounded-lg bg-brand-blue px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+                            className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 disabled:opacity-50"
                         >
-                            {saving ? "Menyimpan..." : "Simpan password"}
+                            {saving ? "Menyimpan Sandi..." : "Simpan Kata Sandi Baru"}
                         </button>
                     </div>
                 </div>
@@ -489,7 +504,7 @@ function PasswordCard({
 }
 
 const inputClass =
-    "w-full rounded-lg border border-ink/10 px-3 py-2 text-sm outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/20";
+    "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500";
 
 function Field({
     label,
@@ -502,9 +517,9 @@ function Field({
 }) {
     return (
         <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-ink-soft">{label}</span>
+            <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600">{label}</span>
             {children}
-            {hint && <span className="mt-1 block text-xs text-ink-soft">{hint}</span>}
+            {hint && <span className="mt-1.5 block text-[11px] font-medium text-slate-400">{hint}</span>}
         </label>
     );
 }

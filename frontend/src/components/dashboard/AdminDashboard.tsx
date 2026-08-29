@@ -12,7 +12,16 @@ import {
     CartesianGrid,
     Legend,
 } from "recharts";
-import { Users, Store, TrendingUp, Wallet } from "lucide-react";
+import {
+    Users,
+    Store,
+    TrendingUp,
+    Wallet,
+    ShieldCheck,
+    Activity,
+    PackageSearch,
+    ListOrdered
+} from "lucide-react";
 import { StatCard } from "./StatCard";
 import { PaymentBadge } from "./PaymentBadge";
 import { getApiErrorMessage } from "@/lib/api";
@@ -43,9 +52,15 @@ export function AdminDashboard() {
 
     if (error) {
         return (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
                 <h2 className="font-display font-bold text-red-800">Data gagal dimuat</h2>
                 <p className="mt-1 text-sm text-red-700">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+                >
+                    Muat ulang
+                </button>
             </div>
         );
     }
@@ -53,179 +68,217 @@ export function AdminDashboard() {
     const f = stats?.finance;
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="rounded-2xl bg-gradient-to-r from-[#1B1A2E] to-[#D97706] p-6 text-white">
-                <div className="text-xs font-medium text-white/70">Pengelola Platform</div>
-                <h2 className="mt-1 font-display text-xl font-bold">Ringkasan Platform</h2>
-                <p className="mt-1 text-sm text-white/85">
-                    Kinerja bisnis PanganKreatif — mitra terdaftar, nilai transaksi, dan pendapatan
-                    komisi.
-                </p>
+        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+            {/* Banner Utama Admin (Tema Indigo & Dark Slate Premium) */}
+            <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] p-6 sm:p-8 md:p-10 text-white shadow-2xl border border-slate-800">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-32 -left-10 h-72 w-72 rounded-full bg-purple-500/15 blur-3xl" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-indigo-200 backdrop-blur-md border border-white/10 mb-4">
+                            <ShieldCheck size={14} className="text-indigo-300" />
+                            Pusat Kendali Platform
+                        </div>
+                        <h2 className="font-display text-2xl md:text-4xl font-extrabold tracking-tight text-white">
+                            Ringkasan Ekosistem
+                        </h2>
+                        <p className="mt-2.5 text-sm md:text-base text-slate-300 max-w-xl leading-relaxed">
+                            Pantau metrik utama, pergerakan nilai transaksi kotor (GMV), serta arus pendapatan komisi dari PanganKreatif secara *real-time*.
+                        </p>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 backdrop-blur-sm">
+                        <Activity className="text-indigo-400" size={24} />
+                        <div>
+                            <div className="text-[11px] text-slate-400 uppercase tracking-wider font-bold">Status Server</div>
+                            <div className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                Online & Stabil
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+            {/* KARTU STATISTIK ADMIN */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     icon={Users}
                     label="UMKM Terdaftar"
-                    value={loading ? "..." : String(stats?.users.umkm ?? 0)}
-                    sub="Mitra hilir"
+                    value={loading ? "..." : `${stats?.users.umkm ?? 0} mitra`}
+                    sub="Pengguna aktif di hilir"
+                    color="text-indigo-600"
                 />
                 <StatCard
                     icon={Store}
                     label="Pemasok Mitra"
-                    value={loading ? "..." : String(stats?.users.supplier ?? 0)}
-                    sub={`${stats?.catalog.products ?? 0} produk di katalog`}
-                    color="text-brand-green"
+                    value={loading ? "..." : `${stats?.users.supplier ?? 0} mitra`}
+                    sub={`${stats?.catalog.products ?? 0} komoditas di katalog`}
+                    color="text-indigo-600"
                 />
                 <StatCard
                     icon={TrendingUp}
-                    label="Nilai Transaksi"
+                    label="Nilai Transaksi (GMV)"
                     value={loading ? "..." : formatRupiahShort(f?.gmv ?? 0)}
-                    // Angka penuh ditaruh di baris bawah — miliaran rupiah
-                    // sulit dibaca kalau ditulis utuh di angka besar
-                    sub={loading ? "" : `${formatRupiah(f?.gmv ?? 0)} · ${f?.successCount ?? 0} transaksi`}
-                    color="text-brand-blue"
+                    sub={loading ? "" : `${formatRupiah(f?.gmv ?? 0)} · ${f?.successCount ?? 0} tranksaksi`}
+                    color="text-indigo-600"
                 />
                 <StatCard
                     icon={Wallet}
-                    label="Pendapatan Platform"
+                    label="Pendapatan Bersih"
                     value={loading ? "..." : formatRupiahShort(f?.revenue ?? 0)}
                     sub={
                         loading
                             ? ""
-                            : `Komisi ${formatRupiahShort(f?.komisi ?? 0)} + margin ${formatRupiahShort(f?.margin ?? 0)}`
+                            : `Komisi ${formatRupiahShort(f?.komisi ?? 0)} + Margin ${formatRupiahShort(f?.margin ?? 0)}`
                     }
-                    color="text-amber-500"
+                    color="text-emerald-600"
                 />
             </div>
 
-            {/* Ringkasan laba rugi — cerminan Bab V proposal */}
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-                <h3 className="font-display text-lg font-bold text-ink">Ikhtisar Keuangan</h3>
-                <p className="mt-1 text-sm text-ink-soft">
-                    Dihitung dari transaksi nyata di platform, mengikuti struktur laba rugi pada
-                    rencana bisnis.
-                </p>
-
-                <div className="mt-5 space-y-2">
-                    <MoneyRow
-                        label="Komisi transaksi supply chain"
-                        value={f?.komisi ?? 0}
-                        hint={`Tarif ${((stats?.commissionRate ?? 0) * 100).toFixed(1)}% dari nilai transaksi`}
-                    />
-                    <MoneyRow
-                        label="Margin distribusi grosir"
-                        value={f?.margin ?? 0}
-                        hint="Imbalan atas volume bahan baku yang disalurkan"
-                    />
-
-                    <div className="border-t border-slate-100 pt-2">
-                        <MoneyRow label="Total pendapatan" value={f?.revenue ?? 0} bold />
-                    </div>
-
-                    <MoneyRow
-                        label="Harga pokok penjualan"
-                        value={-(f?.cogs ?? 0)}
-                        hint={`${f?.successCount ?? 0} transaksi x biaya komputasi & verifikasi`}
-                    />
-
-                    <div className="border-t border-slate-100 pt-2">
-                        <MoneyRow label="Laba kotor" value={f?.grossProfit ?? 0} bold />
-                    </div>
-                </div>
-
-                {(f?.pendingCount ?? 0) > 0 && (
-                    <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                        {f?.pendingCount} pembayaran senilai {formatRupiah(f?.pendingValue ?? 0)}{" "}
-                        masih menunggu konfirmasi pemasok dan belum dihitung sebagai pendapatan.
+            <div className="grid gap-6 lg:grid-cols-3">
+                {/* Ikhtisar Keuangan (Laba Rugi) */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm lg:col-span-1 flex flex-col">
+                    <h3 className="font-display text-lg font-bold text-slate-900">Buku Besar Keuangan</h3>
+                    <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                        Rekapitulasi berdasarkan transaksi riil, merujuk pada struktur rancangan laba rugi bisnis.
                     </p>
-                )}
-            </div>
 
-            {/* Tren bulanan */}
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-                <h3 className="font-display text-lg font-bold text-ink">Tren 6 Bulan Terakhir</h3>
+                    <div className="mt-6 flex-1 space-y-4">
+                        <MoneyRow
+                            label="Komisi Transaksi"
+                            value={f?.komisi ?? 0}
+                            hint={`Tarif ${((stats?.commissionRate ?? 0) * 100).toFixed(1)}% dari nilai transaksi`}
+                        />
+                        <MoneyRow
+                            label="Margin Distribusi"
+                            value={f?.margin ?? 0}
+                            hint="Imbalan volume grosir disalurkan"
+                        />
 
-                <div className="mt-5 h-72 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={stats?.series ?? []}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis dataKey="label" fontSize={12} />
-                            <YAxis
-                                yAxisId="left"
-                                fontSize={12}
-                                tickFormatter={(v) => formatRupiahShort(v)}
-                            />
-                            <YAxis
-                                yAxisId="right"
-                                orientation="right"
-                                fontSize={12}
-                                tickFormatter={(v) => formatRupiahShort(v)}
-                            />
-                            <Tooltip
-                                // Recharts v3 punya tipe parameter sendiri, jadi
-                                // biarkan disimpulkan lalu konversi di dalam
-                                formatter={(value, name) => [
-                                    formatRupiah(Number(value)),
-                                    String(name),
-                                ]}
-                            />
-                            <Legend />
-                            <Bar
-                                yAxisId="left"
-                                dataKey="gmv"
-                                name="Nilai transaksi"
-                                fill="#2563eb"
-                                radius={[4, 4, 0, 0]}
-                            />
-                            <Line
-                                yAxisId="right"
-                                type="monotone"
-                                dataKey="revenue"
-                                name="Komisi platform"
-                                stroke="#16a34a"
-                                strokeWidth={3}
-                            />
-                        </ComposedChart>
-                    </ResponsiveContainer>
+                        <div className="border-t-2 border-dashed border-slate-100 pt-4">
+                            <MoneyRow label="Total Pendapatan" value={f?.revenue ?? 0} bold />
+                        </div>
+
+                        <MoneyRow
+                            label="Harga Pokok (HPP)"
+                            value={-(f?.cogs ?? 0)}
+                            hint={`${f?.successCount ?? 0} tx × beban server & verifikasi`}
+                        />
+
+                        <div className="border-t-2 border-slate-800 pt-4 mt-2">
+                            <MoneyRow label="Laba Kotor" value={f?.grossProfit ?? 0} bold total />
+                        </div>
+                    </div>
+
+                    {(f?.pendingCount ?? 0) > 0 && (
+                        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 leading-relaxed shadow-sm">
+                            <span className="font-bold">{f?.pendingCount} pembayaran</span> senilai <span className="font-bold">{formatRupiah(f?.pendingValue ?? 0)}</span> masih dalam proses kliring pemasok dan belum dibukukan.
+                        </div>
+                    )}
+                </div>
+
+                {/* Grafik Tren Bulanan */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm lg:col-span-2 flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="font-display text-lg font-bold text-slate-900">Pergerakan GMV & Komisi</h3>
+                            <p className="mt-1 text-xs text-slate-500">Tren pertumbuhan 6 bulan terakhir</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-2 h-72 w-full flex-1">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={stats?.series ?? []} margin={{ top: 10, right: -10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} tickMargin={10} />
+                                <YAxis
+                                    yAxisId="left"
+                                    fontSize={11}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(v) => formatRupiahShort(v)}
+                                />
+                                <YAxis
+                                    yAxisId="right"
+                                    orientation="right"
+                                    fontSize={11}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(v) => formatRupiahShort(v)}
+                                />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value, name) => [
+                                        formatRupiah(Number(value)),
+                                        String(name),
+                                    ]}
+                                />
+                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} iconType="circle" />
+                                <Bar
+                                    yAxisId="left"
+                                    dataKey="gmv"
+                                    name="Nilai Transaksi (GMV)"
+                                    fill="#4f46e5" // Indigo 600
+                                    radius={[4, 4, 0, 0]}
+                                    maxBarSize={40}
+                                />
+                                <Line
+                                    yAxisId="right"
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    name="Pendapatan Komisi"
+                                    stroke="#10b981" // Emerald 500
+                                    strokeWidth={3}
+                                    dot={{ r: 4, strokeWidth: 2 }}
+                                    activeDot={{ r: 6 }}
+                                />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2">
                 {/* Komoditas teratas */}
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
-                    <h3 className="font-display text-lg font-bold text-ink">
-                        Komoditas Paling Bernilai
-                    </h3>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+                    <div className="flex items-center gap-2 mb-6">
+                        <PackageSearch className="text-indigo-600" size={20} />
+                        <h3 className="font-display text-lg font-bold text-slate-900">
+                            Volume Komoditas Teratas
+                        </h3>
+                    </div>
 
                     {loading ? (
                         <Skeleton count={3} />
                     ) : (stats?.topCommodities.length ?? 0) === 0 ? (
-                        <p className="mt-4 text-sm text-ink-soft">
-                            Belum ada transaksi lunas untuk dianalisis.
-                        </p>
+                        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                            <p className="text-sm text-slate-500">Belum ada transaksi lunas untuk dianalisis.</p>
+                        </div>
                     ) : (
-                        <div className="mt-4 space-y-3">
+                        <div className="space-y-4">
                             {stats?.topCommodities.map((c) => {
                                 const max = stats.topCommodities[0].value || 1;
                                 return (
-                                    <div key={c.name}>
-                                        <div className="mb-1 flex justify-between text-sm">
-                                            <span>{c.name}</span>
-                                            <span className="font-semibold text-brand-blue">
+                                    <div key={c.name} className="rounded-xl bg-slate-50 p-4 border border-slate-100">
+                                        <div className="mb-2 flex justify-between text-sm">
+                                            <span className="font-bold text-slate-800">{c.name}</span>
+                                            <span className="font-extrabold text-indigo-600">
                                                 {formatRupiah(c.value)}
                                             </span>
                                         </div>
-                                        <div className="h-2 rounded-full bg-slate-100">
+                                        <div className="h-2.5 rounded-full bg-slate-200 overflow-hidden">
                                             <div
-                                                className="h-2 rounded-full bg-brand-blue"
-                                                style={{
-                                                    width: `${Math.max((c.value / max) * 100, 4)}%`,
-                                                }}
+                                                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                                                style={{ width: `${Math.max((c.value / max) * 100, 4)}%` }}
                                             />
                                         </div>
-                                        <div className="mt-1 text-xs text-ink-soft">
-                                            {formatNumber(c.quantity)} {c.unit} tersalur
+                                        <div className="mt-2 text-xs font-medium text-slate-500">
+                                            Total <strong className="text-slate-700">{formatNumber(c.quantity)} {c.unit}</strong> disalurkan
                                         </div>
                                     </div>
                                 );
@@ -235,34 +288,39 @@ export function AdminDashboard() {
                 </div>
 
                 {/* Transaksi terbaru */}
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
-                    <h3 className="font-display text-lg font-bold text-ink">Transaksi Terbaru</h3>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+                    <div className="flex items-center gap-2 mb-6">
+                        <ListOrdered className="text-indigo-600" size={20} />
+                        <h3 className="font-display text-lg font-bold text-slate-900">Monitor Transaksi</h3>
+                    </div>
 
                     {loading ? (
                         <Skeleton count={4} />
                     ) : (stats?.recentTransactions.length ?? 0) === 0 ? (
-                        <p className="mt-4 text-sm text-ink-soft">Belum ada transaksi tercatat.</p>
+                        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                            <p className="text-sm text-slate-500">Belum ada transaksi tercatat di database.</p>
+                        </div>
                     ) : (
-                        <div className="mt-4 space-y-3">
+                        <div className="space-y-3">
                             {stats?.recentTransactions.map((t) => (
                                 <div
                                     key={t.id}
-                                    className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3 text-sm last:border-0 last:pb-0"
+                                    className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-white p-4 transition hover:border-slate-200 hover:shadow-sm"
                                 >
                                     <div className="min-w-0">
-                                        <div className="truncate font-medium text-ink">
+                                        <div className="truncate font-bold text-slate-900 text-sm">
                                             {t.umkm}
                                         </div>
-                                        <div className="truncate text-xs text-ink-soft">
-                                            {t.product} dari {t.supplier} · {formatDate(t.createdAt)}
+                                        <div className="truncate text-xs text-slate-500 mt-1">
+                                            <span className="font-medium text-slate-700">{t.product}</span> dari {t.supplier}
+                                            <span className="mx-1.5 text-slate-300">|</span>
+                                            {formatDate(t.createdAt)}
                                         </div>
                                     </div>
 
-                                    <div className="shrink-0 text-right">
-                                        <div className="font-medium">{formatRupiah(t.amount)}</div>
-                                        <div className="mt-1">
-                                            <PaymentBadge status={t.status} />
-                                        </div>
+                                    <div className="shrink-0 text-right flex flex-col items-end gap-1.5">
+                                        <div className="font-extrabold text-slate-900 text-sm">{formatRupiah(t.amount)}</div>
+                                        <PaymentBadge status={t.status} />
                                     </div>
                                 </div>
                             ))}
@@ -279,20 +337,24 @@ function MoneyRow({
     value,
     hint,
     bold,
+    total,
 }: {
     label: string;
     value: number;
     hint?: string;
     bold?: boolean;
+    total?: boolean;
 }) {
     return (
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-start justify-between gap-4">
             <div>
-                <span className={bold ? "font-semibold text-ink" : "text-ink-soft"}>{label}</span>
-                {hint && <div className="text-xs text-ink-soft">{hint}</div>}
+                <span className={bold ? (total ? "font-extrabold text-slate-900 uppercase" : "font-bold text-slate-800") : "font-semibold text-slate-600"}>
+                    {label}
+                </span>
+                {hint && <div className="text-[11px] font-medium text-slate-400 mt-0.5">{hint}</div>}
             </div>
             <span
-                className={`shrink-0 font-display ${bold ? "text-lg font-bold" : "text-sm"} ${value < 0 ? "text-red-600" : "text-brand-green"
+                className={`shrink-0 font-display ${bold ? (total ? "text-xl font-extrabold" : "text-lg font-bold") : "text-sm font-semibold"} ${value < 0 ? "text-red-500" : "text-emerald-600"
                     }`}
             >
                 {value < 0 ? `- ${formatRupiah(Math.abs(value))}` : formatRupiah(value)}
@@ -303,9 +365,9 @@ function MoneyRow({
 
 function Skeleton({ count }: { count: number }) {
     return (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-slate-100" />
             ))}
         </div>
     );

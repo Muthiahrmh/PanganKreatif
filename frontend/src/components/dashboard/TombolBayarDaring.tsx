@@ -84,8 +84,10 @@ export function TombolBayarMidtrans({
 
     if (tahap === "berhasil") {
         return (
-            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2.5 text-sm font-medium text-green-700">
-                <Check size={16} className="shrink-0" />
+            <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 border border-emerald-100 shadow-sm">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0">
+                    <Check size={14} strokeWidth={3} />
+                </div>
                 Lunas{kanal ? ` lewat ${kanal}` : ""}
             </div>
         );
@@ -94,13 +96,13 @@ export function TombolBayarMidtrans({
     const sibuk = tahap === "menyiapkan" || tahap === "memeriksa";
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-3">
             {tahap === "diam" && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-900 leading-relaxed shadow-sm">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
                     <span>
                         Pilih cara bayar dengan teliti. Di dalam jendela pembayaran tidak ada tombol
-                        kembali — kalau salah pilih, tutup jendelanya lalu klik Bayar lagi.
+                        kembali — kalau salah pilih, tutup jendelanya lalu klik <strong>Bayar lagi</strong>.
                     </span>
                 </div>
             )}
@@ -108,34 +110,36 @@ export function TombolBayarMidtrans({
             <button
                 onClick={bayar}
                 disabled={sibuk || tahap === "membayar"}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-blue px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-blue-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
                 {sibuk ? (
                     <>
-                        <Loader2 size={15} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin" />
                         {tahap === "menyiapkan" ? "Menyiapkan..." : "Memeriksa status..."}
                     </>
                 ) : (
                     <>
-                        <CreditCard size={15} />
+                        <CreditCard size={18} className="transition-transform group-hover:scale-110" />
                         Bayar {rupiah(jumlah)}
                     </>
                 )}
             </button>
 
             {tahap === "diam" && (
-                <p className="text-center text-xs text-ink-soft">
-                    GoPay, ShopeePay, QRIS, kartu, atau virtual account
+                <p className="text-center text-xs font-medium text-slate-400">
+                    Mendukung GoPay, ShopeePay, QRIS, Kartu, atau Virtual Account
                 </p>
             )}
 
             {tahap === "menunggu" && pesan && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{pesan}</p>
+                <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs font-medium text-amber-800 leading-relaxed shadow-sm">
+                    {pesan}
+                </p>
             )}
 
             {tahap === "gagal" && pesan && (
-                <p className="flex items-start gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    <X size={13} className="mt-0.5 shrink-0" />
+                <p className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-xs font-medium text-red-700 shadow-sm">
+                    <X size={16} className="mt-0.5 shrink-0" />
                     {pesan}
                 </p>
             )}

@@ -89,12 +89,13 @@ export function AuthLayout({
 
                         {/* KUNCI PERUBAHAN ADA DI SINI: Ukuran gambar dibedakan berdasarkan peran */}
                         <div
-                            className={`pointer-events-none absolute bottom-0 left-0 right-0 z-[1] ${peran === "umkm"
-                                    // UMKM: Diberikan scale untuk memperbesar gambar agar tidak kekecilan
+                            className={`pointer-events-none absolute bottom-0 left-0 right-0 z-[1] ${
+                                peran === "umkm"
                                     ? "top-[15%] scale-[1.2] xl:scale-[1.3] origin-bottom-left"
-                                    // Tani: Batas atas diturunkan ke 45% agar gambar tidak tinggi menabrak teks
-                                    : "top-[45%] xl:top-[40%]"
-                                }`}
+                                    // Tani: Batas atas kita naikkan ke 5-10% supaya ruang tumbuhnya lega,
+                                    // lalu scale kita besarkan drastis sampai 160% - 180%!
+                                    : "top-[10%] xl:top-[5%] scale-[1.6] xl:scale-[1.8] origin-bottom-left"
+                            }`}
                         >
                             <Image
                                 key={backgroundImage}
