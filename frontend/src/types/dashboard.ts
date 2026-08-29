@@ -86,6 +86,12 @@ export interface RekeningPemasok {
     atasNama: string | null;
 }
 
+export interface DompetDigitalPemasok {
+    nomor: string;
+    atasNama: string | null;
+    providers: string[];
+}
+
 export interface ProcurementOrderItem {
     id: string;
     orderId: string;
@@ -94,6 +100,7 @@ export interface ProcurementOrderItem {
     order: ProcurementOrder;
     pricing?: BulkPricing;
     subtotal?: number;
+    dompetDigital?: DompetDigitalPemasok | null;
     /** Rekening tujuan transfer, kalau pemasok sudah mengisinya */
     rekening?: RekeningPemasok | null;
     transactions?: {

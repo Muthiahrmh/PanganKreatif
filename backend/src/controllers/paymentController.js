@@ -131,21 +131,47 @@ async function buatPembayaran(req, res) {
         return res.status(502).json({ error: err.message });
     }
 
-    const transaksi = await prisma.transaction.create({
-        data: {
-            id: transaksiId,
-            orderItemId: item.id,
-            amount: bagi.amount,
-            status: 'pending',
-            platformFee: bagi.platformFee,
-            commissionRate: bagi.commissionRate,
-            distributionMargin: bagi.distributionMargin,
-            marginRate: bagi.marginRate,
-            supplierPayout: bagi.supplierPayout,
-            gatewayOrderId: orderId,
-            snapToken: sesi.token,
-        },
-    });
+    let transaksi;
+    try {
+        transaksi = await prisma.transaction.create({
+            data: {
+                id: transaksiId,
+                orderItemId: item.id,
+                amount: bagi.amount,
+                status: 'pending',
+                platformFee: bagi.platformFee,
+                commissionRate: bagi.commissionRate,
+                distributionMargin: bagi.distributionMargin,
+                marginRate: bagi.marginRate,
+                supplierPayout: bagi.supplierPayout,
+                gatewayOrderId: orderId,
+                snapToken: sesi.token,
+            },
+        });
+    } catch (err) {
+        // P2002: index parsial transactions_pending_per_item kena —
+        // request lain menang lebih dulu (klik dobel/retry jaringan).
+        // Sesi Snap yang baru dibuat di atas dibuang, dan sesi milik
+        // pemenang race dipakai supaya pengguna tidak melihat error.
+        if (err.code === 'P2002') {
+            const punyaOrang = await prisma.transaction.findFirst({
+                where: { orderItemId: item.id, status: 'pending' },
+                orderBy: { createdAt: 'desc' },
+            });
+            if (punyaOrang) {
+                return res.json({
+                    transactionId: punyaOrang.id,
+                    orderId: punyaOrang.gatewayOrderId,
+                    snapToken: punyaOrang.snapToken,
+                    amount: Number(punyaOrang.amount),
+                    clientKey: midtrans.CLIENT_KEY,
+                    produksi: midtrans.PRODUKSI,
+                    dipakaiUlang: true,
+                });
+            }
+        }
+        throw err;
+    }
 
     res.status(201).json({
         transactionId: transaksi.id,

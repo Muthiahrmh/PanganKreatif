@@ -10,6 +10,8 @@ import { formatNumber, formatRupiah } from "@/lib/format";
 interface Pengiriman {
     km: number;
     samaKota: boolean;
+    /** true = dihitung dari alamat asli (geocoding), false = perkiraan titik-pusat-kota */
+    presisi: boolean;
     estimasi: { hari: number; label: string; catatan: string };
 }
 
@@ -405,11 +407,19 @@ export default function SuppliersPage() {
                                                         {o.pengiriman && (
                                                             <span className="inline-flex items-center gap-1.5">
                                                                 <Truck size={13} className="text-slate-400" />
-                                                                {o.pengiriman.samaKota
+                                                                {o.pengiriman.samaKota && !o.pengiriman.presisi
                                                                     ? "Pengiriman dalam kota"
-                                                                    : `Jarak ±${o.pengiriman.km} km`}
+                                                                    : `Jarak ${o.pengiriman.presisi ? "" : "±"}${o.pengiriman.km} km`}
                                                                 {" · "}
                                                                 <strong className="text-slate-700">{o.pengiriman.estimasi.label}</strong>
+                                                                {o.pengiriman.presisi && (
+                                                                    <span
+                                                                        title="Dihitung dari alamat asli, bukan perkiraan kota"
+                                                                        className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600"
+                                                                    >
+                                                                        presisi
+                                                                    </span>
+                                                                )}
                                                             </span>
                                                         )}
                                                     </div>

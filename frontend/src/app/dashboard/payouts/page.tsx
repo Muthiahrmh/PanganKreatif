@@ -14,11 +14,25 @@ interface Rekening {
     atasNama: string | null;
 }
 
+interface DompetDigital {
+    nomor: string;
+    atasNama: string | null;
+    providers: string[];
+}
+
+const LABEL_EWALLET: Record<string, string> = {
+    dana: "DANA",
+    gopay: "GoPay",
+    shopeepay: "ShopeePay",
+    ovo: "OVO",
+};
+
 interface BarisPemasok {
     supplierId: string;
     groupName: string;
     city: string;
     rekening: Rekening | null;
+    dompetDigital: DompetDigital | null;
     jumlahTransaksi: number;
     totalNilai: number;
     totalKomisi: number;
@@ -218,7 +232,7 @@ export default function PayoutsPage() {
                                 </div>
                             </div>
 
-                            {p.rekening ? (
+                            {p.rekening && (
                                 <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm">
                                     <span className="font-bold text-slate-900">{p.rekening.bank}</span>
                                     <span className="font-mono font-bold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">{p.rekening.nomor}</span>
@@ -239,16 +253,50 @@ export default function PayoutsPage() {
                                         a.n. <strong className="text-slate-800">{p.rekening.atasNama}</strong>
                                     </span>
                                 </div>
-                            ) : (
+                            )}
+
+                            {p.dompetDigital && (
+                                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-sm">
+                                    <span className="flex flex-wrap gap-1.5">
+                                        {p.dompetDigital.providers.map((prov) => (
+                                            <span
+                                                key={prov}
+                                                className="rounded-lg bg-white px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200"
+                                            >
+                                                {LABEL_EWALLET[prov] ?? prov}
+                                            </span>
+                                        ))}
+                                    </span>
+                                    <span className="font-mono font-bold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">{p.dompetDigital.nomor}</span>
+                                    <button
+                                        onClick={() =>
+                                            salin(p.dompetDigital?.nomor ?? "", `${p.supplierId}-ewallet`)
+                                        }
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-slate-50"
+                                    >
+                                        {tersalin === `${p.supplierId}-ewallet` ? (
+                                            <Check size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <Copy size={14} />
+                                        )}
+                                        {tersalin === `${p.supplierId}-ewallet` ? "Tersalin!" : "Salin Nomor"}
+                                    </button>
+                                    <span className="text-xs font-semibold text-slate-500 ml-auto">
+                                        a.n. <strong className="text-slate-800">{p.dompetDigital.atasNama}</strong>
+                                    </span>
+                                </div>
+                            )}
+
+                            {!p.rekening && !p.dompetDigital && (
                                 <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
-                                    ⚠️ Rekening belum diisi oleh pemasok. Harap instruksikan mereka untuk melengkapi profil sebelum pencairan dilakukan.
+                                    ⚠️ Belum ada rekening atau dompet digital yang diisi oleh pemasok. Harap instruksikan mereka untuk melengkapi profil sebelum pencairan dilakukan.
                                 </p>
                             )}
 
                             {tab === "pending" && (
                                 <button
                                     onClick={() => setSasaran(p)}
-                                    disabled={!p.rekening}
+                                    disabled={!p.rekening && !p.dompetDigital}
                                     className="mt-5 w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     Tandai Sudah Diteruskan
@@ -387,12 +435,18 @@ function ModalTandaiPayout({
                             {pemasok.rekening.bank} <span className="font-mono font-bold text-slate-700">{pemasok.rekening.nomor}</span> a.n. {pemasok.rekening.atasNama}
                         </div>
                     )}
+                    {pemasok.dompetDigital && (
+                        <div className="mt-1.5 text-xs font-semibold text-slate-500">
+                            {pemasok.dompetDigital.providers.map((p) => LABEL_EWALLET[p] ?? p).join(" / ")}{" "}
+                            <span className="font-mono font-bold text-slate-700">{pemasok.dompetDigital.nomor}</span> a.n. {pemasok.dompetDigital.atasNama}
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900 leading-relaxed">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
                     <span>
-                        Pastikan Anda telah melakukan transfer dana via m-banking sebelum menandainya di sini. Bukti transfer ini dapat dilihat langsung oleh pemasok.
+                        Pastikan Anda telah melakukan transfer dana via m-banking atau dompet digital sebelum menandainya di sini. Bukti transfer ini dapat dilihat langsung oleh pemasok.
                     </span>
                 </div>
 

@@ -8,6 +8,8 @@ const {
     kirimUlangVerifikasi,
     lupaPassword,
     resetPassword,
+    verifikasiOtpLogin,
+    kirimUlangOtpLogin,
 } = require('../controllers/authController');
 const {
     getProfile,
@@ -30,6 +32,10 @@ const upload = multer({
 router.post('/register', register);
 router.post('/login', login);
 router.get('/me', authenticate, me);
+
+// Lapis kedua login (OTP email) — terbuka, dipanggil sebelum token JWT ada
+router.post('/login/verify-otp', verifikasiOtpLogin);
+router.post('/login/otp/resend', kirimUlangOtpLogin);
 
 // Verifikasi email — terbuka, karena dipanggil sebelum bisa masuk
 router.post('/verify', verifikasiEmail);

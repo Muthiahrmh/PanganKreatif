@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PanganKreatif</string>
+    <string name="title_activity_main">PanganKreatif</string>
+    <string name="package_name">id.pangankreatif.app</string>
+    <string name="custom_url_scheme">id.pangankreatif.app</string>
+</resources>

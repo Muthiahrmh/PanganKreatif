@@ -157,29 +157,54 @@ function estimasiKirim(km) {
     return { hari: 14, label: '7-14 hari', catatan: 'Lintas pulau jauh' };
 }
 
-/**
- * Hitung jarak dan estimasi pengiriman antara dua kota.
- * @returns {null|{km: number, estimasi: object, samaKota: boolean}}
- */
-function hitungPengiriman(kotaAsal, kotaTujuan) {
-    if (!kotaAsal || !kotaTujuan) return null;
+function koordinatValid(lat, lon) {
+    return Number.isFinite(lat) && Number.isFinite(lon);
+}
 
-    const a = cariKoordinat(kotaAsal);
-    const b = cariKoordinat(kotaTujuan);
+/**
+ * Hitung jarak dan estimasi pengiriman antara dua lokasi.
+ *
+ * Menerima kota (string) untuk kompatibilitas lama, atau objek
+ * { kota, lat, lon } kalau ada hasil geocoding alamat yang presisi.
+ * Kalau kedua sisi punya koordinat presisi, jaraknya dihitung dari
+ * alamat ke alamat asli, bukan sekadar titik pusat kota.
+ *
+ * @param {string|{kota: string, lat?: number|null, lon?: number|null}} asal
+ * @param {string|{kota: string, lat?: number|null, lon?: number|null}} tujuan
+ * @returns {null|{km: number, estimasi: object, samaKota: boolean, presisi: boolean}}
+ */
+function hitungPengiriman(asal, tujuan) {
+    const a0 = typeof asal === 'string' ? { kota: asal } : asal;
+    const b0 = typeof tujuan === 'string' ? { kota: tujuan } : tujuan;
+    if (!a0?.kota || !b0?.kota) return null;
+
+    const presisiAsal = koordinatValid(a0.lat, a0.lon);
+    const presisiTujuan = koordinatValid(b0.lat, b0.lon);
+
+    const a = presisiAsal ? { lat: a0.lat, lon: a0.lon } : cariKoordinat(a0.kota);
+    const b = presisiTujuan ? { lat: b0.lat, lon: b0.lon } : cariKoordinat(b0.kota);
     if (!a || !b) return null;
 
-    const samaKota =
-        String(kotaAsal).toLowerCase().trim() === String(kotaTujuan).toLowerCase().trim();
+    // Sama kota dianggap cukup dari nama kotanya saja, terlepas dari
+    // presisi koordinat — dua alamat di kota yang sama tetap "dalam kota"
+    // meskipun jaraknya secara teknis tidak nol.
+    const samaKota = String(a0.kota).toLowerCase().trim() === String(b0.kota).toLowerCase().trim();
 
     const lurus = haversine(a, b);
-    const km = samaKota ? 0 : Math.round(lurus * FAKTOR_JALAN);
+    const km = samaKota && !(presisiAsal && presisiTujuan)
+        ? 0
+        : Math.round(lurus * FAKTOR_JALAN);
 
     return {
         km,
         samaKota,
-        estimasi: samaKota
-            ? { hari: 0, label: 'Hari yang sama', catatan: 'Satu kota' }
-            : estimasiKirim(km),
+        // true kalau jaraknya dihitung dari alamat ke alamat asli (geocoding),
+        // false kalau masih perkiraan titik-pusat-kota
+        presisi: presisiAsal && presisiTujuan,
+        estimasi:
+            samaKota && !(presisiAsal && presisiTujuan)
+                ? { hari: 0, label: 'Hari yang sama', catatan: 'Satu kota' }
+                : estimasiKirim(km),
     };
 }
 

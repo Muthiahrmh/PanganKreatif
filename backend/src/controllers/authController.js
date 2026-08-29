@@ -4,9 +4,12 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const mailer = require('../utils/email');
+const { geocodeAlamat } = require('../utils/geocoding');
 
 const BERLAKU_MENIT = Number(process.env.VERIFY_TOKEN_MINUTES ?? 5);
 const JEDA_KIRIM_ULANG_DETIK = Number(process.env.VERIFY_RESEND_SECONDS ?? 60);
+const OTP_MENIT = Number(process.env.OTP_MINUTES ?? 5);
+const OTP_MAKS_PERCOBAAN = 5;
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -32,6 +35,14 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
+/** Kode OTP 6 digit — dipakai sebagai lapis kedua autentikasi login */
+function buatOtp() {
+  const kode = String(crypto.randomInt(100000, 1000000));
+  const hash = hashToken(kode);
+  const kedaluwarsa = new Date(Date.now() + OTP_MENIT * 60_000);
+  return { kode, hash, kedaluwarsa };
+}
+
 function tautanVerifikasi(token) {
   const dasar = process.env.CLIENT_URL || 'http://localhost:3000';
   return `${dasar.replace(/\/$/, '')}/verifikasi?token=${token}`;
@@ -52,6 +63,11 @@ async function register(req, res) {
   const passwordHash = await bcrypt.hash(data.password, 10);
   const { token, hash, kedaluwarsa } = buatToken();
 
+  // Geocoding alamat, best-effort — kalau gagal/tidak dikenali, profil
+  // tetap dibuat tanpa koordinat presisi. jarak/pengiriman otomatis
+  // jatuh kembali ke perkiraan titik-pusat-kota (lihat utils/jarak.js).
+  const lokasi = await geocodeAlamat({ alamat: data.address, kota: data.city });
+
   const user = await prisma.user.create({
     data: {
       name: data.name,
@@ -70,6 +86,8 @@ async function register(req, res) {
             businessType: data.businessType || 'umum',
             city: data.city,
             address: data.address,
+            latitude: lokasi?.lat ?? null,
+            longitude: lokasi?.lon ?? null,
           },
         },
       }),
@@ -79,6 +97,8 @@ async function register(req, res) {
             groupName: data.groupName || data.name,
             city: data.city,
             address: data.address,
+            latitude: lokasi?.lat ?? null,
+            longitude: lokasi?.lon ?? null,
           },
         },
       }),
@@ -147,8 +167,147 @@ async function login(req, res) {
     });
   }
 
+  // Lapis kedua: kode OTP dikirim ke email, token JWT baru diterbitkan
+  // setelah kode itu diverifikasi lewat /login/verify-otp
+  const { kode, hash, kedaluwarsa } = buatOtp();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { otpHash: hash, otpExpires: kedaluwarsa, otpSentAt: new Date(), otpAttempts: 0 },
+  });
+
+  if (mailer.terkonfigurasi()) {
+    try {
+      await mailer.kirimOtp({
+        email: user.email,
+        nama: user.name,
+        kode,
+        berlakuMenit: OTP_MENIT,
+      });
+    } catch (err) {
+      console.error('Email OTP gagal dikirim:', err.message);
+    }
+  } else {
+    console.warn('SMTP belum diatur, kode OTP login untuk', user.email, ':', kode);
+  }
+
+  return res.json({
+    perluOtp: true,
+    email: user.email,
+    berlakuMenit: OTP_MENIT,
+  });
+}
+
+const otpSchema = z.object({
+  email: z.string().email(),
+  kode: z.string().length(6),
+});
+
+async function verifikasiOtpLogin(req, res) {
+  const parsed = otpSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Kode tidak valid' });
+
+  const { email, kode } = parsed.data;
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { umkmProfile: true, supplierProfile: true },
+  });
+
+  if (!user || !user.otpHash) {
+    return res.status(400).json({
+      error: 'Tidak ada permintaan login yang menunggu. Silakan masuk ulang.',
+    });
+  }
+
+  if (!user.otpExpires || user.otpExpires < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpHash: null, otpExpires: null, otpAttempts: 0 },
+    });
+    return res.status(400).json({
+      error: 'Kode sudah kedaluwarsa. Silakan masuk ulang.',
+      kedaluwarsa: true,
+    });
+  }
+
+  if (user.otpAttempts >= OTP_MAKS_PERCOBAAN) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpHash: null, otpExpires: null, otpAttempts: 0 },
+    });
+    return res.status(429).json({
+      error: 'Terlalu banyak percobaan salah. Silakan masuk ulang untuk kode baru.',
+      kedaluwarsa: true,
+    });
+  }
+
+  const hash = hashToken(kode);
+  // Perbandingan waktu tetap, supaya tidak bocor lewat selisih waktu
+  const a = Buffer.from(hash);
+  const b = Buffer.from(user.otpHash);
+  const cocok = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+  if (!cocok) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpAttempts: { increment: 1 } },
+    });
+    const sisa = OTP_MAKS_PERCOBAAN - (user.otpAttempts + 1);
+    return res.status(400).json({
+      error: sisa > 0 ? `Kode salah. Sisa ${sisa} percobaan.` : 'Kode salah.',
+    });
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { otpHash: null, otpExpires: null, otpAttempts: 0 },
+  });
+
   const token = signToken(user);
   return res.json({ token, user: sanitizeUser(user) });
+}
+
+async function kirimUlangOtpLogin(req, res) {
+  const parsed = ulangSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Email tidak valid' });
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+
+  // Jawaban dibuat sama supaya halaman ini tidak bisa dipakai menebak
+  // email mana yang sedang punya sesi login menunggu OTP
+  const jawabanUmum = { pesan: 'Kalau ada permintaan login yang menunggu, kode baru sudah dikirim.' };
+
+  if (!user || !user.otpHash) return res.json(jawabanUmum);
+
+  if (user.otpSentAt) {
+    const selisih = (Date.now() - new Date(user.otpSentAt).getTime()) / 1000;
+    if (selisih < JEDA_KIRIM_ULANG_DETIK) {
+      return res.status(429).json({
+        error: `Tunggu ${Math.ceil(JEDA_KIRIM_ULANG_DETIK - selisih)} detik sebelum meminta lagi.`,
+      });
+    }
+  }
+
+  const { kode, hash, kedaluwarsa } = buatOtp();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { otpHash: hash, otpExpires: kedaluwarsa, otpSentAt: new Date(), otpAttempts: 0 },
+  });
+
+  if (mailer.terkonfigurasi()) {
+    try {
+      await mailer.kirimOtp({ email: user.email, nama: user.name, kode, berlakuMenit: OTP_MENIT });
+    } catch (err) {
+      console.error('Email OTP gagal dikirim:', err.message);
+      return res.status(502).json({ error: 'Email gagal dikirim. Coba beberapa saat lagi.' });
+    }
+  } else {
+    console.warn('SMTP belum diatur, kode OTP login untuk', user.email, ':', kode);
+  }
+
+  return res.json(jawabanUmum);
 }
 
 const verifySchema = z.object({ token: z.string().min(10) });
@@ -368,7 +527,19 @@ function signToken(user) {
 }
 
 function sanitizeUser(user) {
-  const { passwordHash, verifyTokenHash, verifyTokenExpires, verifySentAt, resetPasswordToken, resetPasswordExpires, ...rest } = user;
+  const {
+    passwordHash,
+    verifyTokenHash,
+    verifyTokenExpires,
+    verifySentAt,
+    resetPasswordToken,
+    resetPasswordExpires,
+    otpHash,
+    otpExpires,
+    otpSentAt,
+    otpAttempts,
+    ...rest
+  } = user;
   return rest;
 }
 
@@ -380,4 +551,6 @@ module.exports = {
   kirimUlangVerifikasi,
   lupaPassword,
   resetPassword,
+  verifikasiOtpLogin,
+  kirimUlangOtpLogin,
 };

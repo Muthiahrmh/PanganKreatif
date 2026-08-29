@@ -66,6 +66,25 @@ function hashTeks(teks) {
     return h;
 }
 
+/** Panjang digit nomor rekening lazim per bank, supaya data demo tidak kelihatan asal */
+const PANJANG_REKENING = {
+    'Bank Aceh Syariah': 10,
+    'Bank BRI': 15,
+    'Bank BSI': 10,
+    'Bank Mandiri': 13,
+    'Bank BNI': 10,
+};
+
+/** Nomor rekening acak sepanjang digit yang wajar untuk bank tersebut */
+function buatNomorRekening(bank, seed) {
+    const panjang = PANJANG_REKENING[bank] ?? 10;
+    let nomor = String(1 + Math.floor(rnd(seed) * 9)); // digit pertama tidak nol
+    for (let i = 1; i < panjang; i++) {
+        nomor += String(Math.floor(rnd(seed + i * 97) * 10));
+    }
+    return nomor;
+}
+
 async function batchCreate(model, rows, ukuran = 300) {
     for (let i = 0; i < rows.length; i += ukuran) {
         await model.createMany({ data: rows.slice(i, i + ukuran), skipDuplicates: true });
@@ -381,6 +400,22 @@ const SUPPLIERS_UTAMA = [
             { name: 'Daun Jeruk', category: 'Bumbu Dapur', unit: 'kg', price: 21000, stock: 100, bulkPrice: 18000, bulkMinQty: 25 },
         ],
     },
+    {
+        // Akun demo dengan rekening & dompet digital ASLI, dipakai untuk
+        // menunjukkan alur penerusan dana ke pemasok benar-benar bisa
+        // diverifikasi (bukan nomor rekening acak seperti pemasok lain).
+        email: 'yayapretty086@gmail.com', name: 'Muthiah Rahma Pasaribu', groupName: 'Kelompok Tani Rahma Jaya', katalog: 'sayur',
+        city: 'Lhokseumawe', address: 'Jl. Samudera, Banda Sakti, Lhokseumawe', phone: '082165383828',
+        bankName: 'BSI', bankAccountNumber: '7264367397', bankAccountHolder: 'Muthiah Rahma Pasaribu',
+        ewalletNumber: '082165383828', ewalletHolder: 'Muthiah Rahma',
+        ewalletProviders: ['dana', 'gopay', 'shopeepay', 'ovo'],
+        products: [
+            { name: 'Cabai Merah Keriting', category: 'Sayuran', unit: 'kg', price: 37000, stock: 300, bulkPrice: 32500, bulkMinQty: 60 },
+            { name: 'Bawang Merah', category: 'Bumbu Dapur', unit: 'kg', price: 31000, stock: 280, bulkPrice: 27000, bulkMinQty: 50 },
+            { name: 'Tomat', category: 'Sayuran', unit: 'kg', price: 12500, stock: 260, bulkPrice: 10500, bulkMinQty: 60 },
+            { name: 'Bawang Putih', category: 'Bumbu Dapur', unit: 'kg', price: 33000, stock: 220, bulkPrice: 29000, bulkMinQty: 50 },
+        ],
+    },
 ];
 
 const UMKMS_UTAMA = [
@@ -508,11 +543,12 @@ function buatSuppliersTambahan(jumlah) {
         }
 
         const bankPilihan = ['Bank Aceh Syariah', 'Bank BRI', 'Bank BSI', 'Bank Mandiri', 'Bank BNI'];
+        const bankTerpilih = pilih(bankPilihan, s + 11);
 
         hasil.push({
             katalog: jenisKatalog,
-            bankName: pilih(bankPilihan, s + 11),
-            bankAccountNumber: String(1000000000 + Math.floor(rnd(s + 12) * 8999999999)),
+            bankName: bankTerpilih,
+            bankAccountNumber: buatNomorRekening(bankTerpilih, s + 12),
             bankAccountHolder: nama,
             email: `supplier${String(i + 1).padStart(3, '0')}@demo.pangankreatif.id`,
             name: `${pilih(NAMA_DEPAN, s + 5)} ${pilih(NAMA_BELAKANG, s + 6)}`,
@@ -643,6 +679,10 @@ async function simpanAkun(daftar, peran) {
                 passwordHash: d.passwordHash,
                 role: peran,
                 phone: d.phone,
+                // Akun demo tidak punya kotak masuk sungguhan untuk
+                // menerima tautan verifikasi, jadi langsung diloloskan
+                emailVerified: true,
+                emailVerifiedAt: new Date(),
             });
             profilBaru.push(
                 peran === 'supplier'
@@ -655,6 +695,9 @@ async function simpanAkun(daftar, peran) {
                         bankName: d.bankName ?? null,
                         bankAccountNumber: d.bankAccountNumber ?? null,
                         bankAccountHolder: d.bankAccountHolder ?? null,
+                        ewalletNumber: d.ewalletNumber ?? null,
+                        ewalletHolder: d.ewalletHolder ?? null,
+                        ewalletProviders: d.ewalletProviders ?? [],
                     }
                     : {
                         id: uuid(),
@@ -677,6 +720,9 @@ async function simpanAkun(daftar, peran) {
                         bankName: d.bankName ?? null,
                         bankAccountNumber: d.bankAccountNumber ?? null,
                         bankAccountHolder: d.bankAccountHolder ?? null,
+                        ewalletNumber: d.ewalletNumber ?? null,
+                        ewalletHolder: d.ewalletHolder ?? null,
+                        ewalletProviders: d.ewalletProviders ?? [],
                     }
                     : {
                         id: uuid(),

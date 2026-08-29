@@ -63,6 +63,15 @@ model User {
   resetPasswordToken   String?   @map("reset_password_token")
   resetPasswordExpires DateTime? @map("reset_password_expires")
 
+  // Autentikasi berlapis — kode OTP lewat email sebagai lapis kedua
+  // setelah password benar, sebelum token JWT diterbitkan.
+  otpHash     String?   @map("otp_hash")
+  otpExpires  DateTime? @map("otp_expires")
+  otpSentAt   DateTime? @map("otp_sent_at")
+  // Dibatalkan otomatis setelah beberapa kali salah, supaya kode 6 digit
+  // tidak bisa ditebak lewat percobaan bertubi-tubi (brute force).
+  otpAttempts Int       @default(0) @map("otp_attempts")
+
   umkmProfile       UmkmProfile?
   supplierProfile   SupplierProfile?
 
@@ -76,6 +85,12 @@ model UmkmProfile {
   businessType String   @map("business_type")
   city         String
   address      String
+
+  // Hasil geocoding alamat (Nominatim/OpenStreetMap), diisi otomatis
+  // saat profil dibuat/diubah. Kalau kosong, jarak/pengiriman jatuh
+  // kembali ke perkiraan titik-pusat-kota di utils/jarak.js.
+  latitude  Float?
+  longitude Float?
 
   user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   salesRecords      SalesRecord[]
@@ -92,10 +107,22 @@ model SupplierProfile {
   city      String
   address   String
 
+  // Hasil geocoding alamat (Nominatim/OpenStreetMap) — lihat catatan
+  // yang sama di UmkmProfile.
+  latitude  Float?
+  longitude Float?
+
   // Rekening tujuan penerusan dana dari platform ke pemasok
   bankName          String? @map("bank_name")
   bankAccountNumber String? @map("bank_account_number")
   bankAccountHolder String? @map("bank_account_holder")
+
+  // Dompet digital — di Indonesia satu nomor HP umumnya dipakai untuk
+  // beberapa aplikasi sekaligus (DANA/GoPay/ShopeePay/OVO), jadi cukup
+  // satu nomor + nama, dengan daftar penyedia mana saja yang aktif.
+  ewalletNumber    String?  @map("ewallet_number")
+  ewalletHolder    String?  @map("ewallet_holder")
+  ewalletProviders String[] @default([]) @map("ewallet_providers")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   products Product[]
@@ -217,5 +244,12 @@ model Transaction {
 
   orderItem ProcurementOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
+  // CATATAN: ada satu unique index PARSIAL di database yang tidak
+  // muncul di sini — "transactions_pending_per_item" pada (order_item_id)
+  // WHERE status = 'pending', dari migration 20260830020000. Prisma
+  // belum mendukung index bersyarat di schema DSL, jadi ini hanya
+  // ada sebagai migration SQL murni. Jangan kaget kalau `prisma migrate
+  // dev` menandainya sebagai "drift" — itu bukan berarti hilang, index
+  // itu tetap ada di database.
   @@map("transactions")
 }

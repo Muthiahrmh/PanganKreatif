@@ -1,5 +1,7 @@
 export type Role = "umkm" | "supplier" | "admin";
 
+export type EwalletProvider = "dana" | "gopay" | "shopeepay" | "ovo";
+
 export interface UmkmProfile {
     id: string;
     businessName: string;
@@ -16,6 +18,9 @@ export interface SupplierProfile {
     bankName?: string | null;
     bankAccountNumber?: string | null;
     bankAccountHolder?: string | null;
+    ewalletNumber?: string | null;
+    ewalletHolder?: string | null;
+    ewalletProviders?: EwalletProvider[];
 }
 
 export interface User {
@@ -35,6 +40,13 @@ export interface AuthResponse {
     user: User;
 }
 
+/** Respons /auth/login tahap pertama saat lapis kedua (OTP) diaktifkan */
+export interface LoginOtpResponse {
+    perluOtp: true;
+    email: string;
+    berlakuMenit: number;
+}
+
 export interface ProfilePayload {
     name?: string;
     phone?: string | null;
@@ -46,4 +58,7 @@ export interface ProfilePayload {
     bankName?: string | null;
     bankAccountNumber?: string | null;
     bankAccountHolder?: string | null;
+    ewalletNumber?: string | null;
+    ewalletHolder?: string | null;
+    ewalletProviders?: EwalletProvider[];
 }

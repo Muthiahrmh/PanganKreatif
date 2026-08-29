@@ -1,0 +1,19 @@
+{
+  "java.import.exclusions": [
+    "**/frontend/android/**"
+  ],
+  "files.watcherExclude": {
+    "**/frontend/android/**": true
+  },
+  "search.exclude": {
+    "**/frontend/android/**": true
+  },
+  "files.exclude": {
+    "**/frontend/android": true
+  },
+  "java.project.resourceFilters": [
+    "node_modules",
+    ".git",
+    "android"
+  ]
+}

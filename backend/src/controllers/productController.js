@@ -16,19 +16,27 @@ async function listProducts(req, res) {
 
   // Kalau yang meminta adalah UMKM, sertakan jarak dan estimasi
   // pengiriman dari kotanya ke kota tiap pemasok
-  let kotaPembeli = null;
+  let lokasiPembeli = null;
   if (req.user?.role === 'umkm') {
     const profil = await prisma.umkmProfile.findUnique({
       where: { userId: req.user.id },
-      select: { city: true },
+      select: { city: true, latitude: true, longitude: true },
     });
-    kotaPembeli = profil?.city ?? null;
+    if (profil) {
+      lokasiPembeli = { kota: profil.city, lat: profil.latitude, lon: profil.longitude };
+    }
   }
 
   res.json(
     products.map((p) => ({
       ...p,
-      pengiriman: kotaPembeli ? hitungPengiriman(kotaPembeli, p.supplier?.city) : null,
+      pengiriman: lokasiPembeli
+        ? hitungPengiriman(lokasiPembeli, {
+            kota: p.supplier?.city,
+            lat: p.supplier?.latitude,
+            lon: p.supplier?.longitude,
+          })
+        : null,
     }))
   );
 }
@@ -174,7 +182,7 @@ async function katalogKomoditas(req, res) {
       stock: true,
       bulkPrice: true,
       bulkMinQty: true,
-      supplier: { select: { id: true, groupName: true, city: true } },
+      supplier: { select: { id: true, groupName: true, city: true, latitude: true, longitude: true } },
     },
     orderBy: { name: 'asc' },
   });
@@ -187,12 +195,16 @@ async function katalogKomoditas(req, res) {
   const adaOrder = new Set(terbuka.map((o) => o.productId));
 
   let kotaPembeli = null;
+  let lokasiPembeli = null;
   if (req.user?.role === 'umkm') {
     const profil = await prisma.umkmProfile.findUnique({
       where: { userId: req.user.id },
-      select: { city: true },
+      select: { city: true, latitude: true, longitude: true },
     });
     kotaPembeli = profil?.city ?? null;
+    if (profil) {
+      lokasiPembeli = { kota: profil.city, lat: profil.latitude, lon: profil.longitude };
+    }
   }
 
   const peta = new Map();
@@ -220,7 +232,13 @@ async function katalogKomoditas(req, res) {
       minGrosir: p.bulkMinQty,
       stok: p.stock,
       adaPesananTerbuka: adaOrder.has(p.id),
-      pengiriman: kotaPembeli ? hitungPengiriman(kotaPembeli, p.supplier?.city) : null,
+      pengiriman: lokasiPembeli
+        ? hitungPengiriman(lokasiPembeli, {
+            kota: p.supplier?.city,
+            lat: p.supplier?.latitude,
+            lon: p.supplier?.longitude,
+          })
+        : null,
     });
 
     grup.termurah = Math.min(grup.termurah, harga);

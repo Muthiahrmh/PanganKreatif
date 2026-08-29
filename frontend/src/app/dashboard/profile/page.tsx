@@ -12,7 +12,7 @@ import {
     uploadAvatar,
 } from "@/lib/profile";
 import { formatDate } from "@/lib/format";
-import type { ProfilePayload } from "@/types/auth";
+import type { EwalletProvider, ProfilePayload } from "@/types/auth";
 
 const emptyForm: ProfilePayload = {
     name: "",
@@ -25,7 +25,17 @@ const emptyForm: ProfilePayload = {
     bankName: "",
     bankAccountNumber: "",
     bankAccountHolder: "",
+    ewalletNumber: "",
+    ewalletHolder: "",
+    ewalletProviders: [],
 };
+
+const DAFTAR_EWALLET: { value: EwalletProvider; label: string }[] = [
+    { value: "dana", label: "DANA" },
+    { value: "gopay", label: "GoPay" },
+    { value: "shopeepay", label: "ShopeePay" },
+    { value: "ovo", label: "OVO" },
+];
 
 export default function ProfilePage() {
     const user = useAuthStore((s) => s.user);
@@ -58,6 +68,9 @@ export default function ProfilePage() {
                 bankName: data.supplierProfile?.bankName ?? "",
                 bankAccountNumber: data.supplierProfile?.bankAccountNumber ?? "",
                 bankAccountHolder: data.supplierProfile?.bankAccountHolder ?? "",
+                ewalletNumber: data.supplierProfile?.ewalletNumber ?? "",
+                ewalletHolder: data.supplierProfile?.ewalletHolder ?? "",
+                ewalletProviders: data.supplierProfile?.ewalletProviders ?? [],
             });
             setError(null);
         } catch (err) {
@@ -93,6 +106,9 @@ export default function ProfilePage() {
                     payload.bankName = form.bankName || null;
                     payload.bankAccountNumber = form.bankAccountNumber || null;
                     payload.bankAccountHolder = form.bankAccountHolder || null;
+                    payload.ewalletNumber = form.ewalletNumber || null;
+                    payload.ewalletHolder = form.ewalletHolder || null;
+                    payload.ewalletProviders = form.ewalletProviders ?? [];
                 } else {
                     payload.businessName = form.businessName;
                     payload.businessType = form.businessType;
@@ -396,6 +412,60 @@ export default function ProfilePage() {
                                 className={inputClass}
                             />
                         </Field>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                        <h4 className="text-sm font-extrabold text-slate-800">Dompet Digital (Opsional)</h4>
+                        <p className="mt-1 text-xs font-medium text-slate-500 leading-relaxed max-w-3xl">
+                            Alternatif tujuan pencairan dana selain rekening bank. Di Indonesia satu nomor HP
+                            biasanya dipakai untuk beberapa aplikasi sekaligus — centang yang aktif.
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {DAFTAR_EWALLET.map((w) => {
+                                const aktif = form.ewalletProviders?.includes(w.value) ?? false;
+                                return (
+                                    <button
+                                        key={w.value}
+                                        type="button"
+                                        onClick={() =>
+                                            setForm({
+                                                ...form,
+                                                ewalletProviders: aktif
+                                                    ? (form.ewalletProviders ?? []).filter((p) => p !== w.value)
+                                                    : [...(form.ewalletProviders ?? []), w.value],
+                                            })
+                                        }
+                                        className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${aktif
+                                                ? "border-blue-500 bg-blue-50 text-blue-700"
+                                                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                                            }`}
+                                    >
+                                        {w.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                            <Field label="Nomor HP Dompet Digital">
+                                <input
+                                    value={form.ewalletNumber ?? ""}
+                                    onChange={(e) => setForm({ ...form, ewalletNumber: e.target.value })}
+                                    placeholder="08xxxxxxxxxx"
+                                    className={inputClass}
+                                />
+                            </Field>
+
+                            <Field label="Nama Pemilik">
+                                <input
+                                    value={form.ewalletHolder ?? ""}
+                                    onChange={(e) => setForm({ ...form, ewalletHolder: e.target.value })}
+                                    placeholder="Nama sesuai akun dompet digital"
+                                    className={inputClass}
+                                />
+                            </Field>
+                        </div>
                     </div>
 
                     <div className="mt-8 flex pt-6 border-t border-slate-100">

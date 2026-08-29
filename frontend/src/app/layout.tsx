@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
-import { PWARegister } from "@/components/PWARegister";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,9 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="id"
       className={`${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-paper text-ink">{children}
-        <PWARegister />
-      </body>
+      <body className="min-h-full flex flex-col bg-paper text-ink">{children}</body>
     </html>
   );
 }

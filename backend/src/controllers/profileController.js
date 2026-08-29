@@ -2,6 +2,7 @@ const { z } = require('zod');
 const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
 const storage = require('../utils/supabaseStorage');
+const { geocodeAlamat } = require('../utils/geocoding');
 
 function sanitizeUser(user) {
     const { passwordHash, ...rest } = user;
@@ -34,6 +35,9 @@ const updateSchema = z.object({
     bankName: z.string().max(60).optional().nullable(),
     bankAccountNumber: z.string().max(40).optional().nullable(),
     bankAccountHolder: z.string().max(80).optional().nullable(),
+    ewalletNumber: z.string().max(20).optional().nullable(),
+    ewalletHolder: z.string().max(80).optional().nullable(),
+    ewalletProviders: z.array(z.enum(['dana', 'gopay', 'shopeepay', 'ovo'])).optional(),
     // Keduanya
     city: z.string().min(1).optional(),
     address: z.string().min(1).optional(),
@@ -54,6 +58,24 @@ async function updateProfile(req, res) {
     if (d.city !== undefined) profileData.city = d.city;
     if (d.address !== undefined) profileData.address = d.address;
 
+    // Kota/alamat berubah -> geocode ulang, best-effort. Kalau gagal,
+    // koordinat lama dihapus (bukan dibiarkan basi/salah) supaya
+    // jarak/pengiriman jatuh kembali ke perkiraan titik-pusat-kota.
+    if (d.city !== undefined || d.address !== undefined) {
+        const modelProfil = req.user.role === 'umkm' ? prisma.umkmProfile : prisma.supplierProfile;
+        const lama = await modelProfil.findUnique({
+            where: { userId: req.user.id },
+            select: { city: true, address: true },
+        });
+
+        const lokasi = await geocodeAlamat({
+            alamat: d.address ?? lama?.address,
+            kota: d.city ?? lama?.city,
+        });
+        profileData.latitude = lokasi?.lat ?? null;
+        profileData.longitude = lokasi?.lon ?? null;
+    }
+
     if (req.user.role === 'umkm') {
         if (d.businessName !== undefined) profileData.businessName = d.businessName;
         if (d.businessType !== undefined) profileData.businessType = d.businessType;
@@ -70,6 +92,9 @@ async function updateProfile(req, res) {
         if (d.bankAccountHolder !== undefined) {
             profileData.bankAccountHolder = d.bankAccountHolder || null;
         }
+        if (d.ewalletNumber !== undefined) profileData.ewalletNumber = d.ewalletNumber || null;
+        if (d.ewalletHolder !== undefined) profileData.ewalletHolder = d.ewalletHolder || null;
+        if (d.ewalletProviders !== undefined) profileData.ewalletProviders = d.ewalletProviders;
 
         if (Object.keys(profileData).length > 0) {
             userData.supplierProfile = { update: profileData };

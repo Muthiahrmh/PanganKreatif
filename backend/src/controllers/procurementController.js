@@ -195,6 +195,13 @@ async function listMyItems(req, res) {
             atasNama: sup.bankAccountHolder,
           }
           : null,
+        dompetDigital: sup?.ewalletNumber && sup.ewalletProviders?.length > 0
+          ? {
+            nomor: sup.ewalletNumber,
+            atasNama: sup.ewalletHolder,
+            providers: sup.ewalletProviders,
+          }
+          : null,
       };
     })
   );

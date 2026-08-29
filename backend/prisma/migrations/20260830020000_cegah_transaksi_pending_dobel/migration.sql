@@ -1,0 +1,13 @@
+-- Cegah dua transaksi "pending" untuk satu order item yang sama.
+--
+-- Tanpa ini, dua permintaan bikin-sesi-bayar yang nyaris bersamaan
+-- (klik dobel, retry jaringan) bisa lolos pengecekan "belum ada yang
+-- pending" di kode sebelum salah satunya sempat tersimpan, sehingga
+-- membuat dua sesi Snap/dua baris transaksi untuk pesanan yang sama.
+--
+-- Ini index parsial (unique index dengan WHERE) — bentuk database yang
+-- TIDAK bisa direpresentasikan lewat @@unique di schema.prisma, jadi
+-- sengaja hanya ada di sini sebagai migration murni. Prisma tetap
+-- mendeteksi pelanggarannya sebagai P2002 karena ia membaca kode error
+-- 23505 dari Postgres, bukan dari definisi skema.
+CREATE UNIQUE INDEX "transactions_pending_per_item" ON "transactions" ("order_item_id") WHERE "status" = 'pending';

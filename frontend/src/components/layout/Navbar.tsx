@@ -120,7 +120,7 @@ export function Navbar() {
         {/* Tombol Aksi di Kanan: Pasang App, Masuk, Daftar */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* Tombol Khusus Aplikasi / Pasang PWA */}
+          {/* Tombol Khusus Aplikasi / Unduh APK Android */}
           <a
             href="#pasang"
             className="hidden items-center gap-1.5 rounded-full border border-leaf/30 bg-leaf-soft/50 px-4 py-2 text-sm font-semibold text-leaf-dark transition-all hover:bg-leaf-soft hover:shadow-sm md:flex"

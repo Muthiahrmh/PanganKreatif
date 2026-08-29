@@ -82,6 +82,7 @@ async function kirimVerifikasi({ email, nama, tautan, berlakuMenit = 5 }) {
         to: email,
         subject: 'Verifikasi email PanganKreatif',
         html: bungkus('Verifikasi alamat emailmu', isi),
+        text: `Halo ${nama}, terima kasih sudah mendaftar di PanganKreatif.\n\nKlik tautan berikut untuk memverifikasi emailmu (berlaku ${berlakuMenit} menit):\n${tautan}\n\nKalau kamu tidak merasa mendaftar, abaikan saja email ini.`,
     });
 }
 
@@ -104,6 +105,7 @@ async function kirimSelamatDatang({ email, nama, tautanMasuk }) {
             to: email,
             subject: 'Akun PanganKreatif kamu sudah aktif',
             html: bungkus('Selamat datang', isi),
+            text: `Halo ${nama}, emailmu sudah terverifikasi. Akunmu siap dipakai.\n\nMasuk di sini: ${tautanMasuk}`,
         });
     } catch (err) {
         console.warn('Email sambutan gagal dikirim:', err.message);
@@ -134,6 +136,34 @@ async function kirimResetPassword({ email, nama, tautan, berlakuMenit = 30 }) {
         to: email,
         subject: 'Permintaan Reset Kata Sandi PanganKreatif',
         html: bungkus('Reset Kata Sandi Akun', isi),
+        text: `Halo ${nama}, kami menerima permintaan reset kata sandi akun PanganKreatif kamu.\n\nBuat kata sandi baru di sini (berlaku ${berlakuMenit} menit):\n${tautan}\n\nKalau kamu tidak merasa meminta ini, abaikan saja email ini.`,
+    });
+}
+
+async function kirimOtp({ email, nama, kode, berlakuMenit = 5 }) {
+    const isi = `
+    <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.7;">
+        Halo ${nama}, ini kode verifikasi login (lapis kedua) untuk akun PanganKreatif kamu.
+        Jangan bagikan kode ini ke siapa pun, termasuk pihak yang mengaku dari PanganKreatif.
+    </p>
+
+    <div style="margin:8px 0 16px;padding:16px 24px;background:#f0f7ff;border-radius:12px;
+                text-align:center;font-size:32px;font-weight:800;letter-spacing:8px;color:#0b1220;">
+        ${kode}
+    </div>
+
+    <p style="margin:24px 0 0;font-size:13px;color:#64748b;line-height:1.7;">
+        Kode ini berlaku ${berlakuMenit} menit. Kalau kamu tidak sedang mencoba masuk, abaikan
+        saja email ini — akunmu tetap aman selama kode ini tidak dibagikan.
+    </p>
+    `;
+
+    await getTransporter().sendMail({
+        from: PENGIRIM,
+        to: email,
+        subject: `${kode} — Kode login PanganKreatif`,
+        html: bungkus('Kode Verifikasi Login', isi),
+        text: `Halo ${nama}, kode verifikasi login PanganKreatif kamu: ${kode}\n\nBerlaku ${berlakuMenit} menit. Jangan bagikan kode ini ke siapa pun. Kalau kamu tidak sedang mencoba masuk, abaikan saja email ini.`,
     });
 }
 
@@ -150,4 +180,11 @@ async function ujiSambungan() {
     }
 }
 
-module.exports = { terkonfigurasi, kirimVerifikasi, kirimSelamatDatang, kirimResetPassword, ujiSambungan };
+module.exports = {
+    terkonfigurasi,
+    kirimVerifikasi,
+    kirimSelamatDatang,
+    kirimResetPassword,
+    kirimOtp,
+    ujiSambungan,
+};

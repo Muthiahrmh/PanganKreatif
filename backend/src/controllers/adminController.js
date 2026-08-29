@@ -279,6 +279,9 @@ async function getPayouts(req, res) {
                                             bankName: true,
                                             bankAccountNumber: true,
                                             bankAccountHolder: true,
+                                            ewalletNumber: true,
+                                            ewalletHolder: true,
+                                            ewalletProviders: true,
                                         },
                                     },
                                 },
@@ -306,6 +309,13 @@ async function getPayouts(req, res) {
                     bank: sup.bankName,
                     nomor: sup.bankAccountNumber,
                     atasNama: sup.bankAccountHolder,
+                }
+                : null,
+            dompetDigital: sup.ewalletNumber && sup.ewalletProviders?.length > 0
+                ? {
+                    nomor: sup.ewalletNumber,
+                    atasNama: sup.ewalletHolder,
+                    providers: sup.ewalletProviders,
                 }
                 : null,
             jumlahTransaksi: 0,
@@ -350,7 +360,7 @@ async function getPayouts(req, res) {
             totalKomisi: round2(daftar.reduce((s, d) => s + d.totalKomisi, 0)),
             totalMargin: round2(daftar.reduce((s, d) => s + d.totalMargin, 0)),
             totalDiteruskan: round2(daftar.reduce((s, d) => s + d.totalDiteruskan, 0)),
-            tanpaRekening: daftar.filter((d) => !d.rekening).length,
+            tanpaRekening: daftar.filter((d) => !d.rekening && !d.dompetDigital).length,
         },
         pemasok: daftar,
     });

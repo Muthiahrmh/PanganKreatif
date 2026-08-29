@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, ArrowRight, Store, Sprout } from "lucide-react";
+import { AlertCircle, ArrowRight, Store, Sprout, ShieldCheck, RefreshCw } from "lucide-react";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
-import type { AuthResponse } from "@/types/auth";
+import type { AuthResponse, LoginOtpResponse } from "@/types/auth";
 
 const loginSchema = z.object({
     email: z.string().min(1, "Email wajib diisi").email("Format email gak valid"),
@@ -29,11 +29,26 @@ export default function LoginPage() {
     const [perluVerifikasi, setPerluVerifikasi] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Lapis kedua: kalau backend minta OTP, form password disembunyikan
+    // dan diganti form kode, tanpa pindah halaman.
+    const [emailOtp, setEmailOtp] = useState<string | null>(null);
+    const [kodeOtp, setKodeOtp] = useState("");
+    const [otpError, setOtpError] = useState<string | null>(null);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [mengirimUlang, setMengirimUlang] = useState(false);
+    const [jedaKirimUlang, setJedaKirimUlang] = useState(0);
+
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
+
+    useEffect(() => {
+        if (jedaKirimUlang <= 0) return;
+        const t = window.setInterval(() => setJedaKirimUlang((s) => Math.max(0, s - 1)), 1000);
+        return () => window.clearInterval(t);
+    }, [jedaKirimUlang]);
 
     async function onSubmit(data: LoginForm) {
         setServerError(null);
@@ -41,8 +56,16 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await api.post<AuthResponse>("/auth/login", data);
-            setAuth(res.data.user, res.data.token);
+            const res = await api.post<AuthResponse | LoginOtpResponse>("/auth/login", data);
+
+            if ("perluOtp" in res.data && res.data.perluOtp) {
+                setEmailOtp(res.data.email);
+                setJedaKirimUlang(60);
+                return;
+            }
+
+            const hasil = res.data as AuthResponse;
+            setAuth(hasil.user, hasil.token);
             router.push("/dashboard");
         } catch (err) {
             const pesan = getApiErrorMessage(err);
@@ -54,6 +77,113 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+    }
+
+    async function submitOtp() {
+        if (!emailOtp || kodeOtp.length !== 6) return;
+        setOtpError(null);
+        setOtpLoading(true);
+        try {
+            const res = await api.post<AuthResponse>("/auth/login/verify-otp", {
+                email: emailOtp,
+                kode: kodeOtp,
+            });
+            setAuth(res.data.user, res.data.token);
+            router.push("/dashboard");
+        } catch (err) {
+            setOtpError(getApiErrorMessage(err));
+            setKodeOtp("");
+        } finally {
+            setOtpLoading(false);
+        }
+    }
+
+    async function kirimUlangOtp() {
+        if (!emailOtp || jedaKirimUlang > 0) return;
+        setMengirimUlang(true);
+        setOtpError(null);
+        try {
+            await api.post("/auth/login/otp/resend", { email: emailOtp });
+            setJedaKirimUlang(60);
+        } catch (err) {
+            setOtpError(getApiErrorMessage(err));
+        } finally {
+            setMengirimUlang(false);
+        }
+    }
+
+    if (emailOtp) {
+        return (
+            <AuthLayout
+                title="Verifikasi Kode Login"
+                subtitle="Satu langkah lagi — kode verifikasi sudah dikirim ke emailmu."
+                backgroundImage="/images/umkmlogin.png"
+                peran="umkm"
+                mode="ilustrasi"
+            >
+                <div className="flex flex-col items-center text-center">
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-brand-blue">
+                        <ShieldCheck size={30} strokeWidth={1.5} />
+                    </span>
+                    <p className="mt-5 text-sm leading-relaxed text-ink-soft">
+                        Masukkan kode 6 digit yang dikirim ke{" "}
+                        <span className="font-semibold text-soil">{emailOtp}</span>.
+                    </p>
+
+                    <input
+                        value={kodeOtp}
+                        onChange={(e) =>
+                            setKodeOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        }
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") submitOtp();
+                        }}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="000000"
+                        className="mt-6 w-full max-w-[240px] rounded-2xl border border-ink/15 px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-brand-blue"
+                    />
+
+                    {otpError && (
+                        <p className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <AlertCircle size={16} className="shrink-0" />
+                            {otpError}
+                        </p>
+                    )}
+
+                    <Button
+                        onClick={submitOtp}
+                        loading={otpLoading}
+                        disabled={kodeOtp.length !== 6}
+                        className="mt-6 w-full rounded-full py-3.5 text-[15px] font-semibold shadow-sm transition-all hover:shadow-md"
+                    >
+                        Verifikasi & Masuk
+                    </Button>
+
+                    <button
+                        onClick={kirimUlangOtp}
+                        disabled={jedaKirimUlang > 0 || mengirimUlang}
+                        className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand-blue transition hover:underline disabled:cursor-not-allowed disabled:text-ink-soft disabled:no-underline"
+                    >
+                        <RefreshCw size={14} className={mengirimUlang ? "animate-spin" : ""} />
+                        {jedaKirimUlang > 0
+                            ? `Kirim ulang kode (${jedaKirimUlang}s)`
+                            : "Kirim ulang kode"}
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setEmailOtp(null);
+                            setKodeOtp("");
+                            setOtpError(null);
+                        }}
+                        className="mt-3 text-xs font-medium text-ink-soft hover:underline"
+                    >
+                        Kembali ke halaman masuk
+                    </button>
+                </div>
+            </AuthLayout>
+        );
     }
 
     return (
