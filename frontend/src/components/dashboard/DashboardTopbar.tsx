@@ -43,8 +43,11 @@ export function DashboardTopbar() {
 
     return (
         <>
-            {/* Topbar Ramping dan Standar */}
-            <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+            {/* Topbar mengikuti aksen warna peran, bukan putih generik buat semua orang */}
+            <header
+                className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-white px-4 sm:px-6"
+                style={{ borderBottom: `3px solid ${tema.aksen}` }}
+            >
                 <div className="flex min-w-0 items-center gap-3">
                     <button
                         onClick={() => setMenuTerbuka(true)}

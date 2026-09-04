@@ -17,26 +17,29 @@ export interface TemaPeran {
 const TEMA: Record<Role, TemaPeran> = {
     umkm: {
         label: "UMKM Kuliner",
-        sidebar: "#18200b",
+        // Biru tua yang jelas kebiruan, bukan sekadar gelap generik
+        sidebar: "#0B1E3D",
         aktif: "#2563EB",
         aksen: "#2563EB",
-        latar: "#F5F9FF",
+        latar: "#EFF6FF",
         penanda: "Sisi Pembeli",
     },
     supplier: {
         label: "Kelompok Tani / Distributor",
-        sidebar: "#0C2318",
+        // Hijau hutan tua yang jelas kehijauan
+        sidebar: "#0B2A1B",
         aktif: "#16A34A",
         aksen: "#16A34A",
-        latar: "#F4FAF6",
+        latar: "#F0FDF4",
         penanda: "Sisi Pemasok",
     },
     admin: {
         label: "Admin PanganKreatif",
-        sidebar: "#1B1A2E",
+        // Cokelat-oren tua yang jelas keoranyean, bukan ungu gelap
+        sidebar: "#2B1706",
         aktif: "#D97706",
         aksen: "#D97706",
-        latar: "#F8F7FC",
+        latar: "#FFFBEB",
         penanda: "Pengelola Platform",
     },
 };

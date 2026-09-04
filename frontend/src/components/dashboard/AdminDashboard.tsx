@@ -69,27 +69,27 @@ export function AdminDashboard() {
 
     return (
         <div className="flex flex-col gap-6 md:gap-8 pb-10">
-            {/* Banner Utama Admin (Tema Indigo & Dark Slate Premium) */}
-            <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] p-6 sm:p-8 md:p-10 text-white shadow-2xl border border-slate-800">
-                <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-32 -left-10 h-72 w-72 rounded-full bg-purple-500/15 blur-3xl" />
+            {/* Banner Utama Admin (Tema Oranye Kendali Premium) */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1F1406] via-[#3F2708] to-[#D97706] p-6 sm:p-8 md:p-10 text-white shadow-2xl border border-amber-900/40">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/25 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-32 -left-10 h-72 w-72 rounded-full bg-orange-400/15 blur-3xl" />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-indigo-200 backdrop-blur-md border border-white/10 mb-4">
-                            <ShieldCheck size={14} className="text-indigo-300" />
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-amber-200 backdrop-blur-md border border-white/10 mb-4">
+                            <ShieldCheck size={14} className="text-amber-300" />
                             Pusat Kendali Platform
                         </div>
                         <h2 className="font-display text-2xl md:text-4xl font-extrabold tracking-tight text-white">
                             Ringkasan Ekosistem
                         </h2>
-                        <p className="mt-2.5 text-sm md:text-base text-slate-300 max-w-xl leading-relaxed">
+                        <p className="mt-2.5 text-sm md:text-base text-amber-100/80 max-w-xl leading-relaxed">
                             Pantau metrik utama, pergerakan nilai transaksi kotor (GMV), serta arus pendapatan komisi dari PanganKreatif secara *real-time*.
                         </p>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 backdrop-blur-sm">
-                        <Activity className="text-indigo-400" size={24} />
+                    <div className="shrink-0 flex items-center gap-2 rounded-2xl bg-white/10 border border-white/10 p-4 backdrop-blur-sm">
+                        <Activity className="text-amber-300" size={24} />
                         <div>
                             <div className="text-[11px] text-slate-400 uppercase tracking-wider font-bold">Status Server</div>
                             <div className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5">
@@ -111,21 +111,21 @@ export function AdminDashboard() {
                     label="UMKM Terdaftar"
                     value={loading ? "..." : `${stats?.users.umkm ?? 0} mitra`}
                     sub="Pengguna aktif di hilir"
-                    color="text-indigo-600"
+                    color="text-amber-600"
                 />
                 <StatCard
                     icon={Store}
                     label="Pemasok Mitra"
                     value={loading ? "..." : `${stats?.users.supplier ?? 0} mitra`}
                     sub={`${stats?.catalog.products ?? 0} komoditas di katalog`}
-                    color="text-indigo-600"
+                    color="text-amber-600"
                 />
                 <StatCard
                     icon={TrendingUp}
                     label="Nilai Transaksi (GMV)"
                     value={loading ? "..." : formatRupiahShort(f?.gmv ?? 0)}
                     sub={loading ? "" : `${formatRupiah(f?.gmv ?? 0)} · ${f?.successCount ?? 0} tranksaksi`}
-                    color="text-indigo-600"
+                    color="text-amber-600"
                 />
                 <StatCard
                     icon={Wallet}
@@ -223,7 +223,7 @@ export function AdminDashboard() {
                                     yAxisId="left"
                                     dataKey="gmv"
                                     name="Nilai Transaksi (GMV)"
-                                    fill="#4f46e5" // Indigo 600
+                                    fill="#D97706" // Amber 600
                                     radius={[4, 4, 0, 0]}
                                     maxBarSize={40}
                                 />
@@ -247,7 +247,7 @@ export function AdminDashboard() {
                 {/* Komoditas teratas */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
                     <div className="flex items-center gap-2 mb-6">
-                        <PackageSearch className="text-indigo-600" size={20} />
+                        <PackageSearch className="text-amber-600" size={20} />
                         <h3 className="font-display text-lg font-bold text-slate-900">
                             Volume Komoditas Teratas
                         </h3>
@@ -267,13 +267,13 @@ export function AdminDashboard() {
                                     <div key={c.name} className="rounded-xl bg-slate-50 p-4 border border-slate-100">
                                         <div className="mb-2 flex justify-between text-sm">
                                             <span className="font-bold text-slate-800">{c.name}</span>
-                                            <span className="font-extrabold text-indigo-600">
+                                            <span className="font-extrabold text-amber-600">
                                                 {formatRupiah(c.value)}
                                             </span>
                                         </div>
                                         <div className="h-2.5 rounded-full bg-slate-200 overflow-hidden">
                                             <div
-                                                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                                                className="h-full rounded-full bg-amber-500 transition-all duration-500"
                                                 style={{ width: `${Math.max((c.value / max) * 100, 4)}%` }}
                                             />
                                         </div>
@@ -290,7 +290,7 @@ export function AdminDashboard() {
                 {/* Transaksi terbaru */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
                     <div className="flex items-center gap-2 mb-6">
-                        <ListOrdered className="text-indigo-600" size={20} />
+                        <ListOrdered className="text-amber-600" size={20} />
                         <h3 className="font-display text-lg font-bold text-slate-900">Monitor Transaksi</h3>
                     </div>
 

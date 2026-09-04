@@ -20,7 +20,7 @@ export function StatCard({ icon: Icon, label, value, sub, color = "text-blue-600
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     {label}
                 </span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 transition-colors group-hover:bg-blue-50 group-hover:text-blue-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 transition-colors group-hover:bg-slate-100">
                     <Icon size={20} strokeWidth={2} />
                 </div>
             </div>
