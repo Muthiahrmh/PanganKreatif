@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Headset,
   ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 const utama = {
@@ -25,24 +26,28 @@ const fitur = [
     title: "Belanja Kolektif",
     desc: "Beli bersama UMKM lain supaya kuota grosir tercapai dan harga per satuan turun.",
     warna: "#2563EB",
+    preview: "kolektif" as const,
   },
   {
     icon: Scale,
     title: "Perbandingan Pemasok",
     desc: "Harga, stok, jarak, dan estimasi pengiriman dari beberapa pemasok, berdampingan.",
-    warna: "#159B87",
+    warna: "#0E7FA6",
+    preview: "pemasok" as const,
   },
   {
     icon: LineChart,
     title: "Analitik & Insight",
     desc: "Pantau penghematan, tren permintaan, dan performa bisnis dari satu dashboard.",
-    warna: "#D98324",
+    warna: "#0EA5E9",
+    preview: "analitik" as const,
   },
   {
     icon: ShieldCheck,
     title: "Aman & Transparan",
     desc: "Potongan komisi ditampilkan terbuka, penerusan dana disertai bukti transfer.",
-    warna: "#0E7A6B",
+    warna: "#0B5F7D",
+    preview: "aman" as const,
   },
   {
     icon: Headset,
@@ -50,14 +55,119 @@ const fitur = [
     desc: "Tim kami siap membantu lewat WhatsApp, termasuk pendampingan langsung untuk mitra.",
     warna: "#3E7D22",
     tautan: "/bantuan",
+    preview: "dukungan" as const,
   },
 ];
 
+type JenisPreview = (typeof fitur)[number]["preview"];
+
+/** Mini preview UI sungguhan di tiap kartu fitur — bukan cuma ikon+teks,
+ *  terinspirasi cara Outseta menempelkan cuplikan produk asli di tiap
+ *  kartu fiturnya. Dibikin dari div/SVG polos, bukan aset gambar. */
+function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string }) {
+  if (jenis === "kolektif") {
+    return (
+      <div className="mt-4 rounded-xl border border-ink/5 bg-white p-3">
+        <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500">
+          <span>Kuota grosir</span>
+          <span>8/10 UMKM</span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full w-4/5 rounded-full" style={{ backgroundColor: warna }} />
+        </div>
+        <div className="mt-2.5 flex -space-x-1.5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span
+              key={i}
+              className="h-5 w-5 rounded-full border-2 border-white"
+              style={{ backgroundColor: warna, opacity: 0.45 + i * 0.13 }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (jenis === "pemasok") {
+    const baris = [
+      { nama: "Tani Makmur", nilai: 72 },
+      { nama: "Koperasi Gayo", nilai: 55 },
+      { nama: "Kelompok Segar", nilai: 40 },
+    ];
+    return (
+      <div className="mt-4 space-y-1.5 rounded-xl border border-ink/5 bg-white p-3">
+        {baris.map((b) => (
+          <div key={b.nama} className="flex items-center gap-2 text-[10px] text-slate-500">
+            <span className="w-[4.5rem] shrink-0 truncate">{b.nama}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${b.nilai}%`, backgroundColor: warna }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (jenis === "analitik") {
+    const batang = [42, 65, 50, 82, 60, 74];
+    return (
+      <div className="mt-4 flex h-14 items-end gap-1.5 rounded-xl border border-ink/5 bg-white p-3">
+        {batang.map((h, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t-sm"
+            style={{ height: `${h}%`, backgroundColor: warna, opacity: 0.45 + i * 0.09 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (jenis === "aman") {
+    return (
+      <div className="mt-4 space-y-1.5 rounded-xl border border-ink/5 bg-white p-3 text-[10px]">
+        <div className="flex items-center justify-between text-slate-500">
+          <span>Nilai transaksi</span>
+          <span className="font-semibold text-slate-700">Rp2.450.000</span>
+        </div>
+        <div className="flex items-center justify-between text-slate-500">
+          <span>Komisi platform (2%)</span>
+          <span className="font-semibold" style={{ color: warna }}>
+            Rp49.000
+          </span>
+        </div>
+        <div className="flex items-center gap-1 pt-0.5 font-semibold" style={{ color: warna }}>
+          <CheckCircle2 size={11} />
+          Bukti transfer terlampir
+        </div>
+      </div>
+    );
+  }
+
+  // dukungan
+  return (
+    <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-ink/5 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-500 sm:mt-0 sm:ml-auto">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      </span>
+      Tim siap membantu
+    </span>
+  );
+}
+
 export function FeaturesSection() {
   return (
-    <section id="fitur" className="bg-white">
+    <section id="fitur" className="relative isolate overflow-hidden bg-white">
+      {/* Cahaya ambient — supaya latar putih di sekitar kartu fitur tidak
+          terasa kosong, senada dengan section lain yang sudah bergradasi */}
+      <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-leaf-soft/60 blur-3xl" />
+
       {/* PERBAIKAN: pt-20 untuk HP biar nggak terlalu jauh ke bawah, pt-40 untuk desktop */}
-      <div className="mx-auto w-full max-w-[1700px] px-6 pb-16 pt-24 sm:px-8 lg:px-16 lg:pb-20 lg:pt-40">
+      <div className="relative mx-auto w-full max-w-[1700px] px-6 pb-16 pt-24 sm:px-8 lg:px-16 lg:pb-20 lg:pt-40">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -88,7 +198,7 @@ export function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.55 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-6 text-white md:col-span-2 lg:col-span-1 lg:row-span-2 sm:p-8"
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] p-6 text-white md:col-span-2 lg:col-span-1 lg:row-span-2 sm:p-8"
           >
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5" />
             <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-leaf/10" />
@@ -153,6 +263,10 @@ export function FeaturesSection() {
                   </h3>
                   <p className="mt-1.5 text-[13px] sm:text-sm leading-relaxed text-ink-soft">{f.desc}</p>
 
+                  {f.preview !== "dukungan" && (
+                    <MiniPreviewFitur jenis={f.preview} warna={f.warna} />
+                  )}
+
                   {f.tautan && (
                     <span className="mt-auto pt-3 inline-flex items-center gap-1 text-xs font-semibold text-leaf-dark">
                       Buka pusat bantuan
@@ -160,6 +274,10 @@ export function FeaturesSection() {
                     </span>
                   )}
                 </div>
+
+                {f.preview === "dukungan" && (
+                  <MiniPreviewFitur jenis={f.preview} warna={f.warna} />
+                )}
               </>
             );
 

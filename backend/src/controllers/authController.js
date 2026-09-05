@@ -10,6 +10,7 @@ const BERLAKU_MENIT = Number(process.env.VERIFY_TOKEN_MINUTES ?? 5);
 const JEDA_KIRIM_ULANG_DETIK = Number(process.env.VERIFY_RESEND_SECONDS ?? 60);
 const OTP_MENIT = Number(process.env.OTP_MINUTES ?? 5);
 const OTP_MAKS_PERCOBAAN = 5;
+const DEVICE_TRUST_HARI = Number(process.env.DEVICE_TRUST_DAYS ?? 30);
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -46,6 +47,35 @@ function buatOtp() {
 function tautanVerifikasi(token) {
   const dasar = process.env.CLIENT_URL || 'http://localhost:3000';
   return `${dasar.replace(/\/$/, '')}/verifikasi?token=${token}`;
+}
+
+/** Token "ingat perangkat ini" — diterbitkan setelah OTP login lolos,
+ *  supaya login berikutnya dari perangkat yang sama tidak perlu OTP lagi. */
+function buatDeviceToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const hash = hashToken(token);
+  const kedaluwarsa = new Date(Date.now() + DEVICE_TRUST_HARI * 24 * 60 * 60_000);
+  return { token, hash, kedaluwarsa };
+}
+
+/** Cek apakah deviceToken dari klien cocok dengan perangkat tepercaya
+ *  milik user ini dan belum kedaluwarsa. Kalau ya, OTP boleh dilewati. */
+async function cariPerangkatTepercaya(userId, deviceToken) {
+  if (!deviceToken) return null;
+  const hash = hashToken(deviceToken);
+  const perangkat = await prisma.trustedDevice.findUnique({ where: { tokenHash: hash } });
+  if (!perangkat || perangkat.userId !== userId) return null;
+
+  if (perangkat.expiresAt < new Date()) {
+    await prisma.trustedDevice.delete({ where: { id: perangkat.id } }).catch(() => {});
+    return null;
+  }
+
+  await prisma.trustedDevice.update({
+    where: { id: perangkat.id },
+    data: { lastUsedAt: new Date() },
+  });
+  return perangkat;
 }
 
 async function register(req, res) {
@@ -141,6 +171,10 @@ async function register(req, res) {
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  // Diisi otomatis oleh klien kalau perangkat ini pernah lolos OTP
+  // sebelumnya. Opsional — kalau kosong atau tidak cocok, alur OTP
+  // normal tetap berjalan.
+  deviceToken: z.string().optional(),
 });
 
 async function login(req, res) {
@@ -148,7 +182,7 @@ async function login(req, res) {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { email, password } = parsed.data;
+  const { email, password, deviceToken } = parsed.data;
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -159,12 +193,28 @@ async function login(req, res) {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: 'Email atau password salah' });
 
+  // Admin hanya satu akun tetap milik pengelola platform, bukan akun yang
+  // didaftarkan sendiri lewat halaman register. Karena itu dua langkah email
+  // — gerbang emailVerified dan kode OTP — dilewati: cukup email + password.
+  if (user.role === 'admin') {
+    const token = signToken(user);
+    return res.json({ token, user: sanitizeUser(user) });
+  }
+
   if (!user.emailVerified) {
     return res.status(403).json({
       error: 'Email belum diverifikasi. Cek kotak masukmu atau minta kirim ulang.',
       perluVerifikasi: true,
       email: user.email,
     });
+  }
+
+  // Perangkat ini sudah pernah lolos OTP dan belum kedaluwarsa —
+  // lewati lapis kedua, langsung terbitkan token seperti admin.
+  const perangkat = await cariPerangkatTepercaya(user.id, deviceToken);
+  if (perangkat) {
+    const token = signToken(user);
+    return res.json({ token, user: sanitizeUser(user) });
   }
 
   // Lapis kedua: kode OTP dikirim ke email, token JWT baru diterbitkan
@@ -201,13 +251,16 @@ async function login(req, res) {
 const otpSchema = z.object({
   email: z.string().email(),
   kode: z.string().length(6),
+  // Dicentang user di form OTP. Default true kalau tidak dikirim
+  // (mis. klien lama), supaya perilaku sebelumnya tidak berubah.
+  ingatPerangkat: z.boolean().optional(),
 });
 
 async function verifikasiOtpLogin(req, res) {
   const parsed = otpSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Kode tidak valid' });
 
-  const { email, kode } = parsed.data;
+  const { email, kode, ingatPerangkat } = parsed.data;
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -264,8 +317,28 @@ async function verifikasiOtpLogin(req, res) {
     data: { otpHash: null, otpExpires: null, otpAttempts: 0 },
   });
 
+  // OTP baru saja lolos di perangkat ini. Kalau user centang "ingat
+  // perangkat ini" (default kalau tidak dikirim), terbitkan token
+  // supaya login berikutnya dari perangkat yang sama tidak perlu OTP
+  // lagi selama DEVICE_TRUST_HARI hari ke depan. Kalau di-uncheck,
+  // tidak ada perangkat tepercaya yang dibuat — OTP tetap wajib lagi
+  // di login berikutnya, sama seperti sebelum fitur ini ada.
+  let deviceToken;
+  if (ingatPerangkat ?? true) {
+    const dibuat = buatDeviceToken();
+    deviceToken = dibuat.token;
+    await prisma.trustedDevice.create({
+      data: {
+        userId: user.id,
+        tokenHash: dibuat.hash,
+        expiresAt: dibuat.kedaluwarsa,
+        userAgent: req.headers['user-agent'] || null,
+      },
+    });
+  }
+
   const token = signToken(user);
-  return res.json({ token, user: sanitizeUser(user) });
+  return res.json({ token, user: sanitizeUser(user), ...(deviceToken && { deviceToken }) });
 }
 
 async function kirimUlangOtpLogin(req, res) {
@@ -505,6 +578,10 @@ async function resetPassword(req, res) {
       resetPasswordExpires: null,
     },
   });
+
+  // Password baru diganti — cabut semua perangkat tepercaya lama supaya
+  // wajib OTP lagi di login berikutnya, dari perangkat mana pun.
+  await prisma.trustedDevice.deleteMany({ where: { userId: user.id } });
 
   return res.json({ berhasil: true, pesan: 'Kata sandi berhasil diubah. Silakan masuk.' });
 }

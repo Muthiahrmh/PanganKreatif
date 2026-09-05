@@ -16,6 +16,7 @@ import {
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { SectionEyebrow } from "@/components/dashboard/SectionEyebrow";
 import { WeatherCard } from "@/components/dashboard/WeatherCard";
 import { KartuRekomendasi } from "@/components/dashboard/KartuRekomendasi";
 import { KartuPanduan } from "@/components/dashboard/KartuPanduan";
@@ -226,91 +227,55 @@ export function UmkmDashboardHome() {
                 </div>
             </div>
 
-            {/* KARTU STATISTIK DENGAN CUSTOM RENDERING SUPAYA RAPI */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-2">
-                {/* 1. Data Penjualan */}
-                <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Data Penjualan</span>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600">
-                            <NotebookPen size={20} />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-2">
-                        <span className="font-display text-3xl font-extrabold text-blue-600 tracking-tight">
-                            {salesCount === null ? "..." : salesCount}
-                        </span>
-                        <span className="text-lg font-bold text-slate-700">catatan</span>
-                    </div>
-                    <div className="mt-2 text-xs font-medium text-slate-500">
-                        {productCount ?? 0} bahan baku terdata
-                    </div>
-                </div>
-
-                {/* 2. Forecast Bulan Depan */}
-                <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Forecast Bulan Depan</span>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600">
-                            <Sparkles size={20} />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-2">
-                        <span className="font-display text-3xl font-extrabold text-blue-600 tracking-tight">
-                            {latestForecast ? latestForecast.predictedQuantity : "-"}
-                        </span>
-                        {latestForecast && <span className="text-lg font-bold text-slate-700">kg</span>}
-                    </div>
-                    <div className="mt-2 text-xs font-medium text-slate-500">
-                        {latestForecast ? latestForecast.productName : "Belum tersedia"}
-                    </div>
-                </div>
-
-                {/* 3. Pesanan Aktif */}
-                <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pesanan Aktif</span>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-600">
-                            <ShoppingCart size={20} />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-2">
-                        <span className="font-display text-3xl font-extrabold text-blue-600 tracking-tight">
-                            {activeItems === null ? "..." : activeItems}
-                        </span>
-                        <span className="text-lg font-bold text-slate-700">pesanan</span>
-                    </div>
-                    <div className="mt-2 text-xs font-medium text-slate-500">
-                        Dalam proses kolektif
-                    </div>
-                </div>
-
-                {/* 4. Hemat Belanja Kolektif */}
-                <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Hemat Belanja Kolektif</span>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-emerald-600">
-                            <PiggyBank size={20} />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span className="font-display text-2xl font-extrabold text-emerald-600 tracking-tight">
-                            {totalHemat === null ? "..." : formatRupiah(totalHemat)}
-                        </span>
-                    </div>
-                    <div className="mt-3 text-xs font-medium text-slate-500">
-                        {totalHemat && totalHemat > 0 ? "Dibanding harga satuan" : "Gabung buat harga grosir"}
-                    </div>
+            {/* KARTU STATISTIK — pakai komponen StatCard bersama, konsisten
+                dengan dashboard Tani & Admin */}
+            <div className="mt-2">
+                <SectionEyebrow color="text-blue-600">Statistik Utama</SectionEyebrow>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard
+                        icon={NotebookPen}
+                        label="Data Penjualan"
+                        value={salesCount === null ? "..." : `${salesCount} catatan`}
+                        sub={`${productCount ?? 0} bahan baku terdata`}
+                        color="text-blue-600"
+                    />
+                    <StatCard
+                        icon={Sparkles}
+                        label="Forecast Bulan Depan"
+                        value={latestForecast ? `${latestForecast.predictedQuantity} kg` : "-"}
+                        sub={latestForecast ? latestForecast.productName : "Belum tersedia"}
+                        color="text-blue-600"
+                    />
+                    <StatCard
+                        icon={ShoppingCart}
+                        label="Pesanan Aktif"
+                        value={activeItems === null ? "..." : `${activeItems} pesanan`}
+                        sub="Dalam proses kolektif"
+                        color="text-blue-600"
+                    />
+                    <StatCard
+                        icon={PiggyBank}
+                        label="Hemat Belanja Kolektif"
+                        value={totalHemat === null ? "..." : formatRupiah(totalHemat)}
+                        sub={totalHemat && totalHemat > 0 ? "Dibanding harga satuan" : "Gabung buat harga grosir"}
+                        color="text-emerald-600"
+                    />
                 </div>
             </div>
 
-            <KartuRekomendasi />
-
-            <WeatherCard peran="umkm" />
+            <div>
+                <SectionEyebrow color="text-blue-600">Rekomendasi & Cuaca</SectionEyebrow>
+                <div className="flex flex-col gap-6">
+                    <KartuRekomendasi />
+                    <WeatherCard peran="umkm" />
+                </div>
+            </div>
 
             {/* SEKSI BAWAH */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col">
+            <div>
+                <SectionEyebrow color="text-blue-600">Detail Prediksi & Status</SectionEyebrow>
+                <div className="grid gap-6 lg:grid-cols-3">
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-display text-lg font-bold text-slate-900">
                             Grafik Forecast Terakhir
@@ -358,7 +323,7 @@ export function UmkmDashboardHome() {
                 </div>
 
                 <div className="flex flex-col gap-6">
-                    <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/50 to-white p-6 shadow-sm flex-1">
+                    <div className="rounded-3xl border border-blue-100 bg-gradient-to-b from-blue-50/50 to-white p-6 shadow-sm flex-1">
                         <h3 className="font-display text-lg font-bold text-slate-900 mb-6">
                             Status Sistem
                         </h3>
@@ -378,55 +343,59 @@ export function UmkmDashboardHome() {
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
             {/* QUICK LINKS BOTTOM */}
-            <div className="grid gap-4 sm:grid-cols-3 mt-4">
-                <Link
-                    href="/dashboard/sales"
-                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
-                >
-                    <div>
-                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
-                            <NotebookPen size={22} />
-                        </span>
-                        <h3 className="mt-4 font-display text-base font-bold text-slate-900">Catat Penjualan</h3>
-                        <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-                            Input histori penjualan harian buat bahan training AI prediksi.
-                        </p>
-                    </div>
-                </Link>
+            <div>
+                <SectionEyebrow color="text-blue-600">Aksi Cepat</SectionEyebrow>
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <Link
+                        href="/dashboard/sales"
+                        className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
+                    >
+                        <div>
+                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
+                                <NotebookPen size={22} />
+                            </span>
+                            <h3 className="mt-4 font-display text-base font-bold text-slate-900">Catat Penjualan</h3>
+                            <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                                Input histori penjualan harian buat bahan training AI prediksi.
+                            </p>
+                        </div>
+                    </Link>
 
-                <Link
-                    href="/dashboard/forecast"
-                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
-                >
-                    <div>
-                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
-                            <Sparkles size={22} />
-                        </span>
-                        <h3 className="mt-4 font-display text-base font-bold text-slate-900">Buat Prediksi</h3>
-                        <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-                            Lihat perkiraan kebutuhan bahan baku bulan depan dengan presisi AI.
-                        </p>
-                    </div>
-                </Link>
+                    <Link
+                        href="/dashboard/forecast"
+                        className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
+                    >
+                        <div>
+                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
+                                <Sparkles size={22} />
+                            </span>
+                            <h3 className="mt-4 font-display text-base font-bold text-slate-900">Buat Prediksi</h3>
+                            <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                                Lihat perkiraan kebutuhan bahan baku bulan depan dengan presisi AI.
+                            </p>
+                        </div>
+                    </Link>
 
-                <Link
-                    href="/dashboard/procurement"
-                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
-                >
-                    <div>
-                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
-                            <ShoppingCart size={22} />
-                        </span>
-                        <h3 className="mt-4 font-display text-base font-bold text-slate-900">Belanja Kolektif</h3>
-                        <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-                            Gabung pesanan bareng UMKM lain buat tebus harga grosir termurah.
-                        </p>
-                    </div>
-                </Link>
+                    <Link
+                        href="/dashboard/procurement"
+                        className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 hover:-translate-y-1"
+                    >
+                        <div>
+                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
+                                <ShoppingCart size={22} />
+                            </span>
+                            <h3 className="mt-4 font-display text-base font-bold text-slate-900">Belanja Kolektif</h3>
+                            <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                                Gabung pesanan bareng UMKM lain buat tebus harga grosir termurah.
+                            </p>
+                        </div>
+                    </Link>
+                </div>
             </div>
         </div>
     );
-}   
+}

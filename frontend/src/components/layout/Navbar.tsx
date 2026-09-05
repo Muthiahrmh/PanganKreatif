@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { User, Menu, X, ArrowRight, Download } from "lucide-react";
+import { User, Menu, X, ArrowRight, Download, Smartphone } from "lucide-react";
 
 // Menu teks biasa (tanpa "Aplikasi" karena sudah jadi tombol khusus)
 const navItems = [
@@ -13,6 +13,8 @@ const navItems = [
   { label: "Cara Kerja", href: "#cara-kerja" },
   { label: "Peran", href: "#peran" },
   { label: "Manfaat", href: "#manfaat" },
+  { label: "Perbandingan", href: "#perbandingan" },
+  { label: "Statistik", href: "#statistik" },
   { label: "Tentang", href: "#tentang" },
   { label: "Kontak", href: "#kontak" },
 ];
@@ -78,7 +80,7 @@ export function Navbar() {
           : "border-b border-transparent bg-transparent py-2.5"
         }`}
     >
-      <nav className="mx-auto flex max-w-[1700px] items-center justify-between px-6 py-2.5 sm:px-8 lg:px-16">
+      <nav className="mx-auto flex max-w-[1700px] items-center justify-between px-6 py-2.5 sm:px-8 lg:px-8 xl:px-16">
         <Link href="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           <Image
             src="/images/logo-pangankreatif.png"
@@ -86,12 +88,16 @@ export function Navbar() {
             width={140}
             height={40}
             priority
-            className={`h-auto object-contain transition-all duration-300 ${digulir ? "w-[110px]" : "w-[130px]"
+            className={`h-auto object-contain transition-all duration-300 ${digulir ? "w-[95px] xl:w-[110px]" : "w-[105px] xl:w-[130px]"
               }`}
           />
         </Link>
 
-        {/* Menu Teks Utama (Lebih longgar karena menu Aplikasi dipisah) */}
+        {/* Menu Teks Utama — tetap muncul dari breakpoint lg (laptop),
+            tapi sejak "Perbandingan" & "Statistik" ditambahkan (9 menu
+            sekaligus) paddingnya dibikin lebih rapat & fontnya lebih
+            kecil khusus di lg, baru longgar lagi mulai xl. Supaya laptop
+            tetap dapat menu penuh, bukan menu hamburger. */}
         <div className="hidden items-center lg:flex">
           {navItems.map((item) => {
             const ini = aktif === item.href;
@@ -101,7 +107,7 @@ export function Navbar() {
                 key={item.label}
                 href={item.href}
                 onClick={(e) => klikTautan(e, item.href)}
-                className={`relative rounded-full px-3 py-2 text-sm font-medium transition-colors xl:px-4 ${ini ? "text-leaf-dark" : "text-ink-soft hover:text-ink"
+                className={`relative rounded-full px-1.5 py-2 text-xs font-medium whitespace-nowrap transition-colors xl:px-3 xl:text-sm ${ini ? "text-leaf-dark" : "text-ink-soft hover:text-ink"
                   }`}
               >
                 {ini && (
@@ -120,32 +126,37 @@ export function Navbar() {
         {/* Tombol Aksi di Kanan: Pasang App, Masuk, Daftar */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* Tombol Khusus Aplikasi / Unduh APK Android */}
+          {/* Tombol Khusus Aplikasi — sebelumnya diciutkan jadi ikon polos
+              doang di rentang lg (laptop pas-pasan lebarnya) dan malah jadi
+              gak jelas unduh apa. Sekarang tetap ada teks pendek "App" +
+              ikon HP (bukan ikon unduh generik) supaya tetap jelas ini
+              tombol pasang aplikasi Android, teks lengkap balik dari xl. */}
           <a
             href="#pasang"
-            className="hidden items-center gap-1.5 rounded-full border border-leaf/30 bg-leaf-soft/50 px-4 py-2 text-sm font-semibold text-leaf-dark transition-all hover:bg-leaf-soft hover:shadow-sm md:flex"
-            title="Pasang Aplikasi ke HP"
+            className="hidden items-center gap-1.5 rounded-full border border-leaf/30 bg-leaf-soft/50 px-3 py-2 text-xs font-semibold text-leaf-dark transition-all hover:bg-leaf-soft hover:shadow-sm lg:flex xl:gap-2 xl:px-4 xl:py-2 xl:text-sm"
+            title="Pasang Aplikasi Android PanganKreatif"
           >
-            <Download size={15} />
-            <span>Pasang App</span>
+            <Smartphone size={15} />
+            <span className="xl:hidden">App</span>
+            <span className="hidden xl:inline">Pasang App</span>
           </a>
 
           <Link
             href="/login"
-            className="hidden items-center gap-2 rounded-full border border-ink/12 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-teal hover:text-teal-dark sm:flex"
+            className="hidden items-center gap-1.5 rounded-full border border-ink/12 px-3 py-2 text-xs font-medium text-ink transition-colors hover:border-teal hover:text-teal-dark sm:flex xl:gap-2 xl:px-4 xl:text-sm"
           >
-            <User size={16} />
+            <User size={15} />
             Masuk
           </Link>
 
           <Link
             href="/register"
-            className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-leaf to-teal px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition-all hover:shadow-lg hover:shadow-leaf/25 sm:px-5 sm:text-sm"
+            className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-leaf to-teal px-3.5 py-2.5 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition-all hover:shadow-lg hover:shadow-leaf/25 xl:px-5 xl:text-sm"
           >
             Daftar Sekarang
             <ArrowRight
               size={15}
-              className="transition-transform group-hover:translate-x-0.5"
+              className="hidden transition-transform group-hover:translate-x-0.5 xl:inline-block"
             />
           </Link>
 

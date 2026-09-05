@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Users, Clock, Package, TrendingDown, ShoppingBag, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter, XCircle } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { Button } from "@/components/ui/Button";
 import { TombolBayarMidtrans } from "@/components/dashboard/TombolBayarDaring";
 import { batalkanPembayaran } from "@/lib/payment";
@@ -18,6 +21,13 @@ const rupiah = (n: number) => `Rp${Math.round(n).toLocaleString("id-ID")}`;
 const ITEMS_PER_PAGE = 6;
 
 export default function ProcurementPage() {
+    const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "umkm");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [tab, setTab] = useState<"open" | "mine">("open");
     const [openOrders, setOpenOrders] = useState<ProcurementOrder[]>([]);
     const [myItems, setMyItems] = useState<ProcurementOrderItem[]>([]);
@@ -162,18 +172,28 @@ export default function ProcurementPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
-            {/* Header Halaman */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100">
-                    Belanja Bersama & Efisiensi Biaya
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        Belanja Bersama & Efisiensi Biaya
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Pengadaan Kolektif (Procurement)
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Bergabunglah dengan pesanan kolektif dari berbagai pemasok untuk mendapatkan harga grosir terbaik secara otomatis saat kuota terpenuhi.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Pengadaan Kolektif (Procurement)
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Bergabunglah dengan pesanan kolektif dari berbagai pemasok untuk mendapatkan harga grosir terbaik secara otomatis saat kuota terpenuhi.
-                </p>
             </div>
 
             {/* Tab Navigasi Utama & Filter Kategori */}
@@ -214,7 +234,7 @@ export default function ProcurementPage() {
                         </span>
                         <button
                             onClick={() => { setSelectedCategory("semua"); setCurrentPage(1); }}
-                            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${selectedCategory === "semua" ? "bg-blue-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${selectedCategory === "semua" ? "bg-[var(--warna-peran)] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                 }`}
                         >
                             Semua
@@ -223,7 +243,7 @@ export default function ProcurementPage() {
                             <button
                                 key={cat}
                                 onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }}
-                                className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${selectedCategory === cat ? "bg-blue-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${selectedCategory === cat ? "bg-[var(--warna-peran)] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                     }`}
                             >
                                 {cat}
@@ -394,12 +414,12 @@ export default function ProcurementPage() {
                                                                 [order.id]: e.target.value,
                                                             }))
                                                         }
-                                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
                                                     />
                                                     <Button
                                                         onClick={() => handleJoin(order.id)}
                                                         loading={joiningId === order.id}
-                                                        className="shrink-0 px-6 rounded-2xl font-bold shadow-md bg-blue-600 hover:bg-blue-700"
+                                                        className="shrink-0 px-6 rounded-2xl font-bold shadow-md bg-[var(--warna-peran)] hover:brightness-90"
                                                     >
                                                         Gabung
                                                     </Button>
@@ -703,23 +723,23 @@ function BulkProgress({
     const persen = Math.min((terkumpul / pricing.bulkMinQty) * 100, 100);
 
     return (
-        <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-            <div className="flex items-baseline justify-between text-xs font-bold text-blue-900">
+        <div className="mt-4 rounded-2xl border border-[var(--warna-peran)]/20 bg-[var(--warna-peran-latar)] p-4">
+            <div className="flex items-baseline justify-between text-xs font-bold text-[var(--warna-peran)]">
                 <span>Progress Menuju Grosir</span>
-                <span className="text-blue-600 font-extrabold">
+                <span className="text-[var(--warna-peran)] font-extrabold">
                     {terkumpul} / {pricing.bulkMinQty} {unit}
                 </span>
             </div>
 
             <div className="mt-2.5 h-2.5 rounded-full bg-white overflow-hidden p-0.5 shadow-inner">
                 <div
-                    className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-out"
+                    className="h-full rounded-full bg-[var(--warna-peran)] transition-all duration-500 ease-out"
                     style={{ width: `${Math.max(persen, 4)}%` }}
                 />
             </div>
 
             <p className="mt-2 text-xs font-medium text-slate-600 leading-relaxed">
-                Kurang <strong className="text-blue-900">{pricing.remainingToBulk} {unit}</strong> lagi agar harga turun menjadi <strong className="text-blue-900">{rupiah(pricing.bulkPrice)}</strong>/{unit}.
+                Kurang <strong className="text-[var(--warna-peran)]">{pricing.remainingToBulk} {unit}</strong> lagi agar harga turun menjadi <strong className="text-[var(--warna-peran)]">{rupiah(pricing.bulkPrice)}</strong>/{unit}.
             </p>
         </div>
     );

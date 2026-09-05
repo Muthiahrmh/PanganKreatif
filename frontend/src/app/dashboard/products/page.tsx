@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil, Trash2, X, Package, Layers, ChevronLeft, ChevronRight } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
@@ -44,6 +46,12 @@ const ITEMS_PER_PAGE = 5;
 
 export default function SupplierProductsPage() {
     const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "supplier");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [products, setProducts] = useState<SupplierProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -153,24 +161,34 @@ export default function SupplierProductsPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
-            {/* Header Halaman */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 mb-2 border border-emerald-100">
-                        Manajemen Inventaris & Katalog
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                            Manajemen Inventaris & Katalog
+                        </div>
+                        <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                            Katalog Produk Saya
+                        </h2>
+                        <p className="mt-2 text-sm font-medium text-white/70 max-w-xl leading-relaxed">
+                            Kelola daftar bahan baku dan atur penawaran harga grosir khusus untuk pesanan kolektif UMKM.
+                        </p>
                     </div>
-                    <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Katalog Produk Saya
-                    </h2>
-                    <p className="mt-1 text-sm font-medium text-slate-500 max-w-xl">
-                        Kelola daftar bahan baku dan atur penawaran harga grosir khusus untuk pesanan kolektif UMKM.
-                    </p>
-                </div>
 
-                <Button onClick={openAddForm} className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold shadow-md hover:bg-emerald-700 shrink-0">
-                    <Plus size={18} strokeWidth={2.5} /> Tambah Produk Baru
-                </Button>
+                    <Button onClick={openAddForm} className="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-md hover:bg-white/90 shrink-0">
+                        <Plus size={18} strokeWidth={2.5} /> Tambah Produk Baru
+                    </Button>
+                </div>
             </div>
 
             {error && (
@@ -183,11 +201,12 @@ export default function SupplierProductsPage() {
             {showForm && (
                 <form
                     onSubmit={handleSubmit(onSubmit)}
-                    className="grid gap-5 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:grid-cols-2"
+                    className="relative overflow-hidden grid gap-5 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:grid-cols-2"
                 >
+                    <span className="absolute inset-x-0 top-0 h-1.5 bg-[var(--warna-peran)]" />
                     <div className="flex items-center justify-between sm:col-span-2 pb-4 border-b border-slate-100">
                         <div>
-                            <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Formulir Katalog</div>
+                            <div className="text-[11px] font-bold text-[var(--warna-peran)] uppercase tracking-wider">Formulir Katalog</div>
                             <h3 className="font-display text-lg font-extrabold text-slate-900 mt-0.5">
                                 {editingId ? "Ubah Informasi Produk" : "Daftarkan Produk Baru"}
                             </h3>
@@ -213,9 +232,9 @@ export default function SupplierProductsPage() {
                     />
                     <TextField label="Stok Tersedia" type="number" placeholder="100" {...register("stock")} />
 
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 sm:col-span-2 space-y-3">
+                    <div className="rounded-2xl border border-[var(--warna-peran)]/20 bg-[var(--warna-peran-latar)] p-5 sm:col-span-2 space-y-3">
                         <div className="flex items-center gap-2">
-                            <Layers size={16} className="text-emerald-600" />
+                            <Layers size={16} className="text-[var(--warna-peran)]" />
                             <h4 className="text-sm font-bold text-slate-900">
                                 Pengaturan Harga Grosir (Opsional)
                             </h4>
@@ -241,7 +260,7 @@ export default function SupplierProductsPage() {
                     </div>
 
                     <div className="sm:col-span-2 pt-2">
-                        <Button type="submit" loading={isSubmitting} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold shadow-md hover:bg-emerald-700">
+                        <Button type="submit" loading={isSubmitting} className="rounded-2xl bg-[var(--warna-peran)] px-6 py-3 text-sm font-bold shadow-md hover:brightness-90">
                             {editingId ? "Simpan Perubahan" : "Tambahkan ke Katalog"}
                         </Button>
                     </div>
@@ -249,7 +268,8 @@ export default function SupplierProductsPage() {
             )}
 
             {/* Daftar Produk */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <span className="absolute inset-x-0 top-0 h-1.5 bg-slate-300" />
                 {loading ? (
                     <div className="py-12 text-center text-sm font-medium text-slate-400">Memuat katalog produk...</div>
                 ) : products.length === 0 ? (
@@ -280,7 +300,7 @@ export default function SupplierProductsPage() {
                                             <td className="py-4 px-4 font-semibold text-slate-800">
                                                 Rp{Number(p.price).toLocaleString("id-ID")}/{p.unit}
                                                 {p.bulkPrice != null && p.bulkMinQty != null && (
-                                                    <div className="text-xs font-bold text-emerald-600 mt-0.5">
+                                                    <div className="text-xs font-bold text-[var(--warna-peran)] mt-0.5">
                                                         Grosir: Rp{Number(p.bulkPrice).toLocaleString("id-ID")} (min {p.bulkMinQty} {p.unit})
                                                     </div>
                                                 )}
@@ -293,7 +313,7 @@ export default function SupplierProductsPage() {
                                             <td className="py-4 px-4 font-semibold text-slate-600">{p.orderCount} sesi</td>
                                             <td className="py-4 px-4 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button onClick={() => openEditForm(p)} className="rounded-xl border border-slate-200 bg-white p-2 text-blue-600 shadow-sm transition hover:bg-slate-50" title="Edit">
+                                                    <button onClick={() => openEditForm(p)} className="rounded-xl border border-slate-200 bg-white p-2 text-[var(--warna-peran)] shadow-sm transition hover:bg-slate-50" title="Edit">
                                                         <Pencil size={15} />
                                                     </button>
                                                     <button onClick={() => setHapusTarget(p)} className="rounded-xl border border-slate-200 bg-white p-2 text-red-500 shadow-sm transition hover:bg-slate-50" title="Hapus">
@@ -317,7 +337,7 @@ export default function SupplierProductsPage() {
                                             <span className="text-xs font-semibold text-slate-500">{p.category} · {p.orderCount} pesanan aktif</span>
                                         </div>
                                         <div className="flex gap-1">
-                                            <button onClick={() => openEditForm(p)} className="rounded-xl bg-white border border-slate-200 p-2 text-blue-600 shadow-sm">
+                                            <button onClick={() => openEditForm(p)} className="rounded-xl bg-white border border-slate-200 p-2 text-[var(--warna-peran)] shadow-sm">
                                                 <Pencil size={15} />
                                             </button>
                                             <button onClick={() => setHapusTarget(p)} className="rounded-xl bg-white border border-slate-200 p-2 text-red-500 shadow-sm">
@@ -334,7 +354,7 @@ export default function SupplierProductsPage() {
                                     </div>
 
                                     {p.bulkPrice != null && p.bulkMinQty != null && (
-                                        <div className="mt-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                        <div className="mt-2 text-[11px] font-bold text-[var(--warna-peran)] bg-[var(--warna-peran-latar)] px-2.5 py-1 rounded-lg border border-[var(--warna-peran)]/20">
                                             Grosir: Rp{Number(p.bulkPrice).toLocaleString("id-ID")} (min {p.bulkMinQty} {p.unit})
                                         </div>
                                     )}

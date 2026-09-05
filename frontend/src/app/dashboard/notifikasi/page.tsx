@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Info, Bell, ArrowRight } from "lucide-react";
 import { ambilNotifikasi, tandaiSudahDilihat } from "@/lib/notification";
 import type { Notifikasi, TingkatNotifikasi } from "@/types/notification";
+import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 
 const GAYA: Record<TingkatNotifikasi, { warna: string; latar: string; border: string }> = {
     perlu_tindakan: { warna: "text-amber-700", latar: "bg-amber-50/60 hover:bg-amber-50", border: "border-amber-100" },
@@ -43,6 +46,14 @@ function waktuRelatif(iso: string) {
 }
 
 export default function HalamanNotifikasi() {
+    const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role);
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
+
     const [daftar, setDaftar] = useState<Notifikasi[]>([]);
     const [memuat, setMemuat] = useState(true);
     const [filterAktif, setFilterAktif] = useState<"semua" | TingkatNotifikasi>("semua");
@@ -74,25 +85,35 @@ export default function HalamanNotifikasi() {
     const jumlahInfo = daftar.filter(n => n.tingkat === "info").length;
 
     return (
-        <div className="mx-auto max-w-3xl px-4 py-8 md:py-10">
-            {/* Header Halaman */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100">
-                        Pusat Pemberitahuan
+        <div className="mx-auto max-w-3xl px-4 py-8 md:py-10" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden mb-6 rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                            Pusat Pemberitahuan
+                        </div>
+                        <h1 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                            Notifikasi Anda
+                        </h1>
+                        <p className="mt-2 text-sm font-medium text-white/70">
+                            Pilih kategori di bawah untuk menyaring informasi penting secara instan.
+                        </p>
                     </div>
-                    <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Notifikasi Anda
-                    </h1>
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                        Pilih kategori di bawah untuk menyaring informasi penting secara instan.
-                    </p>
-                </div>
 
-                <div className="shrink-0">
-                    <span className="inline-flex items-center rounded-2xl bg-slate-100 px-4 py-2 text-xs font-extrabold text-slate-700 shadow-inner">
-                        {jumlahSemua} Total Pesan
-                    </span>
+                    <div className="shrink-0">
+                        <span className="inline-flex items-center rounded-2xl bg-white/10 border border-white/15 px-4 py-2 text-xs font-extrabold text-white backdrop-blur-sm">
+                            {jumlahSemua} Total Pesan
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -167,7 +188,7 @@ export default function HalamanNotifikasi() {
 
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        <span className="text-sm font-bold text-slate-900 group-hover:text-[var(--warna-peran)] transition-colors">
                                             {n.judul}
                                         </span>
                                     </div>
@@ -180,7 +201,7 @@ export default function HalamanNotifikasi() {
                                 </div>
                             </div>
 
-                            <div className="shrink-0 self-center text-slate-300 group-hover:text-blue-600 transition-colors transform group-hover:translate-x-1">
+                            <div className="shrink-0 self-center text-slate-300 group-hover:text-[var(--warna-peran)] transition-colors transform group-hover:translate-x-1">
                                 <ArrowRight size={18} />
                             </div>
                         </Link>

@@ -37,7 +37,7 @@ export function ContactSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.5 }}
-                    className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-8 text-white sm:p-12 lg:p-14"
+                    className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] p-8 text-white sm:p-12 lg:p-14"
                 >
                     <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-leaf/10 blur-2xl" />
                     <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-teal/15 blur-2xl" />
@@ -54,23 +54,26 @@ export function ContactSection() {
                                 Gratis mendaftar, tanpa biaya tersembunyi.
                             </p>
 
-                            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                            {/* Dipaksa tetap 2 kolom sebelahan sejak HP terkecil — padding,
+                                ikon, dan teks mengecil khusus di mobile biar tetap muat. */}
+                            <div className="mt-8 grid grid-cols-2 gap-2 sm:gap-3">
                                 <Link
                                     href="/register?role=umkm"
-                                    className="group rounded-2xl bg-white p-4 text-left transition hover:shadow-lg"
+                                    className="group rounded-2xl bg-white p-3 text-left transition hover:shadow-lg sm:p-4"
                                 >
-                                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                        <Store size={17} />
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 sm:h-9 sm:w-9">
+                                        <Store size={14} className="sm:hidden" />
+                                        <Store size={17} className="hidden sm:block" />
                                     </span>
 
-                                    <div className="mt-3 font-display text-sm font-bold text-soil">
+                                    <div className="mt-2 font-display text-xs font-bold leading-tight text-soil sm:mt-3 sm:text-sm">
                                         Saya UMKM Kuliner
                                     </div>
-                                    <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                                    <p className="mt-1 hidden text-xs leading-relaxed text-ink-soft sm:block">
                                         Warung, kafe, katering, rumah makan
                                     </p>
 
-                                    <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600">
+                                    <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 sm:mt-2.5 sm:text-xs">
                                         Daftar sekarang
                                         <ArrowRight
                                             size={12}
@@ -81,20 +84,21 @@ export function ContactSection() {
 
                                 <Link
                                     href="/register?role=supplier"
-                                    className="group rounded-2xl bg-white p-4 text-left transition hover:shadow-lg"
+                                    className="group rounded-2xl bg-white p-3 text-left transition hover:shadow-lg sm:p-4"
                                 >
-                                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-leaf-soft text-leaf-dark">
-                                        <Sprout size={17} />
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-leaf-soft text-leaf-dark sm:h-9 sm:w-9">
+                                        <Sprout size={14} className="sm:hidden" />
+                                        <Sprout size={17} className="hidden sm:block" />
                                     </span>
 
-                                    <div className="mt-3 font-display text-sm font-bold text-soil">
+                                    <div className="mt-2 font-display text-xs font-bold leading-tight text-soil sm:mt-3 sm:text-sm">
                                         Saya Pemasok
                                     </div>
-                                    <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                                    <p className="mt-1 hidden text-xs leading-relaxed text-ink-soft sm:block">
                                         Kelompok tani, nelayan, distributor
                                     </p>
 
-                                    <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-leaf-dark">
+                                    <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-leaf-dark sm:mt-2.5 sm:text-xs">
                                         Daftar sekarang
                                         <ArrowRight
                                             size={12}
@@ -158,7 +162,7 @@ export function ContactSection() {
                                 href="/bantuan"
                                 className="group flex items-center gap-4 rounded-2xl bg-white/10 p-4 backdrop-blur transition hover:bg-white/15"
                             >
-                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-harvest text-white">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal text-white">
                                     <Headset size={19} />
                                 </span>
 

@@ -28,8 +28,8 @@ const cerita = [
         icon: Lightbulb,
         judul: "Cara kami menjawabnya",
         desc: "AI memperkirakan kebutuhan bahan baku, lalu beberapa UMKM digabung jadi satu pesanan besar — harga per satuan pun turun.",
-        warna: "#159B87", // Teal
-        latar: "#E6F4F1",
+        warna: "#0E7FA6", // Teal-biru
+        latar: "#E3F2F7",
     },
     {
         icon: MapPin,
@@ -42,8 +42,11 @@ const cerita = [
 
 export function AboutSection() {
     return (
-        <section id="tentang" className="bg-white">
-            <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
+        <section id="tentang" className="relative isolate overflow-hidden bg-white">
+            {/* Cahaya ambient — konsisten dengan section putih lain */}
+            <div className="pointer-events-none absolute -left-24 bottom-0 h-96 w-96 rounded-full bg-leaf-soft/50 blur-3xl" />
+
+            <div className="relative mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -56,7 +59,7 @@ export function AboutSection() {
                         Tentang Kami
                     </span>
 
-                    <h2 className="mt-4 font-display text-2xl font-bold leading-tight text-soil md:text-4xl">
+                    <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
                         Berawal dari satu hal yang
                         <br className="hidden sm:block" />{" "}
                         <span className="text-teal-dark">kami lihat sendiri</span>
@@ -102,7 +105,7 @@ export function AboutSection() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-60px" }}
                         transition={{ duration: 0.5, delay: 0.15 }}
-                        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] p-7 text-white lg:p-8"
+                        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] p-7 text-white lg:p-8"
                     >
                         <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/5" />
                         <div className="pointer-events-none absolute -bottom-20 -left-14 h-48 w-48 rounded-full bg-leaf/10" />

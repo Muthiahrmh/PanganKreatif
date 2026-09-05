@@ -24,6 +24,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const router = useRouter();
     const setAuth = useAuthStore((s) => s.setAuth);
+    const deviceToken = useAuthStore((s) => s.deviceToken);
+    const setDeviceToken = useAuthStore((s) => s.setDeviceToken);
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [perluVerifikasi, setPerluVerifikasi] = useState(false);
@@ -37,6 +39,7 @@ export default function LoginPage() {
     const [otpLoading, setOtpLoading] = useState(false);
     const [mengirimUlang, setMengirimUlang] = useState(false);
     const [jedaKirimUlang, setJedaKirimUlang] = useState(0);
+    const [ingatPerangkat, setIngatPerangkat] = useState(true);
 
     const {
         register,
@@ -56,7 +59,12 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await api.post<AuthResponse | LoginOtpResponse>("/auth/login", data);
+            const res = await api.post<AuthResponse | LoginOtpResponse>("/auth/login", {
+                ...data,
+                // Kalau perangkat ini pernah lolos OTP sebelumnya, sertakan
+                // tokennya — backend akan lewati OTP kalau masih berlaku.
+                ...(deviceToken && { deviceToken }),
+            });
 
             if ("perluOtp" in res.data && res.data.perluOtp) {
                 setEmailOtp(res.data.email);
@@ -87,8 +95,12 @@ export default function LoginPage() {
             const res = await api.post<AuthResponse>("/auth/login/verify-otp", {
                 email: emailOtp,
                 kode: kodeOtp,
+                ingatPerangkat,
             });
             setAuth(res.data.user, res.data.token);
+            // Simpan token "ingat perangkat ini" — login berikutnya dari
+            // perangkat yang sama tidak perlu OTP lagi.
+            if (res.data.deviceToken) setDeviceToken(res.data.deviceToken);
             router.push("/dashboard");
         } catch (err) {
             setOtpError(getApiErrorMessage(err));
@@ -150,6 +162,19 @@ export default function LoginPage() {
                             {otpError}
                         </p>
                     )}
+
+                    <label className="mt-5 flex cursor-pointer items-start gap-2.5 text-left">
+                        <input
+                            type="checkbox"
+                            checked={ingatPerangkat}
+                            onChange={(e) => setIngatPerangkat(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink/25 text-brand-blue focus:ring-brand-blue"
+                        />
+                        <span className="text-sm text-ink-soft">
+                            Ingat perangkat ini selama 30 hari — login berikutnya di{" "}
+                            <span className="font-semibold">HP/laptop ini</span> tidak perlu kode OTP lagi.
+                        </span>
+                    </label>
 
                     <Button
                         onClick={submitOtp}

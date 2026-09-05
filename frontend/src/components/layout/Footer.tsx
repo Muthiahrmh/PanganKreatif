@@ -22,8 +22,14 @@ const tautan = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-ink/5 bg-soil text-white">
-      <div className="mx-auto w-full max-w-[1700px] px-6 py-14 sm:px-8 lg:px-16">
+    <footer className="relative isolate overflow-hidden border-t border-ink/5 bg-soil text-white">
+      {/* Garis gradasi tipis di puncak footer — menutup halaman dengan
+          gradasi brand yang sama dipakai di tombol utama & logo */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-leaf/60 to-transparent" />
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-leaf/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-teal/10 blur-3xl" />
+
+      <div className="relative mx-auto w-full max-w-[1700px] px-6 py-14 sm:px-8 lg:px-16">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Image
@@ -44,7 +50,7 @@ export function Footer() {
                 <MessageCircle size={14} /> 0821-6538-3828
               </span>
               <span className="inline-flex items-center gap-2">
-                <Mail size={14} /> pangankreatif@gmail.com
+                <Mail size={14} /> pangankreatif08@gmail.com
               </span>
               <span className="inline-flex items-start gap-2">
                 <MapPin size={14} className="mt-0.5 shrink-0" />

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -74,8 +75,28 @@ model User {
 
   umkmProfile       UmkmProfile?
   supplierProfile   SupplierProfile?
+  trustedDevices    TrustedDevice[]
 
   @@map("users")
+}
+
+// Perangkat yang sudah pernah lolos OTP login. Selama tokennya masih
+// berlaku, login berikutnya dari perangkat yang sama tidak perlu OTP
+// lagi — mirip "ingat perangkat ini" di WhatsApp Web. Login dari
+// perangkat lain (tanpa token ini, atau tokennya kedaluwarsa) tetap
+// wajib lewat OTP seperti biasa.
+model TrustedDevice {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  tokenHash  String   @unique @map("token_hash")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("trusted_devices")
 }
 
 model UmkmProfile {

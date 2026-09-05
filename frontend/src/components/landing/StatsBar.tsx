@@ -54,7 +54,7 @@ export function StatsBar() {
   const maks = 300;
 
   return (
-    <section className="relative overflow-hidden bg-soil py-16 text-white lg:py-20">
+    <section id="statistik" className="relative overflow-hidden bg-soil py-16 text-white lg:py-20">
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-leaf/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-teal/10 blur-3xl" />
 
@@ -70,7 +70,7 @@ export function StatsBar() {
               Roadmap & Proyeksi
             </span>
 
-            <h2 className="mt-4 font-display text-2xl font-bold leading-tight md:text-4xl">
+            <h2 className="mt-4 font-display text-3xl font-bold leading-tight md:text-4xl">
               Membangun ekosistem,
               <br className="hidden sm:block" />{" "}
               <span className="text-leaf">menciptakan dampak nyata.</span>

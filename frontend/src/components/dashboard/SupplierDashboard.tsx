@@ -19,6 +19,7 @@ import { StatusBadge } from "./StatusBadge";
 import { WeatherCard } from "./WeatherCard";
 import { KartuPanduan } from "./KartuPanduan";
 import { GrafikPendapatan } from "./GrafikPendapatan";
+import { SectionEyebrow } from "./SectionEyebrow";
 import { useAuthStore } from "@/store/authStore";
 import { fetchDemandInsights, fetchMyOrders, fetchSupplierStats } from "@/lib/supplier";
 import { getApiErrorMessage } from "@/lib/api";
@@ -142,6 +143,8 @@ export function SupplierDashboard() {
             )}
 
             {/* KARTU STATISTIK PEMASOK (Lengkap dengan Satuan) */}
+            <div>
+            <SectionEyebrow color="text-emerald-700">Statistik Utama</SectionEyebrow>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     icon={ClipboardList}
@@ -179,15 +182,22 @@ export function SupplierDashboard() {
                     color="text-amber-600"
                 />
             </div>
+            </div>
 
-            <GrafikPendapatan />
-
-            <WeatherCard peran="supplier" />
+            <div>
+                <SectionEyebrow color="text-emerald-700">Pendapatan & Cuaca</SectionEyebrow>
+                <div className="flex flex-col gap-6">
+                    <GrafikPendapatan />
+                    <WeatherCard peran="supplier" />
+                </div>
+            </div>
 
             {/* SEKSI: Permintaan Pasar & Pesanan Masuk */}
+            <div>
+            <SectionEyebrow color="text-emerald-700">Permintaan & Pesanan Masuk</SectionEyebrow>
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Permintaan Pasar */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
                     <div className="flex items-center justify-between">
                         <h3 className="font-display text-lg font-bold text-slate-900">
                             Permintaan Bahan Baku
@@ -244,7 +254,7 @@ export function SupplierDashboard() {
                 </div>
 
                 {/* Pesanan Masuk Terbaru */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col justify-between">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col justify-between">
                     <div>
                         <div className="flex items-center justify-between">
                             <h3 className="font-display text-lg font-bold text-slate-900">
@@ -299,11 +309,14 @@ export function SupplierDashboard() {
                     </div>
                 </div>
             </div>
+            </div>
 
             {/* SEKSI: Pesanan Aktif & Peluang Pasokan */}
+            <div>
+            <SectionEyebrow color="text-emerald-700">Pesanan Aktif & Peluang Pasokan</SectionEyebrow>
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Pesanan Aktif */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
                     <h3 className="font-display text-lg font-bold text-slate-900">Pesanan Aktif Berjalan</h3>
 
                     {loading ? (
@@ -351,7 +364,7 @@ export function SupplierDashboard() {
                 </div>
 
                 {/* Peluang Pasokan */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col justify-between">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm flex flex-col justify-between">
                     <div>
                         <h3 className="font-display text-lg font-bold text-slate-900">Peluang Komoditas Baru</h3>
 
@@ -411,6 +424,7 @@ export function SupplierDashboard() {
                         </div>
                     )}
                 </div>
+            </div>
             </div>
         </div>
     );

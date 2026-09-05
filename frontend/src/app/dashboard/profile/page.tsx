@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Trash2, Check, KeyRound, User, Building, ShieldCheck, Landmark } from "lucide-react";
+import type { CSSProperties } from "react";
+import { Camera, Trash2, Check, KeyRound, Building, ShieldCheck, Landmark } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { getApiErrorMessage } from "@/lib/api";
 import {
     changePassword,
@@ -160,9 +162,20 @@ export default function ProfilePage() {
     if (!user) return null;
 
     const initial = (user.name ?? "U").charAt(0).toUpperCase();
+    const tema = temaPeran(user.role);
+    // Variabel CSS lokal biar semua aksen di halaman ini otomatis ikut
+    // warna peran (biru/hijau/oranye) — dulu warnanya biru & hijau ngasal,
+    // gak nyambung sama role yang lagi login. --warna-gelap dipakai buat
+    // gradasi hero, diambil dari warna sidebar biar senada sama identitas
+    // peran yang sama persis dipakai di navigasi.
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
             {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 shadow-sm">
                     {error}
@@ -174,84 +187,108 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            <div className="grid items-start gap-6 lg:grid-cols-[380px_1fr]">
-                {/* Kolom kiri: Foto Profil & Keamanan */}
-                <div className="flex flex-col gap-6">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                        <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-4">
-                            <User size={15} /> Identitas Visual
-                        </div>
-                        <h3 className="font-display text-lg font-extrabold text-slate-900">Foto Profil</h3>
+            {/* Hero Identitas — gradasi gelap bernuansa warna peran, gantiin kartu putih polos */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-48 w-48 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
 
-                        <div className="mt-6 flex flex-col items-center gap-5 text-center">
-                            <div className="relative">
-                                {user.avatarUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={user.avatarUrl}
-                                        alt="Foto profil"
-                                        className="h-36 w-36 rounded-full object-cover ring-4 ring-slate-100 shadow-md"
-                                    />
-                                ) : (
-                                    <div className="flex h-36 w-36 items-center justify-center rounded-full bg-blue-600 font-display text-4xl font-extrabold text-white shadow-md">
-                                        {initial}
-                                    </div>
-                                )}
-
-                                {uploading && (
-                                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/40 backdrop-blur-sm">
-                                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="w-full">
-                                <div className="flex flex-wrap justify-center gap-2.5">
-                                    <button
-                                        onClick={() => fileRef.current?.click()}
-                                        disabled={uploading}
-                                        className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
-                                    >
-                                        <Camera size={15} />
-                                        {user.avatarUrl ? "Ganti Foto" : "Unggah Foto"}
-                                    </button>
-
-                                    {user.avatarUrl && (
-                                        <button
-                                            onClick={handleDeletePhoto}
-                                            disabled={uploading}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-                                        >
-                                            <Trash2 size={15} /> Hapus
-                                        </button>
-                                    )}
-                                </div>
-
-                                <p className="mt-3 text-[11px] font-medium text-slate-400">
-                                    Format JPG, PNG, atau WEBP. Maksimal ukuran berkas 2 MB.
-                                </p>
-                            </div>
-
-                            <input
-                                ref={fileRef}
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                onChange={handleFile}
-                                className="hidden"
+                <div className="relative z-10 flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:text-left">
+                    <div className="relative shrink-0">
+                        {user.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={user.avatarUrl}
+                                alt="Foto profil"
+                                className="h-28 w-28 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-white/20 shadow-lg"
                             />
-                        </div>
+                        ) : (
+                            <div className="flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full bg-white/10 font-display text-4xl font-extrabold text-white ring-4 ring-white/15 shadow-lg backdrop-blur-sm">
+                                {initial}
+                            </div>
+                        )}
+
+                        {uploading && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/50 backdrop-blur-sm">
+                                <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            </div>
+                        )}
                     </div>
 
+                    <div className="min-w-0 flex-1">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                            {tema.label}
+                        </div>
+                        <h2 className="mt-3 font-display text-2xl sm:text-3xl font-black tracking-tight text-white truncate">
+                            {user.name || "Pengguna PanganKreatif"}
+                        </h2>
+                        <p className="mt-1 text-sm font-medium text-white/70 truncate">{user.email}</p>
+                        {user.createdAt && (
+                            <p className="mt-1 text-xs font-semibold text-white/50">
+                                Bergabung sejak {formatDate(user.createdAt)}
+                            </p>
+                        )}
+
+                        <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:justify-start">
+                            <button
+                                onClick={() => fileRef.current?.click()}
+                                disabled={uploading}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-white/90 disabled:opacity-60"
+                            >
+                                <Camera size={15} />
+                                {user.avatarUrl ? "Ganti Foto" : "Unggah Foto"}
+                            </button>
+
+                            {user.avatarUrl && (
+                                <button
+                                    onClick={handleDeletePhoto}
+                                    disabled={uploading}
+                                    className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-white/20 disabled:opacity-60 backdrop-blur-sm"
+                                >
+                                    <Trash2 size={15} /> Hapus
+                                </button>
+                            )}
+                        </div>
+
+                        <p className="mt-3 text-[11px] font-medium text-white/40">
+                            Format JPG, PNG, atau WEBP. Maksimal ukuran berkas 2 MB.
+                        </p>
+                    </div>
+                </div>
+
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFile}
+                    className="hidden"
+                />
+            </div>
+
+            <div className="grid items-start gap-6 lg:grid-cols-[380px_1fr]">
+                {/* Kolom kiri: Keamanan */}
+                <div className="flex flex-col gap-6">
                     <PasswordCard onDone={flash} onError={setError} />
                 </div>
 
                 {/* Kolom kanan: Data Usaha */}
                 <div className="flex flex-col gap-6">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">
-                            <Building size={15} /> Informasi Akun & Operasional
+                    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                        <span className="absolute inset-x-0 top-0 h-1.5 bg-[var(--warna-peran)]" />
+                        <div className="flex items-center gap-2.5">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]">
+                                <Building size={17} />
+                            </span>
+                            <div className="text-xs font-bold text-[var(--warna-peran)] uppercase tracking-wider">
+                                Informasi Akun & Operasional
+                            </div>
                         </div>
-                        <h3 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                        <h3 className="mt-3 font-display text-xl font-extrabold text-slate-900 tracking-tight">
                             {isAdmin ? "Data Akun Administrator" : "Data Profil Usaha"}
                         </h3>
                         <p className="mt-1 text-sm font-medium text-slate-500">
@@ -351,7 +388,7 @@ export default function ProfilePage() {
                                     <button
                                         onClick={handleSave}
                                         disabled={saving}
-                                        className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-60"
+                                        className="rounded-2xl bg-[var(--warna-peran)] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:brightness-90 disabled:opacity-60"
                                     >
                                         {saving ? "Menyimpan Perubahan..." : "Simpan Perubahan Profil"}
                                     </button>
@@ -370,11 +407,17 @@ export default function ProfilePage() {
 
             {/* Khusus Supplier: Rekening Pencairan (Dipindah ke Luar Grid Biar Full Width & Balance) */}
             {isSupplier && !loading && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                    <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
-                        <Landmark size={15} /> Pengaturan Finansial
+                <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <span className="absolute inset-x-0 top-0 h-1.5 bg-[var(--warna-peran)]" />
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]">
+                            <Landmark size={17} />
+                        </span>
+                        <div className="text-xs font-bold text-[var(--warna-peran)] uppercase tracking-wider">
+                            Pengaturan Finansial
+                        </div>
                     </div>
-                    <h3 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                    <h3 className="mt-3 font-display text-xl font-extrabold text-slate-900 tracking-tight">
                         Rekening Penerimaan Dana
                     </h3>
                     <p className="mt-1 text-sm font-medium text-slate-500 leading-relaxed max-w-3xl">
@@ -436,11 +479,12 @@ export default function ProfilePage() {
                                                     : [...(form.ewalletProviders ?? []), w.value],
                                             })
                                         }
-                                        className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${aktif
-                                                ? "border-blue-500 bg-blue-50 text-blue-700"
+                                        className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold transition ${aktif
+                                                ? "border-[var(--warna-peran)] bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]"
                                                 : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                                             }`}
                                     >
+                                        {aktif && <Check size={13} />}
                                         {w.label}
                                     </button>
                                 );
@@ -472,7 +516,7 @@ export default function ProfilePage() {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="rounded-2xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded-2xl bg-[var(--warna-peran)] px-8 py-3 text-sm font-bold text-white shadow-md transition hover:brightness-90 disabled:opacity-60"
                         >
                             {saving ? "Menyimpan..." : "Simpan Rekening Pemasok"}
                         </button>
@@ -517,11 +561,17 @@ function PasswordCard({
     }
 
     return (
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">
-                <ShieldCheck size={15} /> Keamanan Akun
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <span className="absolute inset-x-0 top-0 h-1.5 bg-amber-500" />
+            <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <ShieldCheck size={17} />
+                </span>
+                <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">
+                    Keamanan Akun
+                </div>
             </div>
-            <h3 className="font-display text-lg font-extrabold text-slate-900">Ubah Kata Sandi</h3>
+            <h3 className="mt-3 font-display text-lg font-extrabold text-slate-900">Ubah Kata Sandi</h3>
             <p className="mt-1 text-sm font-medium text-slate-500">Amankan akun Anda dengan kata sandi yang kuat.</p>
 
             <button
@@ -574,7 +624,7 @@ function PasswordCard({
 }
 
 const inputClass =
-    "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500";
+    "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]";
 
 function Field({
     label,

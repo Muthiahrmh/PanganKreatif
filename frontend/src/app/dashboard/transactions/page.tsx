@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Receipt, TrendingUp, Wallet, Clock, PiggyBank, ArrowLeftRight, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { getApiErrorMessage } from "@/lib/api";
 import {
     fetchAdminTransactions,
@@ -36,6 +38,12 @@ export default function TransactionsPage() {
 // ============================================================
 
 function UmkmTransactions() {
+    const tema = temaPeran("umkm");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [rows, setRows] = useState<UmkmTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -73,17 +81,27 @@ function UmkmTransactions() {
     );
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-12">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
-                    <ArrowLeftRight size={14} /> Riwayat Finansial
+        <div className="flex flex-col gap-6 md:gap-8 pb-12" style={warnaPeran}>
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        <ArrowLeftRight size={14} /> Riwayat Finansial
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Transaksi Belanja Kolektif
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Semua pembayaran belanja kolektif yang pernah Anda lakukan tercatat transparan di sini.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Transaksi Belanja Kolektif
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Semua pembayaran belanja kolektif yang pernah Anda lakukan tercatat transparan di sini.
-                </p>
             </div>
 
             {error && <ErrorNote>{error}</ErrorNote>}
@@ -94,7 +112,7 @@ function UmkmTransactions() {
                     label="TOTAL TRANSAKSI"
                     value={loading ? "..." : String(rows.length)}
                     sub={`${rows.filter((r) => r.status === "success").length} lunas`}
-                    iconBg="bg-blue-50 text-blue-600"
+                    iconBg="bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]"
                 />
                 <CustomStatCard
                     icon={Wallet}
@@ -113,8 +131,8 @@ function UmkmTransactions() {
                             ? `${((totalHemat / (totalLunas + totalHemat)) * 100).toFixed(1)}% dari harga normal`
                             : "Belum ada penghematan"
                     }
-                    valueColor="text-blue-600"
-                    iconBg="bg-blue-50 text-blue-600"
+                    valueColor="text-emerald-600"
+                    iconBg="bg-emerald-50 text-emerald-600"
                 />
                 <CustomStatCard
                     icon={Clock}
@@ -238,6 +256,12 @@ function UmkmTransactions() {
 // ============================================================
 
 function SupplierTransactions() {
+    const tema = temaPeran("supplier");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [rows, setRows] = useState<SupplierTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -289,17 +313,27 @@ function SupplierTransactions() {
     const menunggu = rows.filter((r) => r.status === "pending");
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-12">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
-                    <CheckCircle2 size={14} /> Verifikasi Pemasukan
+        <div className="flex flex-col gap-6 md:gap-8 pb-12" style={warnaPeran}>
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        <CheckCircle2 size={14} /> Verifikasi Pemasukan
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Pembayaran Masuk Mitra
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Kelola pembayaran dari UMKM untuk pesanan kolektif Anda. Lakukan konfirmasi segera setelah dana diterima.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Pembayaran Masuk Mitra
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Kelola pembayaran dari UMKM untuk pesanan kolektif Anda. Lakukan konfirmasi segera setelah dana diterima.
-                </p>
             </div>
 
             {error && <ErrorNote>{error}</ErrorNote>}
@@ -326,7 +360,7 @@ function SupplierTransactions() {
                     label="TOTAL TRANSAKSI"
                     value={loading ? "..." : String(rows.length)}
                     sub="Sepanjang waktu"
-                    iconBg="bg-blue-50 text-blue-600"
+                    iconBg="bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]"
                 />
             </div>
 
@@ -350,7 +384,7 @@ function SupplierTransactions() {
                                 setCurrentPage(1);
                             }}
                             className={`shrink-0 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all ${filter === f
-                                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                                    ? "bg-[var(--warna-peran)] text-white shadow-md shadow-black/10"
                                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                 }`}
                         >
@@ -490,9 +524,16 @@ function SupplierTransactions() {
 // ============================================================
 
 function AdminTransactions() {
+    const tema = temaPeran("admin");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [rows, setRows] = useState<AdminTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [filter, setFilter] = useState<TxStatus | "all">("all");
     const [currentPage, setCurrentPage] = useState(1);
 
     const load = useCallback(async () => {
@@ -515,24 +556,39 @@ function AdminTransactions() {
         .reduce((s, r) => s + r.platformFee, 0);
     const gmv = rows.filter((r) => r.status === "success").reduce((s, r) => s + r.amount, 0);
 
-    const totalPages = Math.ceil(rows.length / ITEMS_PER_PAGE);
-    const paginatedRows = rows.slice(
+    const visible = useMemo(
+        () => (filter === "all" ? rows : rows.filter((r) => r.status === filter)),
+        [rows, filter]
+    );
+
+    const totalPages = Math.ceil(visible.length / ITEMS_PER_PAGE);
+    const paginatedRows = visible.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-12">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
-                    <TrendingUp size={14} /> Pengawasan Keuangan
+        <div className="flex flex-col gap-6 md:gap-8 pb-12" style={warnaPeran}>
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        <TrendingUp size={14} /> Pengawasan Keuangan
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Seluruh Transaksi Platform
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Monitor seluruh perputaran dana transaksi ekosistem beserta total komisi yang diperoleh platform.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Seluruh Transaksi Platform
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Monitor seluruh perputaran dana transaksi ekosistem beserta total komisi yang diperoleh platform.
-                </p>
             </div>
 
             {error && <ErrorNote>{error}</ErrorNote>}
@@ -543,7 +599,7 @@ function AdminTransactions() {
                     label="NILAI TRANSAKSI (GMV)"
                     value={loading ? "..." : formatRupiah(gmv)}
                     sub="Transaksi terkonfirmasi"
-                    iconBg="bg-blue-50 text-blue-600"
+                    iconBg="bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]"
                 />
                 <CustomStatCard
                     icon={Wallet}
@@ -563,12 +619,47 @@ function AdminTransactions() {
                 />
             </div>
 
+            <div className="flex gap-2.5 overflow-x-auto pb-2">
+                {(["all", "pending", "success", "failed"] as const).map((f) => {
+                    const label =
+                        f === "all"
+                            ? "Semua"
+                            : f === "pending"
+                                ? "Menunggu"
+                                : f === "success"
+                                    ? "Lunas"
+                                    : "Ditolak";
+                    const count = f === "all" ? rows.length : rows.filter((r) => r.status === f).length;
+
+                    return (
+                        <button
+                            key={f}
+                            onClick={() => {
+                                setFilter(f);
+                                setCurrentPage(1);
+                            }}
+                            className={`shrink-0 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all ${filter === f
+                                    ? "bg-[var(--warna-peran)] text-white shadow-md shadow-black/10"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                        >
+                            {label} ({count})
+                        </button>
+                    );
+                })}
+            </div>
+
             {loading ? (
                 <SkeletonTable />
             ) : rows.length === 0 ? (
                 <EmptyState
                     title="Belum ada transaksi"
                     body="Transaksi tercatat otomatis begitu UMKM membayar pesanan kolektif."
+                />
+            ) : visible.length === 0 ? (
+                <EmptyState
+                    title="Tidak ada transaksi dalam kategori ini"
+                    body="Coba pilih kategori status lain di atas untuk melihat transaksi yang tersedia."
                 />
             ) : (
                 <div className="space-y-6">
@@ -634,7 +725,7 @@ function AdminTransactions() {
                     {totalPages > 1 && (
                         <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                             <div className="text-xs font-medium text-slate-500">
-                                Menampilkan halaman <strong className="text-slate-800">{currentPage}</strong> dari <strong className="text-slate-800">{totalPages}</strong> (Total {rows.length} transaksi)
+                                Menampilkan halaman <strong className="text-slate-800">{currentPage}</strong> dari <strong className="text-slate-800">{totalPages}</strong> (Total {visible.length} transaksi)
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -670,7 +761,7 @@ function CustomStatCard({
     value,
     sub,
     valueColor = "text-slate-900",
-    iconBg = "bg-blue-50 text-blue-600",
+    iconBg = "bg-slate-100 text-slate-500",
 }: {
     icon: any;
     label: string;

@@ -33,7 +33,17 @@ const isi = {
         warna: "#2563EB", // Biru UMKM
         latar: "#EFF6FF", // Biru muda
         gradasi: "from-[#0B1220] via-[#1E3A8A] to-[#2563EB]", // Gradasi Auth UMKM
-        sorot: { angka: "Rp297rb", label: "hemat sekali belanja kolektif" },
+        // Dibuat sebagai perbandingan harga konkret (bukan cuma angka
+        // "hemat" yang mengambang) supaya jelas 297rb itu selisih dari
+        // apa — dicontohkan dari pembelian Cabai Merah 66 kg, angka yang
+        // sama dipakai di cuplikan PhoneMockup supaya konsisten.
+        sorot: {
+            jenis: "banding" as const,
+            label: "Contoh Perhitungan · Cabai Merah 66 kg",
+            barisA: { nama: "Beli sendiri-sendiri", nilai: "Rp2.970.000" },
+            barisB: { nama: "Belanja kolektif", nilai: "Rp2.673.000" },
+            hasil: { label: "Selisih hemat", nilai: "Rp297rb", sub: "10%" },
+        },
         poin: [
             // Poin-poin tetap sama
             {
@@ -66,7 +76,17 @@ const isi = {
         warna: "#3E7D22",
         latar: "#EEF7E8",
         gradasi: "from-[#16241B] via-[#3E7D22] to-[#5CA935]",
-        sorot: { angka: "1 kirim", label: "melayani beberapa UMKM sekaligus" },
+        // Sama polanya dengan sisi UMKM — dibikin perbandingan konkret
+        // (bukan cuma "1 kirim" yang mengambang) supaya jelas untungnya
+        // di mana: ongkos angkut yang tadinya ditanggung sendiri per
+        // pengiriman, sekarang dibagi rame-rame ke UMKM yang gabung.
+        sorot: {
+            jenis: "banding" as const,
+            label: "Contoh Perhitungan · 5 UMKM Pesan Bahan Sama",
+            barisA: { nama: "Kirim sendiri-sendiri", nilai: "5× pengiriman" },
+            barisB: { nama: "Digabung PanganKreatif", nilai: "1× pengiriman" },
+            hasil: { label: "Ongkos angkut", nilai: "Dibagi 5 UMKM", sub: "bukan ditanggung sendiri" },
+        },
         poin: [
             // Poin-poin tetap sama...
             {
@@ -114,7 +134,7 @@ export function BenefitsSection() {
                         Manfaat
                     </span>
 
-                    <h2 className="mt-4 font-display text-2xl font-bold leading-tight text-soil md:text-4xl">
+                    <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
                         Menguntungkan <span className="text-leaf-dark">kedua ujung</span> rantai
                     </h2>
 
@@ -184,9 +204,38 @@ export function BenefitsSection() {
                                 <p className="mt-1.5 text-sm text-white/70">{d.sub}</p>
 
                                 <div className="mt-8 rounded-2xl bg-white/10 p-5 backdrop-blur">
-                                    <div className="font-display text-3xl font-bold">{d.sorot.angka}</div>
-                                    <div className="mt-1 text-xs leading-relaxed text-white/75">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                                         {d.sorot.label}
+                                    </div>
+
+                                    {/* Perbandingan "tanpa vs dengan PanganKreatif" — supaya
+                                        angka hasilnya kelihatan jelas selisih dari mana, bukan
+                                        angka mengambang yang bisa disalahartikan sebagai diskon. */}
+                                    <div className="mt-3">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-white/60">{d.sorot.barisA.nama}</span>
+                                            <span className="font-medium text-white/60 line-through decoration-white/30">
+                                                {d.sorot.barisA.nilai}
+                                            </span>
+                                        </div>
+                                        <div className="mt-1.5 flex items-center justify-between text-sm">
+                                            <span className="font-semibold text-white/90">{d.sorot.barisB.nama}</span>
+                                            <span className="font-display text-lg font-bold text-white">
+                                                {d.sorot.barisB.nilai}
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between rounded-xl bg-white/10 px-3 py-2">
+                                            <span className="text-xs font-semibold text-white/80">{d.sorot.hasil.label}</span>
+                                            <span className="text-right font-display text-base font-bold text-leaf">
+                                                {d.sorot.hasil.nilai}
+                                                {d.sorot.hasil.sub && (
+                                                    <span className="ml-1 text-xs font-semibold text-leaf/80">
+                                                        ({d.sorot.hasil.sub})
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 

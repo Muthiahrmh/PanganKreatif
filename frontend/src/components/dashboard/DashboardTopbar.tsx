@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LogOut, Headset } from "lucide-react";
+import { Menu, X, LogOut, Headset, ChevronDown, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { getNavItems, getPageTitle } from "./navItems";
 import { temaPeran } from "./roleTheme";
@@ -17,6 +17,7 @@ export function DashboardTopbar() {
     const logout = useAuthStore((s) => s.logout);
 
     const [menuTerbuka, setMenuTerbuka] = useState(false);
+    const [profilMenuTerbuka, setProfilMenuTerbuka] = useState(false);
 
     const navItems = getNavItems(user?.role);
     const tema = temaPeran(user?.role);
@@ -33,6 +34,11 @@ export function DashboardTopbar() {
         };
     }, [menuTerbuka]);
 
+    // Tutup popup profil otomatis kalau pindah halaman
+    useEffect(() => {
+        setProfilMenuTerbuka(false);
+    }, [pathname]);
+
     const tutupMenu = () => setMenuTerbuka(false);
 
     function keluar() {
@@ -45,7 +51,7 @@ export function DashboardTopbar() {
         <>
             {/* Topbar mengikuti aksen warna peran, bukan putih generik buat semua orang */}
             <header
-                className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-white px-4 sm:px-6"
+                className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-cream/95 backdrop-blur-sm px-4 sm:px-6"
                 style={{ borderBottom: `3px solid ${tema.aksen}` }}
             >
                 <div className="flex min-w-0 items-center gap-3">
@@ -77,26 +83,95 @@ export function DashboardTopbar() {
 
                     <div className="hidden sm:block h-5 w-px bg-slate-200 mx-1"></div>
 
-                    <Link href="/dashboard/profile" className="flex items-center gap-2.5 rounded-full hover:opacity-80">
-                        <span className="hidden text-sm font-semibold text-slate-700 sm:block">
-                            {displayName}
-                        </span>
-                        {user?.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={user.avatarUrl}
-                                alt="Profil"
-                                className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
+                    <div className="relative">
+                        <button
+                            onClick={() => setProfilMenuTerbuka((v) => !v)}
+                            aria-haspopup="menu"
+                            aria-expanded={profilMenuTerbuka}
+                            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 transition hover:bg-slate-50 sm:pr-2.5"
+                        >
+                            <span className="hidden text-sm font-semibold text-slate-700 sm:block">
+                                {displayName}
+                            </span>
+                            {user?.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={user.avatarUrl}
+                                    alt="Profil"
+                                    className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
+                                />
+                            ) : (
+                                <div
+                                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-1 ring-slate-200"
+                                    style={{ backgroundColor: tema.aksen }}
+                                >
+                                    {(displayName ?? "U").charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <ChevronDown
+                                size={14}
+                                className={`hidden text-slate-400 transition-transform duration-200 sm:block ${profilMenuTerbuka ? "rotate-180" : ""}`}
                             />
-                        ) : (
-                            <div
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-1 ring-slate-200"
-                                style={{ backgroundColor: tema.aksen }}
-                            >
-                                {(displayName ?? "U").charAt(0).toUpperCase()}
-                            </div>
+                        </button>
+
+                        {profilMenuTerbuka && (
+                            <>
+                                <button
+                                    aria-label="Tutup menu profil"
+                                    onClick={() => setProfilMenuTerbuka(false)}
+                                    className="fixed inset-0 z-40 cursor-default"
+                                />
+                                <div
+                                    role="menu"
+                                    className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] ring-1 ring-slate-900/5"
+                                >
+                                    <div className="flex items-center gap-3 border-b border-slate-100 p-4">
+                                        {user?.avatarUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={user.avatarUrl}
+                                                alt="Profil"
+                                                className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ring-1 ring-slate-200"
+                                                style={{ backgroundColor: tema.aksen }}
+                                            >
+                                                {(displayName ?? "U").charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-bold text-slate-900">
+                                                {displayName}
+                                            </div>
+                                            <div className="truncate text-xs font-medium text-slate-400">
+                                                {user?.email}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-1.5">
+                                        <Link
+                                            href="/dashboard/profile"
+                                            onClick={() => setProfilMenuTerbuka(false)}
+                                            role="menuitem"
+                                            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                        >
+                                            <UserCircle size={17} className="text-slate-400" /> Lihat Profil
+                                        </Link>
+                                        <button
+                                            onClick={keluar}
+                                            role="menuitem"
+                                            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                                        >
+                                            <LogOut size={17} /> Keluar
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
-                    </Link>
+                    </div>
                 </div>
             </header>
 

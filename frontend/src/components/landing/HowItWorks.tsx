@@ -85,14 +85,14 @@ export function HowItWorks() {
                     transition={{ duration: 0.5 }}
                     className="max-w-2xl"
                 >
-                    <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-brand-blue">
+                    <span className="inline-flex rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal-dark">
                         Cara Kerja
                     </span>
 
                     <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
                         Enam langkah, dari catatan
                         <br className="hidden sm:block" />{" "}
-                        <span className="text-brand-blue">sampai barang tiba</span>
+                        <span className="text-teal-dark">sampai barang tiba</span>
                     </h2>
 
                     <p className="mt-4 text-[15px] leading-relaxed text-ink-soft sm:text-base">

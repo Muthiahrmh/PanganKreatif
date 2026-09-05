@@ -59,8 +59,13 @@ const roles = [
 
 export function PlatformRoles() {
   return (
-    <section id="peran" className="bg-white">
-      <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
+    <section id="peran" className="relative isolate overflow-hidden bg-white">
+      {/* Cahaya ambient lembut — supaya bagian berlatar putih ini tidak
+          terasa datar dibanding section lain yang sudah bergradasi/bertekstur */}
+      <div className="pointer-events-none absolute -left-24 top-0 h-96 w-96 rounded-full bg-leaf-soft/60 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-teal-soft/60 blur-3xl" />
+
+      <div className="relative mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -72,7 +77,7 @@ export function PlatformRoles() {
             Ekosistem
           </span>
 
-          <h2 className="mt-4 font-display text-2xl font-bold leading-tight text-soil md:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
             Satu Platform, <span className="text-teal-dark">Tiga Peran</span>
           </h2>
 
@@ -94,7 +99,7 @@ export function PlatformRoles() {
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.5, delay: i * 0.12 }}
                   className={`group relative flex flex-col overflow-hidden rounded-3xl p-7 transition-all hover:-translate-y-1 ${role.utama
-                      ? "bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0E7A6B] text-white shadow-xl shadow-soil/10 lg:scale-105"
+                      ? "bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] text-white shadow-xl shadow-soil/10 lg:scale-105"
                       : "border border-ink/5 bg-cream hover:shadow-lg hover:shadow-soil/5"
                     }`}
                 >

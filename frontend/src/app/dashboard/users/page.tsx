@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { Users, Building2, Store, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { getApiErrorMessage } from "@/lib/api";
 import { fetchAdminUsers } from "@/lib/transactions";
 import { formatDate } from "@/lib/format";
@@ -12,6 +14,12 @@ const ITEMS_PER_PAGE = 8;
 
 export default function UsersPage() {
     const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "admin");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
     const [rows, setRows] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -52,18 +60,28 @@ export default function UsersPage() {
     const totalSupplier = rows.filter((r) => r.role === "supplier").length;
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-12">
-            {/* Header Halaman */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
-                    <Users size={14} /> Manajemen Ekosistem
+        <div className="flex flex-col gap-6 md:gap-8 pb-12" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        <Users size={14} /> Manajemen Ekosistem
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Seluruh Mitra & Pengguna
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Daftar lengkap UMKM kuliner dan pemasok (kelompok tani/distributor) yang tergabung di dalam ekosistem PanganKreatif.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Seluruh Mitra & Pengguna
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Daftar lengkap UMKM kuliner dan pemasok (kelompok tani/distributor) yang tergabung di dalam ekosistem PanganKreatif.
-                </p>
             </div>
 
             {error && (
@@ -79,7 +97,7 @@ export default function UsersPage() {
                         <div className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Total Pengguna</div>
                         <div className="font-display text-2xl font-black text-slate-900 mt-1">{rows.length}</div>
                     </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--warna-peran-latar)] text-[var(--warna-peran)]">
                         <Users size={22} />
                     </div>
                 </div>
@@ -110,6 +128,15 @@ export default function UsersPage() {
                 {(["all", "umkm", "supplier"] as const).map((f) => {
                     const label = f === "all" ? "Semua Mitra" : f === "umkm" ? "UMKM Kuliner" : "Pemasok / Tani";
                     const count = f === "all" ? rows.length : rows.filter((r) => r.role === f).length;
+                    // "Semua" pakai warna aksen admin (peran pemilik halaman ini),
+                    // sedangkan UMKM/Pemasok tetap pakai warna kategori masing-masing
+                    // biar konsisten dengan badge peran di tabel.
+                    const kelasAktif =
+                        f === "umkm"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                            : f === "supplier"
+                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                                : "bg-[var(--warna-peran)] text-white shadow-md shadow-black/10";
 
                     return (
                         <button
@@ -118,9 +145,7 @@ export default function UsersPage() {
                                 setFilter(f);
                                 setCurrentPage(1);
                             }}
-                            className={`shrink-0 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all ${filter === f
-                                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            className={`shrink-0 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all ${filter === f ? kelasAktif : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                 }`}
                         >
                             {label} ({count})

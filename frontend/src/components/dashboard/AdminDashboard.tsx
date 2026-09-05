@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { PaymentBadge } from "./PaymentBadge";
+import { SectionEyebrow } from "./SectionEyebrow";
 import { getApiErrorMessage } from "@/lib/api";
 import { fetchAdminStats } from "@/lib/transactions";
 import { formatDate, formatNumber, formatRupiah, formatRupiahShort } from "@/lib/format";
@@ -105,6 +106,8 @@ export function AdminDashboard() {
             </div>
 
             {/* KARTU STATISTIK ADMIN */}
+            <div>
+            <SectionEyebrow color="text-amber-600">Statistik Utama</SectionEyebrow>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     icon={Users}
@@ -126,6 +129,7 @@ export function AdminDashboard() {
                     value={loading ? "..." : formatRupiahShort(f?.gmv ?? 0)}
                     sub={loading ? "" : `${formatRupiah(f?.gmv ?? 0)} · ${f?.successCount ?? 0} tranksaksi`}
                     color="text-amber-600"
+                    trend={stats?.series?.map((s) => s.gmv)}
                 />
                 <StatCard
                     icon={Wallet}
@@ -139,7 +143,10 @@ export function AdminDashboard() {
                     color="text-emerald-600"
                 />
             </div>
+            </div>
 
+            <div>
+            <SectionEyebrow color="text-amber-600">Buku Besar & Tren Pendapatan</SectionEyebrow>
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Ikhtisar Keuangan (Laba Rugi) */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm lg:col-span-1 flex flex-col">
@@ -242,7 +249,10 @@ export function AdminDashboard() {
                     </div>
                 </div>
             </div>
+            </div>
 
+            <div>
+            <SectionEyebrow color="text-amber-600">Komoditas & Transaksi</SectionEyebrow>
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Komoditas teratas */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
@@ -327,6 +337,7 @@ export function AdminDashboard() {
                         </div>
                     )}
                 </div>
+            </div>
             </div>
         </div>
     );

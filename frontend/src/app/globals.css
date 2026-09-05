@@ -29,10 +29,12 @@
   --color-leaf-dark: #3e7d22;
   --color-leaf-soft: #eef7e8;
 
-  /* Teal dari garis sirkuit pada logo */
-  --color-teal: #159b87;
-  --color-teal-dark: #0e7a6b;
-  --color-teal-soft: #e6f4f1;
+  /* Teal dari garis sirkuit pada logo — digeser sedikit lebih ke biru
+     supaya landing page terasa harmoni hijau-biru, senada dengan
+     tema biru UMKM di dashboard, tanpa lepas dari identitas logo. */
+  --color-teal: #0e7fa6;
+  --color-teal-dark: #0b5f7d;
+  --color-teal-soft: #e3f2f7;
 
   /* Hijau kehitaman untuk bagian gelap, lebih hangat dari navy */
   --color-soil: #16241b;
@@ -49,6 +51,8 @@
   --font-display: var(--font-inter);
   --font-body: var(--font-inter);
   --font-data: var(--font-plex-mono);
+  /* Aksen tulisan-tangan untuk coretan/panah dekoratif di landing page */
+  --font-hand: var(--font-caveat);
 }
 
 @theme inline {
@@ -79,6 +83,7 @@
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-data: var(--font-data);
+  --font-hand: var(--font-hand);
 }
 
 body {

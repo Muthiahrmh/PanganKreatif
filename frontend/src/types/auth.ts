@@ -38,6 +38,9 @@ export interface User {
 export interface AuthResponse {
     token: string;
     user: User;
+    /** Hanya ada saat login baru saja lolos OTP — simpan dan kirim lagi
+     *  di login berikutnya supaya perangkat ini tidak perlu OTP lagi. */
+    deviceToken?: string;
 }
 
 /** Respons /auth/login tahap pertama saat lapis kedua (OTP) diaktifkan */

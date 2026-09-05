@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Search, MapPin, Package, Award, ShoppingCart, Store, Truck, Building2, ChevronLeft, ChevronRight, ChevronDown, Check, Sparkles } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { formatNumber, formatRupiah } from "@/lib/format";
 
 interface Pengiriman {
@@ -50,6 +52,12 @@ const ITEMS_PER_PAGE = 5;
 
 export default function SuppliersPage() {
     const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "umkm");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
 
     const [data, setData] = useState<Katalog | null>(null);
     const [loading, setLoading] = useState(true);
@@ -121,18 +129,28 @@ export default function SuppliersPage() {
     );
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-12">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100/60">
-                    <Building2 size={14} /> B2B Supply Chain & Collective Procurement
+        <div className="flex flex-col gap-6 md:gap-8 pb-12" style={warnaPeran}>
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        <Building2 size={14} /> B2B Supply Chain & Collective Procurement
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Cari & Bandingkan Pemasok
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Hubungkan kebutuhan stok Anda langsung dengan kelompok tani dan distributor mitra. Nikmati akses harga grosir melalui mekanisme pengadaan kolektif.
+                        {data?.kotaPembeli && ` (Jarak dihitung dari ${data.kotaPembeli}).`}
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Cari & Bandingkan Pemasok
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Hubungkan kebutuhan stok Anda langsung dengan kelompok tani dan distributor mitra. Nikmati akses harga grosir melalui mekanisme pengadaan kolektif.
-                    {data?.kotaPembeli && ` (Jarak dihitung dari ${data.kotaPembeli}).`}
-                </p>
             </div>
 
             {error && (
@@ -151,7 +169,7 @@ export default function SuppliersPage() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Cari bahan baku atau nama kelompok tani..."
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
                     />
                 </label>
 
@@ -164,14 +182,14 @@ export default function SuppliersPage() {
                             setSortDropdownOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-semibold outline-none transition-all ${catDropdownOpen
-                                ? "border-blue-500 bg-white ring-1 ring-blue-500 text-slate-900"
+                                ? "border-[var(--warna-peran)] bg-white ring-1 ring-[var(--warna-peran)] text-slate-900"
                                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                             }`}
                     >
                         <span className="truncate">
                             {category === "all" ? "Semua Kategori" : category}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${catDropdownOpen ? "rotate-180 text-blue-500" : ""}`} />
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${catDropdownOpen ? "rotate-180 text-[var(--warna-peran)]" : ""}`} />
                     </button>
 
                     {catDropdownOpen && (
@@ -184,11 +202,11 @@ export default function SuppliersPage() {
                                         setCategory("all");
                                         setCatDropdownOpen(false);
                                     }}
-                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${category === "all" ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${category === "all" ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                         }`}
                                 >
                                     <span>Semua Kategori</span>
-                                    {category === "all" && <Check size={14} className="text-blue-600" />}
+                                    {category === "all" && <Check size={14} className="text-[var(--warna-peran)]" />}
                                 </button>
                                 {(data?.kategori ?? []).map((c) => (
                                     <button
@@ -198,11 +216,11 @@ export default function SuppliersPage() {
                                             setCategory(c);
                                             setCatDropdownOpen(false);
                                         }}
-                                        className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${category === c ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                        className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${category === c ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                             }`}
                                     >
                                         <span>{c}</span>
-                                        {category === c && <Check size={14} className="text-blue-600" />}
+                                        {category === c && <Check size={14} className="text-[var(--warna-peran)]" />}
                                     </button>
                                 ))}
                             </div>
@@ -219,14 +237,14 @@ export default function SuppliersPage() {
                             setSortDropdownOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-semibold outline-none transition-all ${cityDropdownOpen
-                                ? "border-blue-500 bg-white ring-1 ring-blue-500 text-slate-900"
+                                ? "border-[var(--warna-peran)] bg-white ring-1 ring-[var(--warna-peran)] text-slate-900"
                                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                             }`}
                     >
                         <span className="truncate">
                             {city === "all" ? "Semua Kota" : city}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${cityDropdownOpen ? "rotate-180 text-blue-500" : ""}`} />
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${cityDropdownOpen ? "rotate-180 text-[var(--warna-peran)]" : ""}`} />
                     </button>
 
                     {cityDropdownOpen && (
@@ -239,11 +257,11 @@ export default function SuppliersPage() {
                                         setCity("all");
                                         setCityDropdownOpen(false);
                                     }}
-                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${city === "all" ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${city === "all" ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                         }`}
                                 >
                                     <span>Semua Kota</span>
-                                    {city === "all" && <Check size={14} className="text-blue-600" />}
+                                    {city === "all" && <Check size={14} className="text-[var(--warna-peran)]" />}
                                 </button>
                                 {(data?.kota ?? []).map((c) => (
                                     <button
@@ -253,11 +271,11 @@ export default function SuppliersPage() {
                                             setCity(c);
                                             setCityDropdownOpen(false);
                                         }}
-                                        className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${city === c ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                        className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${city === c ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                             }`}
                                     >
                                         <span>{c}</span>
-                                        {city === c && <Check size={14} className="text-blue-600" />}
+                                        {city === c && <Check size={14} className="text-[var(--warna-peran)]" />}
                                     </button>
                                 ))}
                             </div>
@@ -274,14 +292,14 @@ export default function SuppliersPage() {
                             setCityDropdownOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-semibold outline-none transition-all ${sortDropdownOpen
-                                ? "border-blue-500 bg-white ring-1 ring-blue-500 text-slate-900"
+                                ? "border-[var(--warna-peran)] bg-white ring-1 ring-[var(--warna-peran)] text-slate-900"
                                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                             }`}
                     >
                         <span className="truncate">
                             {urutan === "harga" ? "Termurah Dahulu" : "Terdekat Dahulu"}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${sortDropdownOpen ? "rotate-180 text-blue-500" : ""}`} />
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-2 ${sortDropdownOpen ? "rotate-180 text-[var(--warna-peran)]" : ""}`} />
                     </button>
 
                     {sortDropdownOpen && (
@@ -294,11 +312,11 @@ export default function SuppliersPage() {
                                         setUrutan("harga");
                                         setSortDropdownOpen(false);
                                     }}
-                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${urutan === "harga" ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${urutan === "harga" ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                         }`}
                                 >
                                     <span>Termurah Dahulu</span>
-                                    {urutan === "harga" && <Check size={14} className="text-blue-600" />}
+                                    {urutan === "harga" && <Check size={14} className="text-[var(--warna-peran)]" />}
                                 </button>
                                 <button
                                     type="button"
@@ -306,11 +324,11 @@ export default function SuppliersPage() {
                                         setUrutan("jarak");
                                         setSortDropdownOpen(false);
                                     }}
-                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${urutan === "jarak" ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors flex items-center justify-between ${urutan === "jarak" ? "bg-[var(--warna-peran-latar)] text-[var(--warna-peran)] font-bold" : "text-slate-600 hover:bg-slate-50"
                                         }`}
                                 >
                                     <span>Terdekat Dahulu</span>
-                                    {urutan === "jarak" && <Check size={14} className="text-blue-600" />}
+                                    {urutan === "jarak" && <Check size={14} className="text-[var(--warna-peran)]" />}
                                 </button>
                             </div>
                         </>
@@ -387,7 +405,7 @@ export default function SuppliersPage() {
                                                         )}
 
                                                         {o.adaPesananTerbuka && (
-                                                            <span className="rounded-full bg-blue-50 px-3 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200/60">
+                                                            <span className="rounded-full bg-[var(--warna-peran-latar)] px-3 py-0.5 text-[11px] font-bold text-[var(--warna-peran)] border border-[var(--warna-peran)]/30">
                                                                 Sesi Collective Procurement Aktif
                                                             </span>
                                                         )}
@@ -445,7 +463,7 @@ export default function SuppliersPage() {
                                                 {o.adaPesananTerbuka ? (
                                                     <Link
                                                         href="/dashboard/procurement"
-                                                        className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
+                                                        className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[var(--warna-peran)] px-5 py-3 text-xs font-bold text-white shadow-md transition hover:brightness-90"
                                                     >
                                                         <ShoppingCart size={15} /> Gabung Pesanan Kolektif
                                                     </Link>

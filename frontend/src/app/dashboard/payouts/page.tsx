@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Wallet, AlertTriangle, Check, Copy, Landmark, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -59,6 +61,12 @@ const ITEMS_PER_PAGE = 5;
 
 export default function PayoutsPage() {
     const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "admin");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
 
     const [tab, setTab] = useState<"pending" | "paid">("pending");
     const [data, setData] = useState<DataPayout | null>(null);
@@ -110,18 +118,28 @@ export default function PayoutsPage() {
     );
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
-            {/* Header Halaman */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 mb-2 border border-blue-100">
-                    Manajemen Keuangan & Kliring
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                        Manajemen Keuangan & Kliring
+                    </div>
+                    <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        Penerusan Dana (Payouts)
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
+                        Pembayaran UMKM ditampung di rekening platform. Komisi platform dipotong otomatis, dan sisanya diteruskan ke rekening pemasok/tani.
+                    </p>
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Penerusan Dana (Payouts)
-                </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
-                    Pembayaran UMKM ditampung di rekening platform. Komisi platform dipotong otomatis, dan sisanya diteruskan ke rekening pemasok/tani.
-                </p>
             </div>
 
             {error && (
@@ -240,7 +258,7 @@ export default function PayoutsPage() {
                                         onClick={() =>
                                             salin(p.rekening?.nomor ?? "", p.supplierId)
                                         }
-                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-slate-50"
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-[var(--warna-peran)] shadow-sm transition hover:bg-slate-50"
                                     >
                                         {tersalin === p.supplierId ? (
                                             <Check size={14} className="text-emerald-600" />
@@ -256,12 +274,12 @@ export default function PayoutsPage() {
                             )}
 
                             {p.dompetDigital && (
-                                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-sm">
+                                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--warna-peran)]/20 bg-[var(--warna-peran-latar)] p-4 text-sm">
                                     <span className="flex flex-wrap gap-1.5">
                                         {p.dompetDigital.providers.map((prov) => (
                                             <span
                                                 key={prov}
-                                                className="rounded-lg bg-white px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200"
+                                                className="rounded-lg bg-white px-2 py-0.5 text-xs font-bold text-[var(--warna-peran)] border border-[var(--warna-peran)]/30"
                                             >
                                                 {LABEL_EWALLET[prov] ?? prov}
                                             </span>
@@ -272,7 +290,7 @@ export default function PayoutsPage() {
                                         onClick={() =>
                                             salin(p.dompetDigital?.nomor ?? "", `${p.supplierId}-ewallet`)
                                         }
-                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-slate-50"
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-[var(--warna-peran)] shadow-sm transition hover:bg-slate-50"
                                     >
                                         {tersalin === `${p.supplierId}-ewallet` ? (
                                             <Check size={14} className="text-emerald-600" />
@@ -453,7 +471,7 @@ function ModalTandaiPayout({
                 <div className="mt-4">
                     <button
                         onClick={() => fileRef.current?.click()}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-4 py-3.5 text-xs font-bold text-slate-600 transition hover:border-blue-500 hover:bg-blue-50/30 hover:text-blue-600"
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-4 py-3.5 text-xs font-bold text-slate-600 transition hover:border-[var(--warna-peran)] hover:bg-[var(--warna-peran-latar)] hover:text-[var(--warna-peran)]"
                     >
                         <Upload size={16} />
                         {berkas ? berkas.name : "Unggah Bukti Transfer (Foto/PDF)"}
@@ -472,7 +490,7 @@ function ModalTandaiPayout({
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
                     placeholder="Catatan / Nomor Referensi Transfer (opsional)"
-                    className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                    className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
                 />
 
                 {galat && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
     Plus,
@@ -16,6 +17,7 @@ import {
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
 import { useAuthStore } from "@/store/authStore";
+import { temaPeran } from "@/components/dashboard/roleTheme";
 import { getApiErrorMessage } from "@/lib/api";
 import {
     closeOrder,
@@ -43,6 +45,12 @@ const FILTERS: { value: OrderStatus | "all"; label: string }[] = [
 
 export default function OrdersPage() {
     const user = useAuthStore((s) => s.user);
+    const tema = temaPeran(user?.role ?? "supplier");
+    const warnaPeran = {
+        "--warna-peran": tema.aksen,
+        "--warna-peran-latar": tema.latar,
+        "--warna-gelap": tema.sidebar,
+    } as CSSProperties;
 
     const [orders, setOrders] = useState<SupplierOrder[]>([]);
     const [products, setProducts] = useState<SupplierProduct[]>([]);
@@ -112,28 +120,38 @@ export default function OrdersPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
-            {/* Header Halaman */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 mb-2 border border-emerald-100">
-                        Manajemen Logistik & Sesi
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
+            {/* Hero Header — gradasi gelap bernuansa warna peran */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+                <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
+                />
+                <div
+                    className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full blur-[60px]"
+                    style={{ backgroundColor: "var(--warna-peran)", opacity: 0.2 }}
+                />
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                            Manajemen Logistik & Sesi
+                        </div>
+                        <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+                            Pesanan Kolektif
+                        </h2>
+                        <p className="mt-2 text-sm font-medium text-white/70 max-w-xl leading-relaxed">
+                            Buka sesi pemesanan, kumpulkan permintaan dari berbagai UMKM sekaligus, lalu kirimkan dalam satu rute pengiriman yang efisien.
+                        </p>
                     </div>
-                    <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Pesanan Kolektif
-                    </h2>
-                    <p className="mt-1 text-sm font-medium text-slate-500 max-w-xl">
-                        Buka sesi pemesanan, kumpulkan permintaan dari berbagai UMKM sekaligus, lalu kirimkan dalam satu rute pengiriman yang efisien.
-                    </p>
-                </div>
 
-                <button
-                    onClick={() => setFormOpen(true)}
-                    disabled={products.length === 0}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
-                >
-                    <Plus size={18} strokeWidth={2.5} /> Buka Pesanan Baru
-                </button>
+                    <button
+                        onClick={() => setFormOpen(true)}
+                        disabled={products.length === 0}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-md transition-all hover:bg-white/90 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+                    >
+                        <Plus size={18} strokeWidth={2.5} /> Buka Pesanan Baru
+                    </button>
+                </div>
             </div>
 
             {products.length === 0 && !loading && (
@@ -260,8 +278,8 @@ export default function OrdersPage() {
                                     {o.pricing?.bulkMinQty != null &&
                                         !o.pricing.isBulkActive &&
                                         o.status === "open" && (
-                                            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-xs font-semibold text-blue-800 leading-relaxed">
-                                                💡 Kurang <strong className="text-blue-950">{formatNumber(o.pricing.remainingToBulk)} {o.product.unit}</strong> lagi agar harga grosir spesial <strong className="text-blue-950">{formatRupiah(o.pricing.bulkPrice ?? 0)}</strong> aktif otomatis untuk seluruh UMKM peserta.
+                                            <div className="mt-4 rounded-2xl border border-[var(--warna-peran)]/20 bg-[var(--warna-peran-latar)] px-4 py-3 text-xs font-semibold text-[var(--warna-peran)] leading-relaxed">
+                                                💡 Kurang <strong>{formatNumber(o.pricing.remainingToBulk)} {o.product.unit}</strong> lagi agar harga grosir spesial <strong>{formatRupiah(o.pricing.bulkPrice ?? 0)}</strong> aktif otomatis untuk seluruh UMKM peserta.
                                             </div>
                                         )}
 
@@ -281,7 +299,7 @@ export default function OrdersPage() {
                                             <button
                                                 onClick={() => setKonfirmasi({ id: o.id, aksi: "deliver" })}
                                                 disabled={busy}
-                                                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
+                                                className="inline-flex items-center gap-2 rounded-xl bg-[var(--warna-peran)] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:brightness-90 disabled:opacity-60"
                                             >
                                                 <Truck size={15} />
                                                 {busy ? "Memproses..." : "Tandai Terkirim"}
@@ -496,7 +514,7 @@ function NewOrderModal({
                         <select
                             value={productId}
                             onChange={(e) => setProductId(e.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
                         >
                             {products.map((p) => (
                                 <option key={p.id} value={p.id}>
@@ -515,7 +533,7 @@ function NewOrderModal({
                             value={deadline}
                             min={toDateInput(new Date())}
                             onChange={(e) => setDeadline(e.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
                         />
                     </label>
 

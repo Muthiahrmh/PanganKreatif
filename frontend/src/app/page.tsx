@@ -6,6 +6,7 @@ import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { PlatformRoles } from "@/components/landing/PlatformRoles";
 import { BenefitsSection } from "@/components/landing/BenefitsSection";
+import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { StatsBar } from "@/components/landing/StatsBar";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { InstallSection } from "@/components/landing/InstallSection"; // <-- Import InstallSection
@@ -33,6 +34,7 @@ export default function Home() {
         <PlatformRoles />
 
         <BenefitsSection />
+        <ComparisonSection />
         <StatsBar />
 
         <AboutSection />

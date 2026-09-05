@@ -133,6 +133,10 @@ async function changePassword(req, res) {
         data: { passwordHash },
     });
 
+    // Password baru diganti — cabut semua perangkat tepercaya lama supaya
+    // wajib OTP lagi di login berikutnya, dari perangkat mana pun.
+    await prisma.trustedDevice.deleteMany({ where: { userId: req.user.id } });
+
     res.json({ message: 'Password berhasil diubah' });
 }
 
