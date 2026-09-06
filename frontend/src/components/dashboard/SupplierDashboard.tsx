@@ -87,7 +87,7 @@ export function SupplierDashboard() {
     }
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+        <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 pb-10">
             {/* Kartu Panduan Pemasok - Hijau Daun */}
             <KartuPanduan aksen="#16A34A" />
 
@@ -145,7 +145,7 @@ export function SupplierDashboard() {
             {/* KARTU STATISTIK PEMASOK (Lengkap dengan Satuan) */}
             <div>
             <SectionEyebrow color="text-emerald-700">Statistik Utama</SectionEyebrow>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <StatCard
                     icon={ClipboardList}
                     label="Pesanan Terbuka"

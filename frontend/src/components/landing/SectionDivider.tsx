@@ -21,7 +21,7 @@ export function SectionDivider({
             <svg
                 viewBox="0 0 1440 64"
                 preserveAspectRatio="none"
-                className="block h-10 w-full sm:h-14"
+                className="block h-6 w-full sm:h-10"
                 style={{ transform: balik ? "scaleX(-1)" : undefined }}
             >
                 <path

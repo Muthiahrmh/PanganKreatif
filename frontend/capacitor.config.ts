@@ -7,6 +7,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * Ini pola resmi Capacitor untuk membungkus web app yang sudah
  * berjalan, bukan cara "curang" — hasilnya tetap APK asli yang
  * terinstall dan tampil sebagai aplikasi native di Android.
+ *
+ * Dikembalikan ke landing page ("/") sesuai kesepakatan tim
+ * sebelumnya — SENGAJA tidak langsung ke /login atau /dashboard.
  */
 const config: CapacitorConfig = {
   appId: 'id.pangankreatif.app',

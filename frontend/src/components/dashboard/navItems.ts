@@ -53,10 +53,20 @@ export function getNavItems(role: Role | undefined): NavItem[] {
     return umkmNav;
 }
 
+// Halaman yang BISA diakses tapi TIDAK muncul di sidebar (misalnya lewat ikon
+// lonceng di topbar) — perlu judul sendiri di sini, supaya getPageTitle tidak
+// salah "nyantol" ke item /dashboard (Beranda/Ringkasan Platform) yang paling umum.
+const judulEkstra: { href: string; label: string }[] = [
+    { href: "/dashboard/notifikasi", label: "Notifikasi" },
+];
+
 export function getPageTitle(pathname: string, role: Role | undefined): string {
-    const items = getNavItems(role);
+    const kandidat: { href: string; label: string }[] = [
+        ...getNavItems(role).map(({ href, label }) => ({ href, label })),
+        ...judulEkstra,
+    ];
     // Cocokkan yang paling spesifik dulu, biar /dashboard nggak nangkep semua
-    const match = [...items]
+    const match = [...kandidat]
         .sort((a, b) => b.href.length - a.href.length)
         .find((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
     return match?.label ?? "Dashboard";

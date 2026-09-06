@@ -34,27 +34,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user) return null;
 
     // Menghindari error jika role tidak terdefinisi di temaPeran
-    const tema = user.role ? temaPeran(user.role) : { latar: "#f8fafc", aksen: "#2563EB" };
+    const tema = user.role
+        ? temaPeran(user.role)
+        : { latar: "#f8fafc", latarKuat: "#e2e8f0", aksen: "#2563EB" };
 
     return (
-        <div className="relative min-h-screen bg-cream">
-            {/* Cahaya lembut senada warna peran di balik konten — menggantikan
-                latar polos satu warna rata, tapi tetap netral begitu turun
-                supaya kartu putih di dalamnya tetap kontras. Dipisah jadi
-                lapisan tersendiri (bukan pembungkus sidebar/topbar) supaya
-                overflow-hidden di sini tidak merusak posisi "sticky" sidebar. */}
+        // Latar belakangnya sekarang warna peran RATA di seluruh tinggi
+        // halaman (bukan cuma gradasi di atas yang lama-lama memudar jadi
+        // krem/putih pas discroll) — biar konsisten "biru" buat UMKM,
+        // "hijau" buat tani, "oren" buat admin dari atas sampai bawah.
+        // Kartu-kartu konten tetap putih di atasnya biar kontras & gampang
+        // dibaca.
+        <div className="relative min-h-screen" style={{ backgroundColor: tema.latar }}>
+            {/* Gradasi lembut di bagian atas pakai nuansa yang lebih pekat
+                (latarKuat) supaya ada kedalaman & terasa jelas warnanya,
+                lalu meluruh ke warna dasar latar (bukan ke krem/putih)
+                supaya transisinya mulus tanpa ganti hue. */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div
                     className="absolute inset-x-0 top-0 h-[28rem]"
-                    style={{ background: `linear-gradient(180deg, ${tema.latar} 0%, rgba(251,249,243,0) 100%)` }}
+                    style={{ background: `linear-gradient(180deg, ${tema.latarKuat} 0%, ${tema.latar}00 100%)` }}
                 />
                 <div
                     className="absolute -top-36 left-[10%] h-80 w-80 rounded-full blur-3xl"
-                    style={{ backgroundColor: tema.aksen, opacity: 0.14 }}
+                    style={{ backgroundColor: tema.aksen, opacity: 0.18 }}
                 />
                 <div
                     className="absolute -top-24 right-[6%] h-72 w-72 rounded-full blur-3xl"
-                    style={{ backgroundColor: tema.aksen, opacity: 0.08 }}
+                    style={{ backgroundColor: tema.aksen, opacity: 0.12 }}
                 />
             </div>
 

@@ -122,7 +122,8 @@ export function BenefitsSection() {
 
     return (
         <section id="manfaat" className="bg-pola-tani-halus">
-            <div className="mx-auto w-full max-w-[1700px] px-6 py-20 sm:px-8 lg:px-16">
+            {/* PERBAIKAN MOBILE: padding & jarak dipangkas di HP */}
+            <div className="mx-auto w-full max-w-[1700px] px-5 py-9 sm:px-8 sm:py-20 lg:px-16">
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -134,18 +135,18 @@ export function BenefitsSection() {
                         Manfaat
                     </span>
 
-                    <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
+                    <h2 className="mt-2.5 font-display text-xl font-bold leading-tight text-soil sm:mt-4 sm:text-3xl md:text-4xl">
                         Menguntungkan <span className="text-leaf-dark">kedua ujung</span> rantai
                     </h2>
 
-                    <p className="mt-4 text-sm leading-relaxed text-ink-soft sm:text-base">
+                    <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-soft sm:mt-4 sm:text-base">
                         Rantai pasok hanya kuat kalau pembeli di hilir dan penghasil di hulu sama-sama
                         diuntungkan.
                     </p>
                 </motion.div>
 
                 {/* Pemilih peran */}
-                <div className="mt-8 flex justify-center">
+                <div className="mt-4 flex justify-center sm:mt-8">
                     <div className="inline-flex rounded-full bg-white p-1 shadow-sm">
                         {(Object.keys(isi) as Peran[]).map((k) => {
                             const Ikon = isi[k].icon;
@@ -155,7 +156,7 @@ export function BenefitsSection() {
                                 <button
                                     key={k}
                                     onClick={() => setPeran(k)}
-                                    className="relative inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors sm:px-6"
+                                    className="relative inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium transition-colors sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm"
                                     style={{ color: ini ? "#FFFFFF" : "#64748B" }}
                                 >
                                     {ini && (
@@ -167,8 +168,9 @@ export function BenefitsSection() {
                                         />
                                     )}
 
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        <Ikon size={15} />
+                                    <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+                                        <Ikon size={14} className="sm:hidden" />
+                                        <Ikon size={15} className="hidden sm:block" />
                                         {k === "umkm" ? "UMKM Kuliner" : "Kelompok Tani"}
                                     </span>
                                 </button>
@@ -184,26 +186,27 @@ export function BenefitsSection() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
-                        className="mt-10 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]"
+                        className="mt-5 grid gap-2.5 sm:mt-10 sm:gap-4 lg:grid-cols-[0.85fr_1.15fr]"
                     >
                         {/* Panel identitas peran */}
                         <div
-                            className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${d.gradasi} p-8 text-white`}
+                            className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${d.gradasi} p-4 text-white sm:rounded-3xl sm:p-8`}
                         >
                             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5" />
                             <div className="pointer-events-none absolute -bottom-20 -left-14 h-48 w-48 rounded-full bg-white/5" />
 
                             <div className="relative">
-                                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/12 backdrop-blur">
-                                    <IkonPeran size={26} strokeWidth={1.6} />
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/12 backdrop-blur sm:h-14 sm:w-14 sm:rounded-2xl">
+                                    <IkonPeran size={14} strokeWidth={1.6} className="sm:hidden" />
+                                    <IkonPeran size={26} strokeWidth={1.6} className="hidden sm:block" />
                                 </span>
 
-                                <h3 className="mt-6 font-display text-xl font-bold lg:text-2xl">
+                                <h3 className="mt-3 font-display text-base font-bold sm:mt-6 sm:text-xl lg:text-2xl">
                                     {d.label}
                                 </h3>
-                                <p className="mt-1.5 text-sm text-white/70">{d.sub}</p>
+                                <p className="mt-1 text-[12px] text-white/70 sm:text-sm">{d.sub}</p>
 
-                                <div className="mt-8 rounded-2xl bg-white/10 p-5 backdrop-blur">
+                                <div className="mt-3.5 rounded-xl bg-white/10 p-3 backdrop-blur sm:mt-8 sm:rounded-2xl sm:p-5">
                                     <div className="text-[10px] font-bold uppercase tracking-wider text-white/55">
                                         {d.sorot.label}
                                     </div>
@@ -225,29 +228,39 @@ export function BenefitsSection() {
                                             </span>
                                         </div>
 
-                                        <div className="mt-3 flex items-center justify-between rounded-xl bg-white/10 px-3 py-2">
-                                            <span className="text-xs font-semibold text-white/80">{d.sorot.hasil.label}</span>
-                                            <span className="text-right font-display text-base font-bold text-leaf">
+                                        {/* PERBAIKAN: sebelumnya baris ini pakai warna hijau
+                                            (text-leaf) yang tenggelam di kartu Tani (background-nya
+                                            juga hijau) dan malah nabrak sama tema biru di kartu UMKM.
+                                            Sekarang dibuat netral — putih tebal, disusun bertumpuk
+                                            ke bawah (bukan sejajar kiri-kanan) supaya teks yang
+                                            panjang seperti "bukan ditanggung sendiri" nggak numpuk
+                                            sama labelnya. */}
+                                        <div className="mt-2.5 rounded-lg bg-white/15 px-3 py-2.5 sm:mt-3 sm:rounded-xl sm:px-3.5 sm:py-3">
+                                            <div className="text-[10px] font-semibold uppercase tracking-wide text-white/60 sm:text-[11px]">
+                                                {d.sorot.hasil.label}
+                                            </div>
+                                            <div className="mt-1 font-display text-base font-bold text-white sm:text-xl">
                                                 {d.sorot.hasil.nilai}
-                                                {d.sorot.hasil.sub && (
-                                                    <span className="ml-1 text-xs font-semibold text-leaf/80">
-                                                        ({d.sorot.hasil.sub})
-                                                    </span>
-                                                )}
-                                            </span>
+                                            </div>
+                                            {d.sorot.hasil.sub && (
+                                                <div className="mt-0.5 text-[10px] leading-snug text-white/60 sm:text-[11px]">
+                                                    {d.sorot.hasil.sub}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex items-center gap-2 text-xs text-white/60">
-                                    <CalendarClock size={13} />
+                                <div className="mt-3 flex items-center gap-2 text-[11px] text-white/60 sm:mt-6 sm:text-xs">
+                                    <CalendarClock size={12} className="sm:hidden" />
+                                    <CalendarClock size={13} className="hidden sm:block" />
                                     Terasa sejak transaksi pertama
                                 </div>
                             </div>
                         </div>
 
                         {/* Daftar manfaat */}
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
                             {d.poin.map((p, i) => {
                                 const Icon = p.icon;
 
@@ -257,20 +270,21 @@ export function BenefitsSection() {
                                         initial={{ opacity: 0, y: 14 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.35, delay: i * 0.07 }}
-                                        className="group rounded-2xl border border-ink/5 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-soil/5"
+                                        className="group rounded-lg sm:rounded-2xl border border-ink/5 bg-white p-3 sm:p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-soil/5"
                                     >
                                         <span
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                                            className="flex h-6 w-6 items-center justify-center rounded-md transition-transform group-hover:scale-105 sm:h-10 sm:w-10 sm:rounded-xl"
                                             style={{ backgroundColor: d.latar, color: d.warna }}
                                         >
-                                            <Icon size={18} strokeWidth={1.75} />
+                                            <Icon size={12} strokeWidth={1.75} className="sm:hidden" />
+                                            <Icon size={18} strokeWidth={1.75} className="hidden sm:block" />
                                         </span>
 
-                                        <h4 className="mt-4 font-display text-sm font-bold text-soil">
+                                        <h4 className="mt-2 font-display text-[12px] font-bold text-soil sm:mt-4 sm:text-sm">
                                             {p.judul}
                                         </h4>
 
-                                        <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
+                                        <p className="mt-0.5 text-[10.5px] leading-relaxed text-ink-soft sm:mt-1.5 sm:text-xs">
                                             {p.desc}
                                         </p>
                                     </motion.div>

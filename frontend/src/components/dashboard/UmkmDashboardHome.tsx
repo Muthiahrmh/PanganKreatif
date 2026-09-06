@@ -114,7 +114,7 @@ export function UmkmDashboardHome() {
     if (!user) return null;
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+        <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 pb-10">
             <KartuPanduan aksen="#2563EB" />
 
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
@@ -231,7 +231,7 @@ export function UmkmDashboardHome() {
                 dengan dashboard Tani & Admin */}
             <div className="mt-2">
                 <SectionEyebrow color="text-blue-600">Statistik Utama</SectionEyebrow>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                     <StatCard
                         icon={NotebookPen}
                         label="Data Penjualan"

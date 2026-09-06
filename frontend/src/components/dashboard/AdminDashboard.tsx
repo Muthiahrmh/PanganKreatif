@@ -69,7 +69,7 @@ export function AdminDashboard() {
     const f = stats?.finance;
 
     return (
-        <div className="flex flex-col gap-6 md:gap-8 pb-10">
+        <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 pb-10">
             {/* Banner Utama Admin (Tema Oranye Kendali Premium) */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1F1406] via-[#3F2708] to-[#D97706] p-6 sm:p-8 md:p-10 text-white shadow-2xl border border-amber-900/40">
                 <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/25 blur-3xl" />
@@ -108,7 +108,7 @@ export function AdminDashboard() {
             {/* KARTU STATISTIK ADMIN */}
             <div>
             <SectionEyebrow color="text-amber-600">Statistik Utama</SectionEyebrow>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <StatCard
                     icon={Users}
                     label="UMKM Terdaftar"

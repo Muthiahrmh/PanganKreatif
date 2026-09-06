@@ -416,6 +416,18 @@ const SUPPLIERS_UTAMA = [
             { name: 'Bawang Putih', category: 'Bumbu Dapur', unit: 'kg', price: 33000, stock: 220, bulkPrice: 29000, bulkMinQty: 50 },
         ],
     },
+    {
+        // Akun demo dengan email asli, sama seperti entri di atas —
+        // supaya bisa langsung login dan lihat katalog + data terisi.
+        email: 'greenperson1106@gmail.com', bankName: 'Bank Aceh Syariah', bankAccountNumber: '0304050607', bankAccountHolder: 'Kelompok Tani Hijau Lestari', name: 'Rian Saputra', groupName: 'Kelompok Tani Hijau Lestari', katalog: 'sayur',
+        city: 'Lhokseumawe', address: 'Gampong Blang Pulo, Muara Satu, Lhokseumawe', phone: '081298765432',
+        products: [
+            { name: 'Kangkung', category: 'Sayuran', unit: 'kg', price: 8000, stock: 260, bulkPrice: 6800, bulkMinQty: 70 },
+            { name: 'Bayam', category: 'Sayuran', unit: 'kg', price: 8500, stock: 240, bulkPrice: 7200, bulkMinQty: 60 },
+            { name: 'Cabai Merah Keriting', category: 'Sayuran', unit: 'kg', price: 36000, stock: 300, bulkPrice: 31500, bulkMinQty: 60 },
+            { name: 'Bawang Merah', category: 'Bumbu Dapur', unit: 'kg', price: 31500, stock: 260, bulkPrice: 27500, bulkMinQty: 50 },
+        ],
+    },
 ];
 
 const UMKMS_UTAMA = [
@@ -430,7 +442,9 @@ const UMKMS_UTAMA = [
         phone: '082121212111', skala: 0.7, bahan: ['Cabai Merah Keriting', 'Tomat', 'Minyak Goreng', 'Ikan Tongkol']
     },
     {
-        email: 'kopisenja@umkm.com', name: 'Adha Gusti Harmadhan', businessName: 'Kopi Senja',
+        // Email asli (bukan email palsu @umkm.com lagi) supaya Adha bisa
+        // login pakai akunnya sendiri dan langsung lihat data terisi.
+        email: 'adhagustiharmadan@gmail.com', name: 'Adha Gusti Harmadhan', businessName: 'Kopi Senja',
         businessType: 'Kafe', city: 'Lhokseumawe', address: 'Jl. Darussalam, Banda Sakti, Lhokseumawe',
         phone: '087888999000', skala: 0.6, bahan: ['Kopi Robusta', 'Gula Pasir', 'Tepung Terigu']
     },
@@ -654,20 +668,32 @@ function daftarBulan(jumlah) {
     return hasil;
 }
 
+/**
+ * Cocokkan sekumpulan email TANPA peduli besar-kecil huruf. Akun yang
+ * didaftarkan manual lewat form register bisa saja diketik dengan
+ * kapitalisasi berbeda dari yang ditulis di sini (mis. "GreenPerson@gmail.com"
+ * vs "greenperson@gmail.com") — Postgres membandingkan teks apa adanya,
+ * jadi tanpa ini akun lama tidak akan ketemu dan malah dibuatkan akun
+ * duplikat baru yang kosong terlihat oleh pemiliknya.
+ */
+function kondisiEmailTanpaBesarKecil(daftarEmail) {
+    return { OR: daftarEmail.map((e) => ({ email: { equals: e, mode: 'insensitive' } })) };
+}
+
 /** Buat akun secara massal — jauh lebih cepat daripada satu per satu */
 async function simpanAkun(daftar, peran) {
     const emails = daftar.map((d) => d.email);
     const ada = await prisma.user.findMany({
-        where: { email: { in: emails } },
+        where: kondisiEmailTanpaBesarKecil(emails),
         include: { umkmProfile: true, supplierProfile: true },
     });
-    const petaAda = new Map(ada.map((u) => [u.email, u]));
+    const petaAda = new Map(ada.map((u) => [u.email.toLowerCase(), u]));
 
     const userBaru = [];
     const profilBaru = [];
 
     for (const d of daftar) {
-        const lama = petaAda.get(d.email);
+        const lama = petaAda.get(d.email.toLowerCase());
         const profilLama = peran === 'supplier' ? lama?.supplierProfile : lama?.umkmProfile;
 
         if (!lama) {
@@ -745,14 +771,16 @@ async function simpanAkun(daftar, peran) {
     }
 
     const semua = await prisma.user.findMany({
-        where: { email: { in: emails } },
+        where: kondisiEmailTanpaBesarKecil(emails),
         include: { umkmProfile: true, supplierProfile: true },
     });
 
+    // Kunci peta pakai huruf kecil semua — pemanggil di bawah juga
+    // men-toLowerCase() emailnya saat lookup, lihat kondisiEmailTanpaBesarKecil.
     const peta = new Map();
     for (const u of semua) {
         const p = peran === 'supplier' ? u.supplierProfile : u.umkmProfile;
-        if (p) peta.set(u.email, p);
+        if (p) peta.set(u.email.toLowerCase(), p);
     }
 
     return { peta, baru: userBaru.length };
@@ -761,7 +789,7 @@ async function simpanAkun(daftar, peran) {
 /** Sinkronkan katalog produk seluruh pemasok */
 async function simpanProduk(daftarSupplier, petaProfil) {
     const supplierIds = daftarSupplier
-        .map((s) => petaProfil.get(s.email)?.id)
+        .map((s) => petaProfil.get(s.email.toLowerCase())?.id)
         .filter(Boolean);
 
     const adaSekarang = await prisma.product.findMany({
@@ -774,7 +802,7 @@ async function simpanProduk(daftarSupplier, petaProfil) {
 
     const baru = [];
     for (const s of daftarSupplier) {
-        const profil = petaProfil.get(s.email);
+        const profil = petaProfil.get(s.email.toLowerCase());
         if (!profil) continue;
 
         for (const p of s.products) {
@@ -1015,6 +1043,25 @@ async function main() {
     const mulai = Date.now();
     console.log('\nPanganKreatif — data demo dikalibrasi ke proyeksi Bab V\n');
 
+    // Migrasi kecil: akun demo Adha dulu pakai email palsu kopisenja@umkm.com.
+    // Kalau baris lama itu masih ada di database dan email barunya belum
+    // dipakai, cukup timpa kolom email-nya saja — supaya riwayat penjualan
+    // yang sudah pernah tercatat di akun itu tetap ikut, tidak dibuang lalu
+    // dibuat ulang dari nol.
+    const migrasiEmail = [
+        { lama: 'kopisenja@umkm.com', baru: 'adhagustiharmadan@gmail.com' },
+    ];
+    for (const { lama, baru } of migrasiEmail) {
+        const [akunLama, akunBaru] = await Promise.all([
+            prisma.user.findUnique({ where: { email: lama } }),
+            prisma.user.findUnique({ where: { email: baru } }),
+        ]);
+        if (akunLama && !akunBaru) {
+            await prisma.user.update({ where: { id: akunLama.id }, data: { email: baru } });
+            console.log(`Email akun demo dipindah: ${lama} -> ${baru}`);
+        }
+    }
+
     const passwordHash = await bcrypt.hash(PASSWORD_AKUN_BARU, 10);
 
     const semuaSupplier = [
@@ -1047,7 +1094,7 @@ async function main() {
     const bulanPendek = daftarBulan(12);
 
     const semuaUmkmId = semuaUmkm
-        .map((u) => hasilUmkm.peta.get(u.email)?.id)
+        .map((u) => hasilUmkm.peta.get(u.email.toLowerCase())?.id)
         .filter(Boolean);
 
     const jumlahPerUmkm = await prisma.salesRecord.groupBy({
@@ -1061,7 +1108,7 @@ async function main() {
     const antrian = [];
 
     for (const u of semuaUmkm) {
-        const profil = hasilUmkm.peta.get(u.email);
+        const profil = hasilUmkm.peta.get(u.email.toLowerCase());
         if (!profil) continue;
 
         const minimal = u.bahan.length * (u.ringkas ? 12 : 48);
@@ -1089,7 +1136,7 @@ async function main() {
 
         // Urutan UMKM menentukan siapa yang "bergabung lebih dulu"
         const umkmIdsUrut = semuaUmkm
-            .map((u) => hasilUmkm.peta.get(u.email)?.id)
+            .map((u) => hasilUmkm.peta.get(u.email.toLowerCase())?.id)
             .filter(Boolean);
 
         const { orders, items, transaksi } = bangunPesananTahunPertama({
@@ -1158,8 +1205,10 @@ async function main() {
     console.log('  livia123@gmail.com, muthiahrmh@gmail.com');
     console.log(`\nAkun baru -> password: ${PASSWORD_AKUN_BARU}`);
     console.log('  Tokoh demo : mieaceh@, warkopmuaradua@, timphan@,');
-    console.log('               seafoodpusong@, martabak@, kopisenja@umkm.com');
+    console.log('               seafoodpusong@, martabak@umkm.com');
     console.log('               meunasah@, pusong@, gayo@, rempahpidie@supplier.com');
+    console.log('  Email asli : adhagustiharmadan@gmail.com (UMKM — Kopi Senja)');
+    console.log('               greenperson1106@gmail.com (Pemasok — Kelompok Tani Hijau Lestari)');
     console.log(`  Massal     : umkm001..${String(JUMLAH_UMKM_TAMBAHAN).padStart(3, '0')}@demo.pangankreatif.id`);
     console.log(`               supplier001..${String(JUMLAH_SUPPLIER_TAMBAHAN).padStart(3, '0')}@demo.pangankreatif.id`);
     console.log('\nAkun admin muthiahpsb@gmail.com tidak disentuh.\n');

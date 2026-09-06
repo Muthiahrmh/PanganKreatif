@@ -85,9 +85,13 @@ export default function HalamanNotifikasi() {
     const jumlahInfo = daftar.filter(n => n.tingkat === "info").length;
 
     return (
-        <div className="mx-auto max-w-3xl px-4 py-8 md:py-10" style={warnaPeran}>
+        // Disamakan dengan pola bungkus halaman dashboard lain (orders,
+        // transactions, dst): full-width mengikuti <main>, bukan kolom
+        // sempit mx-auto max-w-3xl sendiri — sebelumnya ini yang bikin
+        // halaman notifikasi kelihatan beda/kosong dibanding yang lain.
+        <div className="flex flex-col gap-6 md:gap-8 pb-10" style={warnaPeran}>
             {/* Hero Header — gradasi gelap bernuansa warna peran */}
-            <div className="relative overflow-hidden mb-6 rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--warna-gelap)] via-[var(--warna-gelap)] to-[var(--warna-peran)] p-6 sm:p-10 text-white shadow-2xl shadow-black/10">
                 <div
                     className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-[70px]"
                     style={{ backgroundColor: "var(--warna-peran)", opacity: 0.4 }}
@@ -117,8 +121,9 @@ export default function HalamanNotifikasi() {
                 </div>
             </div>
 
-            {/* TAB FILTER DI ATAS (Biar gak perlu scroll jauh) */}
-            <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
+            {/* TAB FILTER DI ATAS (Biar gak perlu scroll jauh) — "Filter Tab
+                ala iOS" yang sama polanya dengan halaman Pesanan/Transaksi */}
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
                 <button
                     onClick={() => setFilterAktif("semua")}
                     className={`rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${filterAktif === "semua"

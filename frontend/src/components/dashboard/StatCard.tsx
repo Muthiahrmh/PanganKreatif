@@ -63,35 +63,36 @@ export function StatCard({ icon: Icon, label, value, sub, color = "text-blue-600
     const tint = TINT[color] ?? TINT_DEFAULT;
 
     return (
-        <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5">
+        <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5">
             {/* Garis aksen tipis di tepi atas, senada dengan warna kartu */}
             <span className={`absolute inset-x-0 top-0 h-1 ${tint.bar}`} />
 
-            <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 leading-tight">
                     {label}
                 </span>
                 <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-2xl ${tint.chip} ${color} transition-transform duration-300 group-hover:scale-110`}
+                    className={`flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl ${tint.chip} ${color} transition-transform duration-300 group-hover:scale-110`}
                 >
-                    <Icon size={20} strokeWidth={2} />
+                    <Icon size={16} strokeWidth={2} className="sm:hidden" />
+                    <Icon size={20} strokeWidth={2} className="hidden sm:block" />
                 </div>
             </div>
 
             {/* Bagian Angka & Satuan dengan jarak/gap yang rapi */}
-            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
-                <span className={`font-display text-3xl font-extrabold tracking-tight ${color}`}>
+            <div className="mt-2 sm:mt-4 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+                <span className={`font-display text-xl sm:text-3xl font-extrabold tracking-tight ${color}`}>
                     {angka}
                 </span>
                 {satuan && (
-                    <span className="text-lg font-bold text-slate-700 tracking-normal">
+                    <span className="text-sm sm:text-lg font-bold text-slate-700 tracking-normal">
                         {satuan}
                     </span>
                 )}
             </div>
 
-            <div className="mt-2 flex items-end justify-between gap-3">
-                <div className="text-xs font-medium text-slate-500">{sub}</div>
+            <div className="mt-1 sm:mt-2 flex items-end justify-between gap-3">
+                <div className="text-[11px] sm:text-xs font-medium text-slate-500">{sub}</div>
 
                 {trend && trend.length > 1 && (
                     <div className={`shrink-0 ${color}`}>

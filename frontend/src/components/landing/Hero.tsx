@@ -37,7 +37,7 @@ function PanahCoretan({ className }: { className?: string }) {
 
 export function Hero() {
     return (
-        <section id="beranda" className="relative isolate min-h-[92vh] overflow-hidden bg-soil">
+        <section id="beranda" className="relative isolate min-h-[58vh] overflow-hidden bg-soil sm:min-h-[92vh]">
             {/* Lapisan 0: foto pasar tani asli — zoom lambat & halus, bukan diam */}
             <motion.div
                 initial={{ scale: 1 }}
@@ -64,14 +64,15 @@ export function Hero() {
                 paragraf diperkecil khusus di HP (breakpoint sm: ke atas balik
                 ke ukuran semula) — supaya seluruh isi hero (bukan cuma badge)
                 muat kelihatan tanpa perlu discroll dulu di layar pendek. */}
-            <div className="relative z-20 mx-auto flex min-h-[92vh] w-full max-w-[1100px] flex-col items-center justify-center px-6 py-14 text-center sm:px-8 sm:py-24">
+            <div className="relative z-20 mx-auto flex min-h-[58vh] w-full max-w-[1100px] flex-col items-center justify-center px-5 py-6 text-center sm:min-h-[92vh] sm:px-8 sm:py-24">
                 <motion.span
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-semibold text-white/90 backdrop-blur-md sm:gap-2 sm:px-4 sm:py-1.5 sm:text-xs"
                 >
-                    <Sparkles size={13} className="text-leaf" />
+                    <Sparkles size={11} className="text-leaf sm:hidden" />
+                    <Sparkles size={13} className="hidden text-leaf sm:block" />
                     AI Demand Forecasting &amp; B2B Supply Chain
                 </motion.span>
 
@@ -79,7 +80,7 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.1 }}
-                    className="mt-4 font-display text-3xl font-bold leading-[1.15] text-white drop-shadow-lg sm:mt-6 sm:text-5xl lg:text-6xl"
+                    className="mt-3 font-display text-[26px] font-bold leading-[1.2] text-white drop-shadow-lg sm:mt-6 sm:text-5xl lg:text-6xl"
                 >
                     Menghubungkan <span className="text-leaf">UMKM Kuliner</span>
                     <br className="hidden sm:block" /> &amp; <span className="text-teal">Kelompok Tani</span>
@@ -89,13 +90,13 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    className="mt-3 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow sm:mt-6 sm:text-lg"
+                    className="mt-2.5 max-w-xl text-[12.5px] leading-relaxed text-white/85 drop-shadow sm:mt-6 sm:text-lg"
                 >
                     Belanja Kolektif untuk harga grosir, dan Prediksi Bahan Baku berbasis AI
                     supaya stok dapur tidak pernah meleset.
                 </motion.p>
 
-                <div className="relative mt-6 sm:mt-10">
+                <div className="relative mt-4 sm:mt-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -108,9 +109,9 @@ export function Hero() {
                             muat, lalu balik ke ukuran & teks lengkap dari sm ke atas. */}
                         <Link
                             href="/register?role=umkm"
-                            className="group flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-xs font-bold text-soil shadow-xl transition-all hover:scale-[1.03] hover:shadow-2xl sm:flex-initial sm:gap-2 sm:px-7 sm:py-3.5 sm:text-base"
+                            className="group flex flex-1 items-center justify-center gap-1 rounded-full bg-white px-2.5 py-2 text-[11px] font-bold text-soil shadow-xl transition-all hover:scale-[1.03] hover:shadow-2xl sm:flex-initial sm:gap-2 sm:px-7 sm:py-3.5 sm:text-base"
                         >
-                            <Store size={15} className="shrink-0 text-teal-dark sm:hidden" />
+                            <Store size={13} className="shrink-0 text-teal-dark sm:hidden" />
                             <Store size={18} className="hidden shrink-0 text-teal-dark sm:block" />
                             <span className="sm:hidden">UMKM Kuliner</span>
                             <span className="hidden sm:inline">Daftar sebagai UMKM Kuliner</span>
@@ -119,9 +120,9 @@ export function Hero() {
 
                         <Link
                             href="/register?role=supplier"
-                            className="group flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 sm:flex-initial sm:gap-2 sm:px-7 sm:py-3.5 sm:text-base"
+                            className="group flex flex-1 items-center justify-center gap-1 rounded-full border border-white/25 bg-white/10 px-2.5 py-2 text-[11px] font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 sm:flex-initial sm:gap-2 sm:px-7 sm:py-3.5 sm:text-base"
                         >
-                            <Sprout size={15} className="shrink-0 text-leaf sm:hidden" />
+                            <Sprout size={13} className="shrink-0 text-leaf sm:hidden" />
                             <Sprout size={18} className="hidden shrink-0 text-leaf sm:block" />
                             <span className="sm:hidden">Kelompok Tani</span>
                             <span className="hidden sm:inline">Daftar sebagai Kelompok Tani</span>
@@ -148,15 +149,15 @@ export function Hero() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.5 }}
-                    className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-white/60 sm:mt-8"
+                    className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[10.5px] font-medium text-white/60 sm:mt-8 sm:gap-x-5 sm:gap-y-2 sm:text-xs"
                 >
                     <span className="inline-flex items-center gap-1.5">
-                        <ShieldCheck size={14} className="text-teal-300" />
+                        <ShieldCheck size={13} className="text-teal-300" />
                         Pembayaran aman via Midtrans
                     </span>
                     <span className="hidden h-3 w-px bg-white/20 sm:inline-block" />
                     <span className="inline-flex items-center gap-1.5">
-                        <CloudSun size={14} className="text-leaf" />
+                        <CloudSun size={13} className="text-leaf" />
                         Prediksi cuaca dari data resmi BMKG
                     </span>
                 </motion.div>

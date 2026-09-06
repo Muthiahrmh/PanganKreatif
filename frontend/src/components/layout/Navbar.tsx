@@ -4,19 +4,38 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { User, Menu, X, ArrowRight, Download, Smartphone } from "lucide-react";
+import {
+  User,
+  Menu,
+  X,
+  ArrowRight,
+  Download,
+  Smartphone,
+  Home,
+  LayoutGrid,
+  Workflow,
+  Users,
+  Star,
+  Scale,
+  BarChart3,
+  Info,
+  Mail,
+} from "lucide-react";
 
 // Menu teks biasa (tanpa "Aplikasi" karena sudah jadi tombol khusus)
+// PERBAIKAN: tiap item dikasih ikon supaya laci menu HP nggak kelihatan
+// polos/kosong — sebelumnya cuma teks polos melayang dengan banyak
+// ruang kosong, jadi kelihatan belum jadi/asal-asalan.
 const navItems = [
-  { label: "Beranda", href: "#beranda" },
-  { label: "Fitur", href: "#fitur" },
-  { label: "Cara Kerja", href: "#cara-kerja" },
-  { label: "Peran", href: "#peran" },
-  { label: "Manfaat", href: "#manfaat" },
-  { label: "Perbandingan", href: "#perbandingan" },
-  { label: "Statistik", href: "#statistik" },
-  { label: "Tentang", href: "#tentang" },
-  { label: "Kontak", href: "#kontak" },
+  { label: "Beranda", href: "#beranda", icon: Home },
+  { label: "Fitur", href: "#fitur", icon: LayoutGrid },
+  { label: "Cara Kerja", href: "#cara-kerja", icon: Workflow },
+  { label: "Peran", href: "#peran", icon: Users },
+  { label: "Manfaat", href: "#manfaat", icon: Star },
+  { label: "Perbandingan", href: "#perbandingan", icon: Scale },
+  { label: "Statistik", href: "#statistik", icon: BarChart3 },
+  { label: "Tentang", href: "#tentang", icon: Info },
+  { label: "Kontak", href: "#kontak", icon: Mail },
 ];
 
 export function Navbar() {
@@ -65,12 +84,39 @@ export function Navbar() {
   }, [menuTerbuka]);
 
   function klikTautan(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
-    setMenuTerbuka(false);
-    if (href !== "#beranda") return;
-
     e.preventDefault();
-    setAktif("#beranda");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setMenuTerbuka(false);
+    setAktif(href);
+
+    // PERBAIKAN #1: sebelumnya tautan di laci menu HP mengandalkan lompatan
+    // anchor bawaan browser (tanpa preventDefault). Masalahnya, saat laci
+    // terbuka, document.body.style.overflow dikunci ke "hidden" lewat
+    // useEffect — dan useEffect baru benar-benar melepas kuncian itu
+    // SETELAH event klik ini selesai diproses. Jadi tepat di momen
+    // browser mencoba lompat ke #fitur dkk, halaman masih terkunci
+    // overflow:hidden sehingga lompatannya gagal total tanpa error apa
+    // pun (persis gejala "tombol nggak berfungsi"). Sekarang kuncian
+    // dilepas duluan secara langsung.
+    document.body.style.overflow = "";
+
+    // PERBAIKAN #2: scroll-nya SEMPAT jalan tapi hasilnya kelewatan jauh
+    // (lompat sampai section berikutnya). Penyebabnya: laci menu masih
+    // dalam proses animasi menutup (250ms, lihat transition di motion.div
+    // di bawah) tepat saat scrollIntoView dihitung — begitu lacinya
+    // benar-benar collapse ke tinggi 0 sesaat kemudian, seluruh konten di
+    // bawahnya ikut naik, jadi posisi scroll yang tadinya pas jadi
+    // kelewatan. Makanya ditunda dulu sampai animasi menutup laci selesai
+    // (300ms, sedikit lebih lama dari durasi animasinya) baru discroll,
+    // supaya tata letak halaman sudah stabil duluan.
+    setTimeout(() => {
+      if (href === "#beranda") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      history.pushState(null, "", href);
+      document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
   }
 
   return (
@@ -88,7 +134,7 @@ export function Navbar() {
             width={140}
             height={40}
             priority
-            className={`h-auto object-contain transition-all duration-300 ${digulir ? "w-[95px] xl:w-[110px]" : "w-[105px] xl:w-[130px]"
+            className={`h-auto object-contain transition-all duration-300 ${digulir ? "w-[72px] sm:w-[95px] xl:w-[110px]" : "w-[80px] sm:w-[105px] xl:w-[130px]"
               }`}
           />
         </Link>
@@ -164,9 +210,9 @@ export function Navbar() {
           <button
             onClick={() => setMenuTerbuka((v) => !v)}
             aria-label={menuTerbuka ? "Tutup menu" : "Buka menu"}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink transition hover:bg-leaf-soft lg:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink transition hover:bg-leaf-soft lg:hidden"
           >
-            {menuTerbuka ? <X size={20} /> : <Menu size={20} />}
+            {menuTerbuka ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </nav>
@@ -181,26 +227,32 @@ export function Navbar() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="overflow-hidden border-t border-leaf/10 bg-white lg:hidden"
           >
-            <div className="flex flex-col px-6 pb-5 pt-2 sm:px-8">
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={(e) => klikTautan(e, item.href)}
-                  className={`rounded-lg px-3 py-3 text-sm transition-colors ${aktif === item.href
-                      ? "bg-leaf-soft font-semibold text-leaf-dark"
-                      : "text-ink-soft hover:bg-cream hover:text-ink"
-                    }`}
-                >
-                  {item.label}
-                </a>
-              ))}
+            <div className="flex flex-col gap-0.5 px-4 pb-4 pt-2 sm:px-8">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const ini = aktif === item.href;
+
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => klikTautan(e, item.href)}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${ini
+                        ? "bg-leaf-soft font-semibold text-leaf-dark"
+                        : "text-ink-soft hover:bg-cream hover:text-ink"
+                      }`}
+                  >
+                    <Icon size={16} className={ini ? "text-leaf-dark" : "text-ink-soft/60"} />
+                    {item.label}
+                  </a>
+                );
+              })}
 
               {/* Tambahan menu Pasang App khusus versi HP di dalam laci */}
               <a
                 href="#pasang"
                 onClick={() => setMenuTerbuka(false)}
-                className="mt-1 flex items-center gap-2 rounded-lg bg-leaf-soft px-3 py-3 text-sm font-semibold text-leaf-dark transition-colors"
+                className="mt-2 flex items-center gap-3 rounded-xl bg-leaf-soft px-3 py-2.5 text-sm font-semibold text-leaf-dark transition-colors"
               >
                 <Download size={16} />
                 Pasang Aplikasi ke HP
@@ -209,7 +261,7 @@ export function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setMenuTerbuka(false)}
-                className="mt-3 flex items-center justify-center gap-2 rounded-full border border-ink/12 px-4 py-2.5 text-sm font-medium text-ink sm:hidden"
+                className="mt-2 flex items-center justify-center gap-2 rounded-full border border-ink/12 px-4 py-2.5 text-sm font-medium text-ink sm:hidden"
               >
                 <User size={16} />
                 Masuk

@@ -67,19 +67,19 @@ type JenisPreview = (typeof fitur)[number]["preview"];
 function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string }) {
   if (jenis === "kolektif") {
     return (
-      <div className="mt-4 rounded-xl border border-ink/5 bg-white p-3">
-        <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500">
+      <div className="mt-2.5 rounded-lg border border-ink/5 bg-white p-2 sm:mt-4 sm:rounded-xl sm:p-3">
+        <div className="flex items-center justify-between text-[9px] font-semibold text-slate-500 sm:text-[10px]">
           <span>Kuota grosir</span>
           <span>8/10 UMKM</span>
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-100 sm:h-1.5">
           <div className="h-full w-4/5 rounded-full" style={{ backgroundColor: warna }} />
         </div>
-        <div className="mt-2.5 flex -space-x-1.5">
+        <div className="mt-2 flex -space-x-1.5">
           {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}
-              className="h-5 w-5 rounded-full border-2 border-white"
+              className="h-3.5 w-3.5 rounded-full border-2 border-white sm:h-5 sm:w-5"
               style={{ backgroundColor: warna, opacity: 0.45 + i * 0.13 }}
             />
           ))}
@@ -95,11 +95,11 @@ function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string
       { nama: "Kelompok Segar", nilai: 40 },
     ];
     return (
-      <div className="mt-4 space-y-1.5 rounded-xl border border-ink/5 bg-white p-3">
+      <div className="mt-2.5 space-y-1.5 rounded-lg border border-ink/5 bg-white p-2 sm:mt-4 sm:rounded-xl sm:p-3">
         {baris.map((b) => (
-          <div key={b.nama} className="flex items-center gap-2 text-[10px] text-slate-500">
-            <span className="w-[4.5rem] shrink-0 truncate">{b.nama}</span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div key={b.nama} className="flex items-center gap-2 text-[9px] text-slate-500 sm:text-[10px]">
+            <span className="w-16 shrink-0 truncate sm:w-[4.5rem]">{b.nama}</span>
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-100 sm:h-1.5">
               <div
                 className="h-full rounded-full"
                 style={{ width: `${b.nilai}%`, backgroundColor: warna }}
@@ -114,7 +114,7 @@ function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string
   if (jenis === "analitik") {
     const batang = [42, 65, 50, 82, 60, 74];
     return (
-      <div className="mt-4 flex h-14 items-end gap-1.5 rounded-xl border border-ink/5 bg-white p-3">
+      <div className="mt-2.5 flex h-9 items-end gap-1.5 rounded-lg border border-ink/5 bg-white p-2 sm:mt-4 sm:h-14 sm:rounded-xl sm:p-3">
         {batang.map((h, i) => (
           <div
             key={i}
@@ -128,7 +128,7 @@ function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string
 
   if (jenis === "aman") {
     return (
-      <div className="mt-4 space-y-1.5 rounded-xl border border-ink/5 bg-white p-3 text-[10px]">
+      <div className="mt-2.5 space-y-1.5 rounded-lg border border-ink/5 bg-white p-2 text-[9px] sm:mt-4 sm:rounded-xl sm:p-3 sm:text-[10px]">
         <div className="flex items-center justify-between text-slate-500">
           <span>Nilai transaksi</span>
           <span className="font-semibold text-slate-700">Rp2.450.000</span>
@@ -140,7 +140,7 @@ function MiniPreviewFitur({ jenis, warna }: { jenis: JenisPreview; warna: string
           </span>
         </div>
         <div className="flex items-center gap-1 pt-0.5 font-semibold" style={{ color: warna }}>
-          <CheckCircle2 size={11} />
+          <CheckCircle2 size={10} />
           Bukti transfer terlampir
         </div>
       </div>
@@ -166,8 +166,11 @@ export function FeaturesSection() {
           terasa kosong, senada dengan section lain yang sudah bergradasi */}
       <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-leaf-soft/60 blur-3xl" />
 
-      {/* PERBAIKAN: pt-20 untuk HP biar nggak terlalu jauh ke bawah, pt-40 untuk desktop */}
-      <div className="relative mx-auto w-full max-w-[1700px] px-6 pb-16 pt-24 sm:px-8 lg:px-16 lg:pb-20 lg:pt-40">
+      {/* PERBAIKAN MOBILE: padding atas dipangkas jauh lebih kecil di HP
+          (pt-14) dibanding sebelumnya (pt-24), naik bertahap ke sm:/lg:.
+          pb juga dipangkas biar section-section berikutnya nggak kerasa
+          renggang. */}
+      <div className="relative mx-auto w-full max-w-[1700px] px-5 pb-8 pt-10 sm:px-8 sm:pb-16 sm:pt-24 lg:px-16 lg:pb-20 lg:pt-40">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -179,60 +182,63 @@ export function FeaturesSection() {
             Fitur Unggulan
           </span>
 
-          <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-soil md:text-4xl">
+          <h2 className="mt-3 font-display text-xl font-bold leading-tight text-soil sm:mt-4 sm:text-3xl md:text-4xl">
             Semua yang dibutuhkan untuk
             <br className="hidden sm:block" />{" "}
             <span className="text-teal-dark">mengatur bahan baku</span>
           </h2>
 
-          <p className="mt-4 text-[15px] leading-relaxed text-ink-soft sm:text-base">
+          <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-soft sm:mt-4 sm:text-[15px] lg:text-base">
             Dari memperkirakan kebutuhan sampai barang sampai di dapur — dalam satu
             platform, tanpa berpindah aplikasi.
           </p>
         </motion.div>
 
-        {/* PERBAIKAN: gap-4 untuk desktop, tapi gap-5 untuk HP biar lebih lega */}
-        <div className="mt-10 grid gap-5 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* PERBAIKAN: gap HP dikecilkan (gap-3) supaya kartu-kartu nggak
+            kerasa renggang berjauhan — sebelumnya gap-5 di HP malah lebih
+            besar dari desktop, kebalik dari yang seharusnya */}
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.55 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] p-6 text-white md:col-span-2 lg:col-span-1 lg:row-span-2 sm:p-8"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] p-4 text-white sm:rounded-3xl sm:p-8 md:col-span-2 lg:col-span-1 lg:row-span-2"
           >
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5" />
             <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-leaf/10" />
 
             <div className="relative h-full flex flex-col">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-                <utama.icon size={26} strokeWidth={1.6} />
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur sm:h-14 sm:w-14 sm:rounded-2xl">
+                <utama.icon size={14} strokeWidth={1.6} className="sm:hidden" />
+                <utama.icon size={26} strokeWidth={1.6} className="hidden sm:block" />
               </span>
 
-              <h3 className="mt-6 font-display text-xl font-bold lg:text-2xl">
+              <h3 className="mt-3 font-display text-base font-bold sm:mt-6 sm:text-xl lg:text-2xl">
                 {utama.title}
               </h3>
 
-              <p className="mt-3 text-[14px] leading-relaxed text-white/80">{utama.desc}</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-white/80 sm:mt-3 sm:text-[14px]">{utama.desc}</p>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-6 sm:gap-2">
                 {utama.poin.map((p) => (
                   <span
                     key={p}
-                    className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] text-white/85"
+                    className="rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 text-[9px] text-white/85 sm:px-2.5 sm:py-1 sm:text-[11px]"
                   >
                     {p}
                   </span>
                 ))}
               </div>
 
-              <div className="mt-auto pt-7">
-                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
-                  <div className="text-[11px] text-white/60">Contoh hasil prediksi</div>
+              <div className="mt-auto pt-4 sm:pt-7">
+                <div className="rounded-xl bg-white/10 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
+                  <div className="text-[9.5px] text-white/60 sm:text-[11px]">Contoh hasil prediksi</div>
                   <div className="mt-1 flex items-baseline gap-2">
-                    <span className="font-display text-2xl font-bold">66 kg</span>
-                    <span className="text-xs text-teal-300">naik 8%</span>
+                    <span className="font-display text-lg font-bold sm:text-2xl">66 kg</span>
+                    <span className="text-[11px] text-teal-300 sm:text-xs">naik 8%</span>
                   </div>
-                  <div className="mt-1 text-[11px] leading-relaxed text-white/70">
+                  <div className="mt-1 text-[9.5px] leading-relaxed text-white/70 sm:text-[11px]">
                     Cabai Merah, September. Dihitung dari 24 bulan riwayat.
                   </div>
                 </div>
@@ -245,23 +251,24 @@ export function FeaturesSection() {
             const isLast = i === 4;
 
             // PERBAIKAN: Di HP, kartu terakhir tetap nyusun ke bawah (flex-col), baru pas di Tablet/Desktop dia nyamping (sm:flex-row)
-            const kelasInner = `group flex h-full rounded-3xl border border-ink/5 bg-cream p-5 sm:p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:bg-white hover:shadow-lg hover:shadow-soil/5 ${isLast ? 'flex-col sm:flex-row sm:items-center gap-4 sm:gap-6' : 'flex-col gap-4'
+            const kelasInner = `group flex h-full rounded-xl sm:rounded-3xl border border-ink/5 bg-cream p-3.5 sm:p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:bg-white hover:shadow-lg hover:shadow-soil/5 ${isLast ? 'flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-6' : 'flex-col gap-2.5 sm:gap-4'
               }`;
 
             const isi = (
               <>
                 <span
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 sm:rounded-xl transition-transform group-hover:scale-105"
                   style={{ backgroundColor: `${f.warna}14`, color: f.warna }}
                 >
-                  <Icon size={22} strokeWidth={1.75} />
+                  <Icon size={13} strokeWidth={1.75} className="sm:hidden" />
+                  <Icon size={22} strokeWidth={1.75} className="hidden sm:block" />
                 </span>
 
                 <div className="flex flex-1 flex-col">
-                  <h3 className="font-display text-[15px] sm:text-base font-bold text-soil">
+                  <h3 className="font-display text-[13px] sm:text-base font-bold text-soil">
                     {f.title}
                   </h3>
-                  <p className="mt-1.5 text-[13px] sm:text-sm leading-relaxed text-ink-soft">{f.desc}</p>
+                  <p className="mt-0.5 text-[11.5px] sm:mt-1.5 sm:text-sm leading-relaxed text-ink-soft">{f.desc}</p>
 
                   {f.preview !== "dukungan" && (
                     <MiniPreviewFitur jenis={f.preview} warna={f.warna} />

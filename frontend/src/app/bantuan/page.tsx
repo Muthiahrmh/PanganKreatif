@@ -134,23 +134,25 @@ const PEMASOK: Tanya[] = [
     },
 ];
 
-// KONFIGURASI TEMA DINAMIS (Harmoni Biru & Hijau)
+// KONFIGURASI TEMA DINAMIS — dipindah ke token warna resmi brand
+// (leaf/teal/brand-blue di globals.css), bukan palet Tailwind generik,
+// supaya nyambung sama warna yang dipakai di landing page & dashboard.
 const TEMA = {
     umum: {
-        bg: "bg-teal-600",
-        soft: "bg-teal-50",
-        text: "text-teal-700",
-        border: "border-teal-400/40",
-        shadow: "shadow-teal-500/10",
-        icon: "text-teal-600",
+        bg: "bg-teal",
+        soft: "bg-teal-soft",
+        text: "text-teal-dark",
+        border: "border-teal/40",
+        shadow: "shadow-teal/10",
+        icon: "text-teal",
     },
     umkm: {
-        bg: "bg-blue-600", // Aksen Biru untuk UMKM
-        soft: "bg-blue-50",
-        text: "text-blue-700",
-        border: "border-blue-400/40",
-        shadow: "shadow-blue-500/10",
-        icon: "text-blue-600",
+        bg: "bg-brand-blue", // Aksen Biru untuk UMKM
+        soft: "bg-brand-blue/10",
+        text: "text-brand-blue-dark",
+        border: "border-brand-blue/40",
+        shadow: "shadow-brand-blue/10",
+        icon: "text-brand-blue",
     },
     pemasok: {
         bg: "bg-leaf-dark", // Aksen Hijau untuk Pemasok
@@ -284,8 +286,10 @@ export default function BantuanPage() {
                 </div>
             </header>
 
-            {/* Kepala Halaman: Gradasi Harmoni Biru ke Hijau Teal */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#1E3A8A] via-[#0E7A6B] to-[#1F4D33] text-white">
+            {/* Kepala Halaman: gradasi resmi brand (soil → hijau tua → teal),
+                sama seperti panel gelap di landing page (Fitur, Cara Kerja,
+                Kontak, dll) supaya nyambung sama identitas visual situs */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] text-white">
                 <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
                 <div className="pointer-events-none absolute -bottom-28 -left-20 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
 
@@ -313,7 +317,7 @@ export default function BantuanPage() {
                             value={cari}
                             onChange={(e) => setCari(e.target.value)}
                             placeholder="Cari pertanyaan, misalnya harga grosir..."
-                            className="w-full rounded-full border-0 bg-white py-4 pl-12 pr-4 text-[15px] text-ink outline-none ring-4 ring-white/10 transition placeholder:text-ink-soft/60 focus:ring-blue-500/40"
+                            className="w-full rounded-full border-0 bg-white py-4 pl-12 pr-4 text-[15px] text-ink outline-none ring-4 ring-white/10 transition placeholder:text-ink-soft/60 focus:ring-teal/40"
                         />
                     </div>
                 </div>
@@ -326,9 +330,9 @@ export default function BantuanPage() {
                         href={waUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="group flex items-center gap-4 rounded-3xl border border-ink/5 bg-white p-5 transition-all hover:-translate-y-1 hover:border-green-400/40 hover:shadow-xl hover:shadow-green-500/5"
+                        className="group flex items-center gap-4 rounded-3xl border border-ink/5 bg-white p-5 transition-all hover:-translate-y-1 hover:border-leaf/40 hover:shadow-xl hover:shadow-leaf/5"
                     >
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-green-600">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-leaf-soft text-leaf-dark">
                             <MessageCircle size={22} />
                         </span>
 
@@ -346,9 +350,9 @@ export default function BantuanPage() {
                         href={gmailUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="group flex items-center gap-4 rounded-3xl border border-ink/5 bg-white p-5 transition-all hover:-translate-y-1 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/5"
+                        className="group flex items-center gap-4 rounded-3xl border border-ink/5 bg-white p-5 transition-all hover:-translate-y-1 hover:border-brand-blue/40 hover:shadow-xl hover:shadow-brand-blue/5"
                     >
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue">
                             <Mail size={22} />
                         </span>
 
@@ -364,11 +368,11 @@ export default function BantuanPage() {
 
                     <div className="flex flex-col justify-center gap-2 rounded-3xl border border-ink/5 bg-white p-5 text-xs text-ink-soft">
                         <span className="inline-flex items-center gap-2.5">
-                            <Clock size={14} className="shrink-0 text-blue-600" />
+                            <Clock size={14} className="shrink-0 text-brand-blue" />
                             {KONTAK.jam}
                         </span>
                         <span className="inline-flex items-start gap-2.5">
-                            <MapPin size={14} className="mt-0.5 shrink-0 text-teal-600" />
+                            <MapPin size={14} className="mt-0.5 shrink-0 text-teal" />
                             {KONTAK.alamat}
                         </span>
                     </div>
@@ -377,7 +381,7 @@ export default function BantuanPage() {
                 {/* Bagian Accordion FAQ */}
                 <div className="mt-16 flex flex-wrap items-center justify-between gap-4 mb-6">
                     <h2 className="flex items-center gap-2.5 font-display text-2xl font-bold text-soil">
-                        <HelpCircle size={24} className="text-blue-600" />
+                        <HelpCircle size={24} className="text-brand-blue" />
                         {kunci ? `Hasil pencarian "${cari}"` : "Pertanyaan yang Sering Ditanyakan"}
                     </h2>
 
@@ -429,13 +433,13 @@ export default function BantuanPage() {
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="rounded-3xl border border-blue-200 bg-blue-50/50 p-12 text-center shadow-inner"
+                            className="rounded-3xl border border-teal/20 bg-teal-soft/50 p-12 text-center shadow-inner"
                         >
                             <span className="inline-block text-5xl mb-2 animate-bounce">💆‍♂️☕</span>
-                            <h3 className="mt-4 font-display text-xl font-bold text-blue-800">
+                            <h3 className="mt-4 font-display text-xl font-bold text-teal-dark">
                                 Waduh, kamu pasti capek banget ya?
                             </h3>
-                            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-blue-900/80">
+                            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-soil/80">
                                 Mengelola bisnis kuliner dan berhadapan dengan *error* kodingan memang bikin pusing kepala. Tinggalkan layarmu sebentar, minum teh hangat, dan tarik napas panjang. PanganKreatif akan setia menunggu sampai energimu penuh lagi! Semangat! 🔥
                             </p>
                         </motion.div>
@@ -453,32 +457,34 @@ export default function BantuanPage() {
                         <Akordeon daftar={daftar} temaAktif={kunci ? TEMA.umum : TEMA[tab]} />
                     )}
                 </div>
-
-                {/* Penutup: Gradasi Harmoni Biru ke Hijau Tua */}
-                <div className="mt-16 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E3A8A] via-[#0E7A6B] to-[#1F4D33] p-8 text-white sm:p-10 relative">
-                    <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-xl" />
-                    <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center relative z-10">
-                        <div>
-                            <h3 className="font-display text-xl font-bold sm:text-2xl">
-                                Masih kebingungan?
-                            </h3>
-                            <p className="mt-2 max-w-lg text-[15px] leading-relaxed text-white/80">
-                                Jangan sungkan. Tim ahli kami siap memandu kamu secara langsung lewat pesan WhatsApp, khusus untuk mitra di wilayah Aceh.
-                            </p>
-                        </div>
-
-                        <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex shrink-0 items-center gap-2.5 rounded-2xl bg-white px-6 py-3.5 text-[15px] font-bold text-blue-700 transition-all hover:scale-105 hover:shadow-lg hover:shadow-black/10"
-                        >
-                            <MessageCircle size={18} className="text-blue-600" />
-                            Hubungi Kami
-                        </a>
-                    </div>
-                </div>
             </main>
+
+            {/* Penutup: full-bleed sampai ke tepi layar, sama seperti pola
+                header di atas — sebelumnya kotak ini dibatasi kolom tengah
+                max-w-5xl jadi kelihatan "nanggung"/nggak penuh */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#16241B] via-[#1F4D33] to-[#0B5F7D] text-white">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-xl" />
+                <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-6 px-6 py-12 sm:flex-row sm:items-center sm:py-14">
+                    <div>
+                        <h3 className="font-display text-xl font-bold sm:text-2xl">
+                            Masih kebingungan?
+                        </h3>
+                        <p className="mt-2 max-w-lg text-[15px] leading-relaxed text-white/80">
+                            Jangan sungkan. Tim ahli kami siap memandu kamu secara langsung lewat pesan WhatsApp, khusus untuk mitra di wilayah Aceh.
+                        </p>
+                    </div>
+
+                    <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex shrink-0 items-center gap-2.5 rounded-2xl bg-white px-6 py-3.5 text-[15px] font-bold text-teal-dark transition-all hover:scale-105 hover:shadow-lg hover:shadow-black/10"
+                    >
+                        <MessageCircle size={18} className="text-teal" />
+                        Hubungi Kami
+                    </a>
+                </div>
+            </div>
         </div>
     );
 }

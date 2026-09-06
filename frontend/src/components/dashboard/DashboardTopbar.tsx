@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LogOut, Headset, ChevronDown, UserCircle } from "lucide-react";
+import { Menu, X, LogOut, Headset, ChevronDown, UserCircle, ArrowLeftRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { getNavItems, getPageTitle } from "./navItems";
 import { temaPeran } from "./roleTheme";
@@ -47,12 +47,24 @@ export function DashboardTopbar() {
         router.push("/");
     }
 
+    // Beda dengan "Keluar" (yang balik ke landing page) — ini langsung ke
+    // halaman login, buat yang mau cepat pindah ke akun lain tanpa muter
+    // lewat beranda dulu.
+    function gantiAkun() {
+        tutupMenu();
+        setProfilMenuTerbuka(false);
+        logout();
+        router.push("/login");
+    }
+
     return (
         <>
-            {/* Topbar mengikuti aksen warna peran, bukan putih generik buat semua orang */}
+            {/* Topbar mengikuti latar warna peran juga (bukan krem/putih polos)
+                supaya nyambung sama latar halaman di baliknya — tetap solid
+                warnanya biar gampang dibaca pas sticky di atas saat discroll */}
             <header
-                className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-cream/95 backdrop-blur-sm px-4 sm:px-6"
-                style={{ borderBottom: `3px solid ${tema.aksen}` }}
+                className="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-6"
+                style={{ backgroundColor: tema.latar, borderBottom: `3px solid ${tema.aksen}` }}
             >
                 <div className="flex min-w-0 items-center gap-3">
                     <button
@@ -161,6 +173,13 @@ export function DashboardTopbar() {
                                             <UserCircle size={17} className="text-slate-400" /> Lihat Profil
                                         </Link>
                                         <button
+                                            onClick={gantiAkun}
+                                            role="menuitem"
+                                            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                        >
+                                            <ArrowLeftRight size={17} className="text-slate-400" /> Ganti Akun
+                                        </button>
+                                        <button
                                             onClick={keluar}
                                             role="menuitem"
                                             className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
@@ -242,7 +261,14 @@ export function DashboardTopbar() {
                             })}
                         </nav>
 
-                        <div className="mt-auto pt-6 border-t border-white/10">
+                        <div className="mt-auto pt-6 border-t border-white/10 flex flex-col gap-1">
+                            <button
+                                onClick={gantiAkun}
+                                className="flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-[14px] font-bold text-slate-400 transition-colors hover:text-white"
+                            >
+                                <ArrowLeftRight size={20} className="opacity-80" />
+                                <span>Ganti Akun</span>
+                            </button>
                             <button
                                 onClick={keluar}
                                 className="flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-[14px] font-bold text-slate-400 transition-colors hover:text-red-400"
