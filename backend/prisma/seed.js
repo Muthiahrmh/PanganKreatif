@@ -404,6 +404,12 @@ const SUPPLIERS_UTAMA = [
         // Akun demo dengan rekening & dompet digital ASLI, dipakai untuk
         // menunjukkan alur penerusan dana ke pemasok benar-benar bisa
         // diverifikasi (bukan nomor rekening acak seperti pemasok lain).
+        // PERBAIKAN: katalog dilengkapi tangan sampai 20 produk (bukan
+        // dibiarkan 4 lalu ditambal otomatis oleh lengkapiKatalog) supaya
+        // akun demo utama ini punya isi yang benar-benar dikurasi —
+        // sayuran & bumbu dapur khas hasil kelompok tani, harga & stok
+        // masuk akal, dan sebagian besar sudah punya harga grosir supaya
+        // fitur Collective Procurement kelihatan jelas saat didemokan.
         email: 'yayapretty086@gmail.com', name: 'Muthiah Rahma Pasaribu', groupName: 'Kelompok Tani Rahma Jaya', katalog: 'sayur',
         city: 'Lhokseumawe', address: 'Jl. Samudera, Banda Sakti, Lhokseumawe', phone: '082165383828',
         bankName: 'BSI', bankAccountNumber: '7264367397', bankAccountHolder: 'Muthiah Rahma Pasaribu',
@@ -414,6 +420,22 @@ const SUPPLIERS_UTAMA = [
             { name: 'Bawang Merah', category: 'Bumbu Dapur', unit: 'kg', price: 31000, stock: 280, bulkPrice: 27000, bulkMinQty: 50 },
             { name: 'Tomat', category: 'Sayuran', unit: 'kg', price: 12500, stock: 260, bulkPrice: 10500, bulkMinQty: 60 },
             { name: 'Bawang Putih', category: 'Bumbu Dapur', unit: 'kg', price: 33000, stock: 220, bulkPrice: 29000, bulkMinQty: 50 },
+            { name: 'Cabai Rawit', category: 'Sayuran', unit: 'kg', price: 46000, stock: 180, bulkPrice: 40000, bulkMinQty: 40 },
+            { name: 'Kentang', category: 'Sayuran', unit: 'kg', price: 14000, stock: 260, bulkPrice: 12000, bulkMinQty: 70 },
+            { name: 'Wortel', category: 'Sayuran', unit: 'kg', price: 12000, stock: 240, bulkPrice: 10200, bulkMinQty: 70 },
+            { name: 'Kol', category: 'Sayuran', unit: 'kg', price: 8000, stock: 300, bulkPrice: 6800, bulkMinQty: 90 },
+            { name: 'Kacang Panjang', category: 'Sayuran', unit: 'kg', price: 10500, stock: 220, bulkPrice: 9000, bulkMinQty: 60 },
+            { name: 'Buncis', category: 'Sayuran', unit: 'kg', price: 12500, stock: 210, bulkPrice: 10500, bulkMinQty: 60 },
+            { name: 'Terong', category: 'Sayuran', unit: 'kg', price: 9000, stock: 240, bulkPrice: 7500, bulkMinQty: 70 },
+            { name: 'Timun', category: 'Sayuran', unit: 'kg', price: 8000, stock: 260, bulkPrice: 6800, bulkMinQty: 80 },
+            { name: 'Daun Bawang', category: 'Sayuran', unit: 'kg', price: 16500, stock: 150, bulkPrice: 14000, bulkMinQty: 40 },
+            { name: 'Sawi Hijau', category: 'Sayuran', unit: 'kg', price: 9500, stock: 260, bulkPrice: 8000, bulkMinQty: 70 },
+            { name: 'Bayam', category: 'Sayuran', unit: 'ikat', price: 3500, stock: 200, bulkPrice: null, bulkMinQty: null },
+            { name: 'Kangkung', category: 'Sayuran', unit: 'ikat', price: 3500, stock: 200, bulkPrice: null, bulkMinQty: null },
+            { name: 'Jagung Manis', category: 'Sayuran', unit: 'kg', price: 11000, stock: 220, bulkPrice: 9200, bulkMinQty: 60 },
+            { name: 'Jahe', category: 'Bumbu Dapur', unit: 'kg', price: 30000, stock: 160, bulkPrice: 26000, bulkMinQty: 40 },
+            { name: 'Kunyit', category: 'Bumbu Dapur', unit: 'kg', price: 15000, stock: 180, bulkPrice: 12500, bulkMinQty: 50 },
+            { name: 'Serai', category: 'Bumbu Dapur', unit: 'kg', price: 12500, stock: 200, bulkPrice: 10500, bulkMinQty: 50 },
         ],
     },
     {
@@ -1034,6 +1056,191 @@ function bangunPesananTahunPertama({ produkList, umkmIdsUrut }) {
 }
 
 // ============================================================
+// Riwayat pesanan & transaksi khusus akun demo utama pemasok
+// ============================================================
+// bangunPesananTahunPertama() di atas mengundi produk SECARA ACAK dari
+// seluruh katalog seluruh pemasok, jadi tidak ada jaminan produk akun
+// yayapretty086@gmail.com pernah kepilih — apalagi kalau seed ini sudah
+// pernah dijalankan sebelumnya, karena blok itu dilewati total begitu
+// jumlah transaksi di database sudah mendekati target (lihat pengecekan
+// `sudahAda >= TARGET_TRANSAKSI * 0.8` di main()). Supaya akun ini pasti
+// kelihatan "sudah benar-benar dipakai" saat didemokan — bukan cuma
+// katalog kosong tanpa riwayat — akun ini dijamin punya riwayat pesanan
+// & transaksi sendiri lewat fungsi terpisah ini, yang jalan independen
+// dari pengecekan itu.
+const EMAIL_SUPPLIER_DEMO_UTAMA = 'yayapretty086@gmail.com';
+const TARGET_PESANAN_SELESAI_DEMO = 16; // riwayat "sudah selesai", 10 bulan terakhir
+const TARGET_PESANAN_TERBUKA_DEMO = 3;  // masih mengumpulkan kuota, untuk didemokan langsung
+
+async function bangunRiwayatSupplierDemoUtama({ supplierProfileId, produkList, umkmIdsUrut }) {
+    if (!produkList.length || !umkmIdsUrut.length) {
+        return { orders: 0, transaksi: 0, dilewati: true };
+    }
+
+    // Idempoten: kalau akun ini sudah punya cukup riwayat pesanan (dari
+    // menjalankan seed ini sebelumnya), jangan ditambah terus tiap kali
+    // skrip dijalankan ulang.
+    const sudahAda = await prisma.procurementOrder.count({
+        where: { product: { supplierId: supplierProfileId } },
+    });
+    if (sudahAda >= TARGET_PESANAN_SELESAI_DEMO + TARGET_PESANAN_TERBUKA_DEMO) {
+        return { orders: 0, transaksi: 0, dilewati: true };
+    }
+
+    const now = new Date();
+    const orders = [];
+    const items = [];
+    const transaksi = [];
+    const benihDasar = hashTeks(supplierProfileId);
+
+    // UMKM "langganan" akun ini — dipilih tetap (bukan diundi dari
+    // seluruh UMKM) supaya di demo kelihatan ada pembeli yang berulang,
+    // mirip pola pembelian kolektif yang nyata.
+    const kolamUmkm = umkmIdsUrut.slice(0, Math.min(24, umkmIdsUrut.length));
+
+    // ---- Riwayat pesanan yang sudah selesai, disebar 10 bulan terakhir ----
+    for (let i = 0; i < TARGET_PESANAN_SELESAI_DEMO; i++) {
+        const s = benihDasar + i * 653 + 41;
+        const produk = produkList[Math.floor(rnd(s) * produkList.length) % produkList.length];
+        if (!produk) continue;
+
+        const bulanKe = Math.floor(rnd(s + 1) * 10); // 0..9 bulan ke belakang
+        let dibuat = new Date(now.getFullYear(), now.getMonth() - bulanKe, 1 + Math.floor(rnd(s + 2) * 24));
+        if (dibuat > now) dibuat = new Date(now.getTime() - 86400000 * (i + 1));
+
+        const deadline = new Date(dibuat);
+        deadline.setDate(deadline.getDate() + 5 + Math.floor(rnd(s + 3) * 5));
+
+        const jumlahPeserta = 2 + Math.floor(rnd(s + 4) * 4); // 2..5 UMKM
+        const peserta = [];
+        const dipakai = new Set();
+        for (let j = 0; j < jumlahPeserta; j++) {
+            const id = kolamUmkm[Math.floor(rnd(s + 10 + j) * kolamUmkm.length) % kolamUmkm.length];
+            if (!id || dipakai.has(id)) continue;
+            dipakai.add(id);
+            peserta.push(id);
+        }
+        if (peserta.length === 0) continue;
+
+        const orderId = uuid();
+        const harga = Number(produk.bulkPrice ?? produk.price);
+        // Mayoritas "delivered" (sudah sampai ke UMKM), sebagian kecil
+        // "closed" (kuota tercapai, belum ditandai terkirim) — sama
+        // proporsinya dengan pola di bangunPesananTahunPertama().
+        const status = rnd(s + 5) > 0.15 ? 'delivered' : 'closed';
+
+        let totalQty = 0;
+        const daftarItem = [];
+        const daftarTrx = [];
+
+        for (const umkmId of peserta) {
+            const minGrosir = Number(produk.bulkMinQty ?? 0);
+            const qty = Math.max(
+                1,
+                minGrosir
+                    ? Math.round((minGrosir / jumlahPeserta) * (0.7 + rnd(hashTeks(orderId + umkmId)) * 0.6))
+                    : 5 + Math.floor(rnd(hashTeks(orderId + umkmId)) * 15)
+            );
+            const amount = Math.round(qty * harga);
+            const platformFee = Math.round(amount * KOMISI * 100) / 100;
+            const distributionMargin = Math.round(amount * MARGIN * 100) / 100;
+
+            totalQty += qty;
+
+            const itemId = uuid();
+            daftarItem.push({ id: itemId, orderId, umkmId, quantity: qty, status: 'paid' });
+
+            const bayar = new Date(dibuat);
+            bayar.setDate(bayar.getDate() + 1 + Math.floor(rnd(hashTeks(itemId)) * 3));
+            if (bayar > now) bayar.setTime(now.getTime());
+
+            daftarTrx.push({
+                id: uuid(),
+                orderItemId: itemId,
+                amount,
+                status: 'success',
+                paymentMethod: 'gateway',
+                paidAt: bayar,
+                platformFee,
+                commissionRate: KOMISI,
+                distributionMargin,
+                marginRate: MARGIN,
+                supplierPayout: Math.round((amount - platformFee - distributionMargin) * 100) / 100,
+                createdAt: bayar,
+            });
+        }
+
+        orders.push({ id: orderId, productId: produk.id, totalQuantity: totalQty, status, deadline, createdAt: dibuat });
+        items.push(...daftarItem);
+        transaksi.push(...daftarTrx);
+    }
+
+    // Tandai penerusan dana: semua transaksi "sudah diteruskan" (paid)
+    // kecuali dua yang paling baru, supaya saldo "belum diteruskan" di
+    // dashboard tidak nol — sekaligus menunjukkan status pending itu
+    // memang benar-benar terpakai saat didemokan, bukan cuma teori.
+    transaksi.sort((a, b) => a.createdAt - b.createdAt);
+    transaksi.forEach((t, idx) => {
+        const sisaKeAkhir = transaksi.length - idx;
+        if (sisaKeAkhir > 2) {
+            let payoutAt = new Date(t.createdAt);
+            payoutAt.setDate(payoutAt.getDate() + 2 + Math.floor(rnd(hashTeks(t.id)) * 3));
+            if (payoutAt > now) payoutAt = new Date(now);
+            t.payoutStatus = 'paid';
+            t.payoutAt = payoutAt;
+            t.payoutNote = 'Dana diteruskan ke rekening BSI pemasok';
+        } else {
+            t.payoutStatus = 'pending';
+        }
+    });
+
+    // ---- Pesanan yang masih terbuka, untuk didemokan langsung ----
+    for (let i = 0; i < TARGET_PESANAN_TERBUKA_DEMO; i++) {
+        const s = benihDasar + i * 991 + 777;
+        const produk = produkList[Math.floor(rnd(s) * produkList.length) % produkList.length];
+        if (!produk) continue;
+
+        const dibuat = new Date(now);
+        dibuat.setDate(dibuat.getDate() - Math.floor(rnd(s + 1) * 3));
+        const deadline = new Date(dibuat);
+        deadline.setDate(deadline.getDate() + 5 + Math.floor(rnd(s + 2) * 5));
+
+        const orderId = uuid();
+        const minQty = Number(produk.bulkMinQty ?? 40);
+        // Sengaja belum mencapai kuota grosir, supaya progress bar-nya
+        // kelihatan sedang berjalan waktu direkam.
+        const targetTotal = Math.max(3, Math.round(minQty * (0.4 + rnd(s + 3) * 0.35)));
+
+        const jumlahPeserta = 2 + Math.floor(rnd(s + 4) * 3);
+        const peserta = [];
+        const dipakai = new Set();
+        for (let j = 0; j < jumlahPeserta; j++) {
+            const id = kolamUmkm[Math.floor(rnd(s + 10 + j) * kolamUmkm.length) % kolamUmkm.length];
+            if (!id || dipakai.has(id)) continue;
+            dipakai.add(id);
+            peserta.push(id);
+        }
+        if (peserta.length < 2) continue;
+
+        let totalQty = 0;
+        const daftarItem = peserta.map((umkmId, j) => {
+            const qty = Math.max(1, Math.round(targetTotal / peserta.length + rnd(s + 30 + j) * 3));
+            totalQty += qty;
+            return { id: uuid(), orderId, umkmId, quantity: qty, status: 'pending' };
+        });
+
+        orders.push({ id: orderId, productId: produk.id, totalQuantity: totalQty, status: 'open', deadline, createdAt: dibuat });
+        items.push(...daftarItem);
+    }
+
+    if (orders.length) await batchCreate(prisma.procurementOrder, orders, 200);
+    if (items.length) await batchCreate(prisma.procurementOrderItem, items, 400);
+    if (transaksi.length) await batchCreate(prisma.transaction, transaksi, 400);
+
+    return { orders: orders.length, transaksi: transaksi.length, dilewati: false };
+}
+
+// ============================================================
 // Alur utama
 // ============================================================
 
@@ -1153,6 +1360,36 @@ async function main() {
         );
     }
 
+    // ---------- Riwayat khusus akun demo utama pemasok ----------
+    // Lihat catatan di atas fungsi bangunRiwayatSupplierDemoUtama(): akun
+    // ini butuh riwayat pesanan/transaksi sendiri yang terjamin ada,
+    // tidak digantungkan ke pengundian acak/pengecekan di blok atas.
+    console.log(`\nRiwayat pesanan & transaksi untuk ${EMAIL_SUPPLIER_DEMO_UTAMA}...`);
+    const profilSupplierUtama = hasilSupplier.peta.get(EMAIL_SUPPLIER_DEMO_UTAMA.toLowerCase());
+    if (!profilSupplierUtama) {
+        console.log('  = akun tidak ditemukan, dilewati');
+    } else {
+        const produkSupplierUtama = await prisma.product.findMany({
+            where: { supplierId: profilSupplierUtama.id },
+            select: { id: true, name: true, unit: true, price: true, bulkPrice: true, bulkMinQty: true },
+        });
+        const umkmIdsUntukDemo = semuaUmkm
+            .map((u) => hasilUmkm.peta.get(u.email.toLowerCase())?.id)
+            .filter(Boolean);
+
+        const hasilRiwayat = await bangunRiwayatSupplierDemoUtama({
+            supplierProfileId: profilSupplierUtama.id,
+            produkList: produkSupplierUtama,
+            umkmIdsUrut: umkmIdsUntukDemo,
+        });
+
+        console.log(
+            hasilRiwayat.dilewati
+                ? '  = sudah ada riwayat pesanan, dilewati'
+                : `  ${hasilRiwayat.orders} pesanan, ${hasilRiwayat.transaksi} transaksi dibuat`
+        );
+    }
+
     // ---------- Ringkasan ----------
     const [nSupplier, nUmkm, nProduk, nSales, nOrder, nItem, nTrx] = await Promise.all([
         prisma.supplierProfile.count(),
@@ -1211,7 +1448,7 @@ async function main() {
     console.log('               greenperson1106@gmail.com (Pemasok — Kelompok Tani Hijau Lestari)');
     console.log(`  Massal     : umkm001..${String(JUMLAH_UMKM_TAMBAHAN).padStart(3, '0')}@demo.pangankreatif.id`);
     console.log(`               supplier001..${String(JUMLAH_SUPPLIER_TAMBAHAN).padStart(3, '0')}@demo.pangankreatif.id`);
-    console.log('\nAkun admin muthiahpsb@gmail.com tidak disentuh.\n');
+    console.log('\nAkun admin pangankreatif08@gmail.com tidak disentuh.\n');
 }
 
 main()
