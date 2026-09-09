@@ -1,4 +1,5 @@
 import type { PrakiraanCuaca } from "@/types/weather";
+import type { JejakFulfillment } from "@/types/fulfillment";
 
 export interface SalesRecord {
     id: string;
@@ -92,7 +93,7 @@ export interface DompetDigitalPemasok {
     providers: string[];
 }
 
-export interface ProcurementOrderItem {
+export interface ProcurementOrderItem extends JejakFulfillment {
     id: string;
     orderId: string;
     quantity: string;

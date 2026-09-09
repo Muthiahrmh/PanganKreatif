@@ -34,6 +34,11 @@ import {
     relativeDeadline,
     toDateInput,
 } from "@/lib/format";
+import {
+    GAYA_FULFILLMENT,
+    sisaWaktuKonfirmasi,
+    tandaiDikirim,
+} from "@/lib/fulfillment";
 import type { OrderStatus, SupplierOrder, SupplierProduct } from "@/types/supplier";
 
 const FILTERS: { value: OrderStatus | "all"; label: string }[] = [
@@ -60,6 +65,7 @@ export default function OrdersPage() {
     const [expanded, setExpanded] = useState<string | null>(null);
     const [actingId, setActingId] = useState<string | null>(null);
     const [verifyingId, setVerifyingId] = useState<string | null>(null);
+    const [mengirimId, setMengirimId] = useState<string | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [konfirmasi, setKonfirmasi] = useState<{
         id: string;
@@ -98,6 +104,25 @@ export default function OrdersPage() {
             setError(getApiErrorMessage(err));
         } finally {
             setVerifyingId(null);
+        }
+    }
+
+    /**
+     * Berangkatkan barang milik satu UMKM.
+     *
+     * Sejak tombol ini ditekan, hitungan mundur konfirmasi UMKM mulai
+     * berjalan — dan dana baru bisa dicairkan admin setelah UMKM itu
+     * menyatakan barangnya diterima.
+     */
+    async function kirimItem(itemId: string) {
+        setMengirimId(itemId);
+        try {
+            await tandaiDikirim(itemId);
+            await load();
+        } catch (err) {
+            setError(getApiErrorMessage(err));
+        } finally {
+            setMengirimId(null);
         }
     }
 
@@ -332,6 +357,10 @@ export default function OrdersPage() {
                                                     (t) => t.status === "pending"
                                                 );
 
+                                                const barang = it.fulfillmentStatus ?? "menunggu";
+                                                const gaya = GAYA_FULFILLMENT[barang];
+                                                const sisa = sisaWaktuKonfirmasi(it.sisaJamKonfirmasi);
+
                                                 return (
                                                     <div
                                                         key={it.id}
@@ -394,6 +423,45 @@ export default function OrdersPage() {
                                                                 </div>
                                                             </div>
                                                         )}
+
+                                                        {/* Serah terima barang — hanya relevan setelah lunas */}
+                                                        {it.status === "paid" && (
+                                                            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                                                <div className="min-w-0">
+                                                                    <span
+                                                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ring-inset ${gaya.className}`}
+                                                                    >
+                                                                        {gaya.label}
+                                                                    </span>
+
+                                                                    <p className="mt-1.5 text-[11px] font-semibold text-slate-500 leading-relaxed">
+                                                                        {barang === "menunggu" &&
+                                                                            "Dana UMKM ditahan platform sampai barang dikirim dan dikonfirmasi diterima."}
+                                                                        {barang === "dikirim" &&
+                                                                            `Menunggu ${it.umkm.businessName} menekan "Barang Sudah Diterima"${sisa ? ` — otomatis ${sisa}` : ""}.`}
+                                                                        {barang === "diterima" &&
+                                                                            "Sudah dikonfirmasi diterima. Dana siap diteruskan admin ke rekeningmu."}
+                                                                        {barang === "komplain" &&
+                                                                            `Komplain: ${it.complaintNote ?? "menunggu penyelesaian admin"}`}
+                                                                    </p>
+                                                                </div>
+
+                                                                {(barang === "menunggu" || barang === "komplain") && (
+                                                                    <button
+                                                                        onClick={() => kirimItem(it.id)}
+                                                                        disabled={mengirimId === it.id}
+                                                                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--warna-peran)] px-3.5 py-2 text-[11px] font-bold text-white shadow-sm transition hover:brightness-90 disabled:opacity-60"
+                                                                    >
+                                                                        <Truck size={14} />
+                                                                        {mengirimId === it.id
+                                                                            ? "Memproses..."
+                                                                            : barang === "komplain"
+                                                                                ? "Kirim Ulang"
+                                                                                : "Tandai Dikirim"}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
@@ -417,12 +485,12 @@ export default function OrdersPage() {
                 pesan={
                     konfirmasi?.aksi === "close"
                         ? "UMKM tidak dapat lagi bergabung setelah sesi pemesanan ini ditutup."
-                        : "Pesanan akan dinyatakan selesai dan stok produk terpotong secara otomatis."
+                        : "Seluruh UMKM yang sudah lunas akan ditandai dikirim sekaligus. Dana barumu cair setelah masing-masing UMKM menekan “Barang Sudah Diterima”."
                 }
                 keterangan={
                     konfirmasi?.aksi === "close"
                         ? "Lakukan ini jika jumlah kuota sudah terpenuhi atau batas waktu berakhir."
-                        : "Pastikan barang fisik sudah dikirimkan dengan baik kepada seluruh UMKM peserta."
+                        : "Pastikan barang fisik memang sudah berangkat ke seluruh UMKM peserta. Untuk mengirim per UMKM, pakai tombol di rincian peserta."
                 }
                 labelYa={konfirmasi?.aksi === "close" ? "Tutup Pesanan" : "Tandai Terkirim"}
                 onBatal={() => setKonfirmasi(null)}

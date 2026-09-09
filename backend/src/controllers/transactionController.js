@@ -2,6 +2,7 @@ const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { splitPayment, resolveUnitPrice } = require('../utils/pricing');
 const storage = require('../utils/supabaseStorage');
+const { LABEL_FULFILLMENT, sisaJamKonfirmasi } = require('../utils/escrow');
 
 const { daftarKanalManual } = require('./paymentController');
 
@@ -190,6 +191,14 @@ async function listMyTransactions(req, res) {
         quantity: qty,
         itemStatus: t.orderItem.status,
         orderStatus: order.status,
+        // Serah terima barang, supaya riwayat pembayaran juga menunjukkan
+        // sudah sampai di mana pesanannya — bukan cuma sudah dibayar.
+        fulfillmentStatus: t.orderItem.fulfillmentStatus,
+        statusBarang: LABEL_FULFILLMENT[t.orderItem.fulfillmentStatus],
+        shippedAt: t.orderItem.shippedAt,
+        receivedAt: t.orderItem.receivedAt,
+        autoConfirmAt: t.orderItem.autoConfirmAt,
+        sisaJamKonfirmasi: sisaJamKonfirmasi(t.orderItem.autoConfirmAt),
         // Berapa yang dihemat berkat pembelian kolektif
         unitPrice: pricing.unitPrice,
         normalPrice: pricing.normalPrice,
@@ -247,6 +256,16 @@ async function listSupplierTransactions(req, res) {
       payoutAt: t.payoutAt,
       adaBuktiPayout: Boolean(t.payoutProofUrl || t.payoutProofPath),
       payoutNote: t.payoutNote,
+      // Kenapa dananya belum cair. Pemasok berhak melihat alasannya
+      // sendiri, bukan cuma melihat angka yang tak kunjung berpindah.
+      escrowDilepas: Boolean(t.escrowReleasedAt),
+      escrowReleasedAt: t.escrowReleasedAt,
+      escrowReleaseReason: t.escrowReleaseReason,
+      fulfillmentStatus: t.orderItem.fulfillmentStatus,
+      statusBarang: LABEL_FULFILLMENT[t.orderItem.fulfillmentStatus],
+      shippedAt: t.orderItem.shippedAt,
+      receivedAt: t.orderItem.receivedAt,
+      sisaJamKonfirmasi: sisaJamKonfirmasi(t.orderItem.autoConfirmAt),
       umkm: {
         businessName: t.orderItem.umkm.businessName,
         city: t.orderItem.umkm.city,

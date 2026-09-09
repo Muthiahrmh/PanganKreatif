@@ -1,6 +1,12 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { resolveUnitPrice } = require('../utils/pricing');
+const {
+  batasKonfirmasi,
+  sisaJamKonfirmasi,
+  HARI_AUTO_KONFIRMASI,
+  LABEL_FULFILLMENT,
+} = require('../utils/escrow');
 
 const createOrderSchema = z.object({
   productId: z.string().uuid(),
@@ -84,14 +90,47 @@ async function closeOrder(req, res) {
   res.json(updated);
 }
 
+/**
+ * Pemasok menandai satu sesi pengadaan sudah dikirim seluruhnya.
+ *
+ * Selain mengubah status pesanan, ini juga memberangkatkan setiap
+ * kontribusi UMKM yang sudah lunas sekaligus — sama persis dengan
+ * menekan "Tandai Dikirim" satu per satu. Sejak saat itu hitungan
+ * mundur konfirmasi UMKM mulai berjalan, dan dananya baru terbuka
+ * setelah UMKM menekan "Barang Sudah Diterima".
+ */
 async function markDelivered(req, res) {
   const order = await requireOwnedOrder(req, res);
   if (!order) return;
-  const updated = await prisma.procurementOrder.update({
-    where: { id: order.id },
-    data: { status: 'delivered' },
+
+  const sekarang = new Date();
+  const batas = batasKonfirmasi(sekarang);
+
+  const [updated, berangkat] = await prisma.$transaction([
+    prisma.procurementOrder.update({
+      where: { id: order.id },
+      data: { status: 'delivered' },
+    }),
+    prisma.procurementOrderItem.updateMany({
+      where: {
+        orderId: order.id,
+        status: 'paid',
+        fulfillmentStatus: 'menunggu',
+      },
+      data: {
+        fulfillmentStatus: 'dikirim',
+        shippedAt: sekarang,
+        autoConfirmAt: batas,
+      },
+    }),
+  ]);
+
+  res.json({
+    ...updated,
+    itemDiberangkatkan: berangkat.count,
+    batasKonfirmasi: batas,
+    batasKonfirmasiHari: HARI_AUTO_KONFIRMASI,
   });
-  res.json(updated);
 }
 
 async function requireOwnedOrder(req, res) {
@@ -187,6 +226,11 @@ async function listMyItems(req, res) {
         ...it,
         pricing,
         subtotal: Number(it.quantity) * pricing.unitPrice,
+        // Serah terima barang — dipakai kartu "Pesanan Saya" untuk
+        // memutuskan apakah tombol "Barang Sudah Diterima" muncul.
+        statusBarang: LABEL_FULFILLMENT[it.fulfillmentStatus],
+        sisaJamKonfirmasi: sisaJamKonfirmasi(it.autoConfirmAt),
+        batasKonfirmasiHari: HARI_AUTO_KONFIRMASI,
         // Rekening tujuan, supaya UMKM tahu ke mana harus transfer
         rekening: sup?.bankName
           ? {

@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { resolveUnitPrice, toNum } = require('../utils/pricing');
+const { sisaJamKonfirmasi, HARI_AUTO_KONFIRMASI } = require('../utils/escrow');
 
 /**
  * Notifikasi diturunkan langsung dari keadaan data, bukan disimpan
@@ -103,15 +104,51 @@ async function notifikasiUmkm(umkmId) {
             });
         }
 
-        // Barang dikirim
-        if (o.status === 'delivered' && lunas && hariLalu(o.createdAt) <= 14) {
+        // Barang sudah berangkat — UMKM perlu mengonfirmasi supaya dana
+        // pemasok bisa dilepas. Ini notifikasi terpenting di alur baru,
+        // jadi tingkatnya sengaja "perlu_tindakan", bukan sekadar kabar.
+        if (it.fulfillmentStatus === 'dikirim') {
+            const sisa = sisaJamKonfirmasi(it.autoConfirmAt);
+            const kapan =
+                sisa == null
+                    ? ''
+                    : sisa < 24
+                        ? ` Kalau tidak dikonfirmasi, otomatis selesai dalam ${sisa} jam.`
+                        : ` Kalau tidak dikonfirmasi, otomatis selesai ${Math.ceil(sisa / 24)} hari lagi.`;
+
             notif.push({
                 id: `kirim-${it.id}`,
-                tipe: 'terkirim',
+                tipe: 'perlu_konfirmasi_terima',
+                tingkat: 'perlu_tindakan',
+                judul: 'Konfirmasi barang diterima',
+                pesan: `${pemasok} sudah mengirim ${namaProduk} ${angka(it.quantity)} ${satuan}. Periksa barangnya, lalu tekan "Barang Sudah Diterima".${kapan}`,
+                waktu: it.shippedAt ?? o.createdAt,
+                tautan: '/dashboard/procurement',
+            });
+        }
+
+        // Komplain yang masih menggantung
+        if (it.fulfillmentStatus === 'komplain') {
+            notif.push({
+                id: `komplain-${it.id}`,
+                tipe: 'komplain_diproses',
+                tingkat: 'info',
+                judul: 'Komplain sedang diproses',
+                pesan: `Komplain untuk ${namaProduk} dari ${pemasok} sudah tercatat. Dana ditahan platform sampai masalahnya selesai.`,
+                waktu: it.complaintAt ?? o.createdAt,
+                tautan: '/dashboard/procurement',
+            });
+        }
+
+        // Selesai — barang diterima dan dana pemasok dilepas
+        if (it.fulfillmentStatus === 'diterima' && it.receivedAt && hariLalu(it.receivedAt) <= 14) {
+            notif.push({
+                id: `selesai-${it.id}`,
+                tipe: 'pesanan_selesai',
                 tingkat: 'baik',
-                judul: 'Pesanan dikirim',
-                pesan: `${pemasok} sudah mengirim ${namaProduk} ${angka(it.quantity)} ${satuan}.`,
-                waktu: o.createdAt,
+                judul: 'Pesanan selesai',
+                pesan: `${namaProduk} ${angka(it.quantity)} ${satuan} dari ${pemasok} sudah kamu konfirmasi diterima.`,
+                waktu: it.receivedAt,
                 tautan: '/dashboard/transactions',
             });
         }
@@ -195,6 +232,33 @@ async function notifikasiSupplier(supplierId) {
                 });
             }
 
+            // Barang belum berangkat padahal UMKM sudah bayar
+            if (it.status === 'paid' && it.fulfillmentStatus === 'menunggu') {
+                notif.push({
+                    id: `belum-kirim-${it.id}`,
+                    tipe: 'perlu_dikirim',
+                    tingkat: 'perlu_tindakan',
+                    judul: 'Pesanan lunas menunggu dikirim',
+                    pesan: `${it.umkm.businessName} sudah melunasi ${o.product.name}. Kirim barangnya lalu tandai "Dikirim" — dana baru cair setelah UMKM mengonfirmasi penerimaan.`,
+                    waktu: o.createdAt,
+                    tautan: '/dashboard/orders',
+                });
+            }
+
+            // Sudah dikirim, dananya menunggu konfirmasi UMKM
+            if (it.fulfillmentStatus === 'dikirim') {
+                const sisa = sisaJamKonfirmasi(it.autoConfirmAt);
+                notif.push({
+                    id: `tahan-${it.id}`,
+                    tipe: 'dana_ditahan',
+                    tingkat: 'info',
+                    judul: 'Dana menunggu konfirmasi UMKM',
+                    pesan: `${it.umkm.businessName} belum menekan "Barang Sudah Diterima" untuk ${o.product.name}. Dana dilepas otomatis ${sisa != null && sisa < 24 ? `dalam ${sisa} jam` : `${HARI_AUTO_KONFIRMASI} hari setelah pengiriman`}.`,
+                    waktu: it.shippedAt ?? o.createdAt,
+                    tautan: '/dashboard/transactions',
+                });
+            }
+
             const sukses = it.transactions.find((t) => t.status === 'success');
             if (sukses && sukses.payoutStatus === 'paid' && hariLalu(sukses.payoutAt ?? sukses.createdAt) <= 14) {
                 notif.push({
@@ -265,8 +329,12 @@ async function notifikasiSupplier(supplierId) {
 async function notifikasiAdmin() {
     const notif = [];
 
+    // Hanya yang barangnya sudah dikonfirmasi diterima. Dana yang masih
+    // ditahan punya notifikasinya sendiri di bawah — kalau digabung,
+    // admin akan dikabari "ada yang perlu diteruskan" untuk uang yang
+    // justru sedang sengaja dikunci.
     const tertunda = await prisma.transaction.findMany({
-        where: { status: 'success', payoutStatus: 'pending' },
+        where: { status: 'success', payoutStatus: 'pending', escrowReleasedAt: { not: null } },
         select: {
             supplierPayout: true,
             createdAt: true,
@@ -318,6 +386,50 @@ async function notifikasiAdmin() {
             tingkat: 'perlu_tindakan',
             judul: 'Pemasok belum punya rekening',
             pesan: `${tanpaRekening.length} pemasok belum mengisi rekening, dananya belum bisa dikirim.`,
+            waktu: new Date(),
+            tautan: '/dashboard/payouts',
+        });
+    }
+
+    // Dana yang ditahan rekening bersama, dipisah menurut penyebabnya
+    const [belumDikirim, komplain] = await Promise.all([
+        prisma.transaction.count({
+            where: {
+                status: 'success',
+                payoutStatus: 'pending',
+                escrowReleasedAt: null,
+                orderItem: { fulfillmentStatus: 'menunggu' },
+            },
+        }),
+        prisma.transaction.count({
+            where: {
+                status: 'success',
+                payoutStatus: 'pending',
+                escrowReleasedAt: null,
+                orderItem: { fulfillmentStatus: 'komplain' },
+            },
+        }),
+    ]);
+
+    if (komplain > 0) {
+        notif.push({
+            id: 'escrow-komplain',
+            tipe: 'komplain_umkm',
+            tingkat: 'perlu_tindakan',
+            judul: 'Komplain UMKM perlu ditangani',
+            pesan: `${komplain} pesanan dikomplain UMKM. Dananya ditahan sampai masalahnya selesai — selesaikan lalu lepas dananya dari halaman payout.`,
+            waktu: new Date(),
+            tautan: '/dashboard/payouts',
+        });
+    }
+
+    if (belumDikirim > 0) {
+        notif.push({
+            id: 'escrow-belum-kirim',
+            tipe: 'dana_ditahan',
+            tingkat: 'info',
+            judul: 'Dana ditahan, barang belum dikirim',
+            pesan: `${belumDikirim} pesanan sudah lunas tapi pemasoknya belum menandai barang dikirim. Dananya belum bisa diteruskan.`,
             waktu: new Date(),
             tautan: '/dashboard/payouts',
         });

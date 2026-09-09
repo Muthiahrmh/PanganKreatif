@@ -25,6 +25,18 @@ enum ItemStatus {
   paid
 }
 
+// Perjalanan barang untuk satu kontribusi UMKM, terpisah dari status
+// pembayarannya. Inti sistem rekening bersama (escrow): uang yang sudah
+// dibayar UMKM tetap ditahan platform sampai UMKM sendiri menyatakan
+// barangnya diterima — sama seperti tombol "Barang Sudah Diterima" di
+// lokapasar pada umumnya.
+enum FulfillmentStatus {
+  menunggu // sudah dibayar, pemasok belum mengirim
+  dikirim  // pemasok menyatakan barang sudah berangkat
+  diterima // UMKM mengonfirmasi barang sampai — dana boleh diteruskan
+  komplain // UMKM melaporkan masalah; hitungan otomatis dihentikan
+}
+
 enum TransactionStatus {
   pending
   success
@@ -217,6 +229,29 @@ model ProcurementOrderItem {
   quantity Decimal    @db.Decimal(12, 2)
   status   ItemStatus @default(pending)
 
+  // ---- Serah terima barang (escrow) ----
+  // status di atas soal UANG, blok di bawah soal BARANG. Dana pemasok
+  // baru boleh dicairkan setelah keduanya beres.
+  fulfillmentStatus FulfillmentStatus @default(menunggu) @map("fulfillment_status")
+
+  // Diisi saat pemasok menekan "Tandai Dikirim"
+  shippedAt DateTime? @map("shipped_at")
+
+  // Batas konfirmasi otomatis. Kalau UMKM tidak menekan tombol apa pun
+  // sampai waktu ini lewat, pesanan dianggap diterima supaya dana
+  // pemasok tidak tertahan selamanya. Dikosongkan begitu ada komplain.
+  autoConfirmAt DateTime? @map("auto_confirm_at")
+
+  // Diisi saat barang dinyatakan diterima — oleh UMKM, oleh hitungan
+  // otomatis, atau oleh admin dalam kasus sengketa.
+  receivedAt   DateTime? @map("received_at")
+  receivedNote String?   @map("received_note")
+
+  // Komplain UMKM: menghentikan hitungan otomatis dan menahan dana
+  // sampai admin turun tangan.
+  complaintAt   DateTime? @map("complaint_at")
+  complaintNote String?   @map("complaint_note")
+
   order        ProcurementOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   umkm         UmkmProfile      @relation(fields: [umkmId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -254,6 +289,18 @@ model Transaction {
   paymentChannel  String?   @map("payment_channel")
   paidAt          DateTime? @map("paid_at")
 
+  // ---- Rekening bersama (escrow) ----
+  // Selama kolom ini masih kosong, uangnya memang sudah ada di rekening
+  // platform tetapi BELUM boleh diteruskan ke pemasok: barangnya belum
+  // dinyatakan diterima UMKM. Admin tidak bisa melewati aturan ini lewat
+  // halaman payout — satu-satunya jalan pintas adalah pelepasan paksa
+  // yang alasannya wajib diisi dan tercatat di dua kolom berikutnya.
+  escrowReleasedAt    DateTime? @map("escrow_released_at")
+  // konfirmasi_umkm | otomatis | admin_sengketa
+  escrowReleaseReason String?   @map("escrow_release_reason")
+  escrowReleaseNote   String?   @map("escrow_release_note")
+  escrowReleasedBy    String?   @map("escrow_released_by")
+
   // Penerusan dana dari platform ke pemasok.
   // Dana masuk lebih dulu ke rekening platform, lalu diteruskan
   // setelah dikurangi komisi. Statusnya dicatat di sini.
@@ -272,5 +319,10 @@ model Transaction {
   // ada sebagai migration SQL murni. Jangan kaget kalau `prisma migrate
   // dev` menandainya sebagai "drift" — itu bukan berarti hilang, index
   // itu tetap ada di database.
+  //
+  // Hal yang sama berlaku untuk dua index bersyarat dari migration
+  // 20260909120000: "transactions_escrow_idx" di tabel ini dan
+  // "procurement_order_items_auto_confirm_idx" di tabel item. Keduanya
+  // juga hanya hidup sebagai SQL murni.
   @@map("transactions")
 }

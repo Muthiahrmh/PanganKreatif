@@ -1,3 +1,5 @@
+import type { JejakFulfillment } from "@/types/fulfillment";
+
 export type OrderStatus = "open" | "closed" | "delivered";
 export type ItemStatus = "pending" | "paid";
 export type TransactionStatus = "pending" | "success" | "failed";
@@ -65,7 +67,7 @@ export interface OrderParticipant {
     city: string;
 }
 
-export interface SupplierOrderItem {
+export interface SupplierOrderItem extends JejakFulfillment {
     id: string;
     orderId: string;
     umkmId: string;

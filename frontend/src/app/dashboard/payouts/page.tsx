@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Wallet, AlertTriangle, Check, Copy, Landmark, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wallet, AlertTriangle, Check, Copy, Upload, X, ChevronLeft, ChevronRight, Lock, ShieldCheck, Truck, PackageCheck, MessageCircleWarning, Unlock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { temaPeran } from "@/components/dashboard/roleTheme";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TombolLihatBukti } from "@/components/dashboard/TombolLihatBukti";
+import { GAYA_FULFILLMENT, lepasPaksaEscrow, sisaWaktuKonfirmasi } from "@/lib/fulfillment";
+import type { RingkasanDitahan } from "@/types/fulfillment";
 
 interface Rekening {
     bank: string;
@@ -42,10 +44,15 @@ interface BarisPemasok {
     transaksiTerakhir: string | null;
     buktiTransaksiId?: string | null;
     catatan?: string | null;
+    /** Hanya terisi pada keranjang "ditahan" */
+    pesananDitahan?: RingkasanDitahan[];
 }
 
+type KeranjangPayout = "ditahan" | "pending" | "paid";
+
 interface DataPayout {
-    status: "pending" | "paid";
+    status: KeranjangPayout;
+    batasKonfirmasiHari?: number;
     ringkasan: {
         jumlahPemasok: number;
         jumlahTransaksi: number;
@@ -54,8 +61,18 @@ interface DataPayout {
         totalDiteruskan: number;
         tanpaRekening: number;
     };
+    escrow?: {
+        jumlahTransaksiDitahan: number;
+        totalDitahan: number;
+    };
     pemasok: BarisPemasok[];
 }
+
+const LABEL_TAB: Record<KeranjangPayout, string> = {
+    ditahan: "Ditahan",
+    pending: "Perlu Diteruskan",
+    paid: "Sudah Diteruskan",
+};
 
 const ITEMS_PER_PAGE = 5;
 
@@ -68,7 +85,8 @@ export default function PayoutsPage() {
         "--warna-gelap": tema.sidebar,
     } as CSSProperties;
 
-    const [tab, setTab] = useState<"pending" | "paid">("pending");
+    const [tab, setTab] = useState<KeranjangPayout>("pending");
+    const [lepasSasaran, setLepasSasaran] = useState<RingkasanDitahan | null>(null);
     const [data, setData] = useState<DataPayout | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -137,7 +155,7 @@ export default function PayoutsPage() {
                         Penerusan Dana (Payouts)
                     </h2>
                     <p className="mt-2 text-sm font-medium text-white/70 max-w-2xl leading-relaxed">
-                        Pembayaran UMKM ditampung di rekening platform. Komisi platform dipotong otomatis, dan sisanya diteruskan ke rekening pemasok/tani.
+                        Pembayaran UMKM ditampung di rekening platform sebagai rekening bersama. Dana baru bisa diteruskan ke pemasok setelah UMKM menekan &ldquo;Barang Sudah Diterima&rdquo;{data?.batasKonfirmasiHari ? `, atau otomatis ${data.batasKonfirmasiHari} hari setelah barang dikirim` : ""}.
                     </p>
                 </div>
             </div>
@@ -151,17 +169,24 @@ export default function PayoutsPage() {
             {/* Kotak Statistik Utama */}
             <div className="grid gap-4 sm:grid-cols-3">
                 <StatCard
-                    icon={Wallet}
-                    label={tab === "pending" ? "Perlu Diteruskan" : "Sudah Diteruskan"}
+                    icon={tab === "ditahan" ? Lock : Wallet}
+                    label={LABEL_TAB[tab]}
                     value={loading ? "..." : formatRupiah(r?.totalDiteruskan ?? 0)}
                     sub={`${r?.jumlahPemasok ?? 0} pemasok · ${r?.jumlahTransaksi ?? 0} transaksi`}
-                    color={tab === "pending" ? "text-amber-500" : "text-emerald-600"}
+                    color={
+                        tab === "ditahan"
+                            ? "text-slate-500"
+                            : tab === "pending"
+                                ? "text-amber-500"
+                                : "text-emerald-600"
+                    }
                 />
                 <StatCard
-                    icon={Landmark}
-                    label="Total Nilai Transaksi"
-                    value={loading ? "..." : formatRupiah(r?.totalNilai ?? 0)}
-                    sub="Dibayar lunas oleh UMKM"
+                    icon={ShieldCheck}
+                    label="Dana Ditahan Platform"
+                    value={loading ? "..." : formatRupiah(data?.escrow?.totalDitahan ?? 0)}
+                    sub={`${data?.escrow?.jumlahTransaksiDitahan ?? 0} pesanan menunggu konfirmasi UMKM`}
+                    color="text-slate-500"
                 />
                 <StatCard
                     icon={Check}
@@ -181,9 +206,9 @@ export default function PayoutsPage() {
                 </div>
             )}
 
-            {/* Tab Navigasi Pending / Paid */}
+            {/* Tiga keranjang: ditahan → siap diteruskan → sudah diteruskan */}
             <div className="flex gap-2 rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
-                {(["pending", "paid"] as const).map((t) => (
+                {(["ditahan", "pending", "paid"] as const).map((t) => (
                     <button
                         key={t}
                         onClick={() => {
@@ -196,10 +221,27 @@ export default function PayoutsPage() {
                                 : "text-slate-600 hover:text-slate-900"
                             }`}
                     >
-                        {t === "pending" ? "Perlu Diteruskan" : "Sudah Diteruskan"}
+                        <span className="inline-flex items-center gap-1.5">
+                            {t === "ditahan" && <Lock size={12} />}
+                            {LABEL_TAB[t]}
+                            {t === "ditahan" && (data?.escrow?.jumlahTransaksiDitahan ?? 0) > 0 && (
+                                <span className="rounded-full bg-slate-900 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                                    {data?.escrow?.jumlahTransaksiDitahan}
+                                </span>
+                            )}
+                        </span>
                     </button>
                 ))}
             </div>
+
+            {tab === "ditahan" && (
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-700 shadow-sm">
+                    <Lock size={18} className="mt-0.5 shrink-0 text-slate-500" />
+                    <span className="leading-relaxed">
+                        Uang di keranjang ini <strong className="text-slate-900">sudah masuk rekening platform</strong> tapi belum boleh diteruskan: UMKM-nya belum menyatakan barangnya diterima. Tombol penerusan sengaja dikunci di sini — dana akan pindah sendiri ke tab &ldquo;Perlu Diteruskan&rdquo; begitu UMKM mengonfirmasi{data?.batasKonfirmasiHari ? `, atau ${data.batasKonfirmasiHari} hari setelah barang dikirim` : ""}.
+                    </span>
+                </div>
+            )}
 
             {loading ? (
                 <div className="space-y-4">
@@ -213,12 +255,18 @@ export default function PayoutsPage() {
                         <Wallet size={28} />
                     </div>
                     <h3 className="font-display text-lg font-bold text-slate-800">
-                        {tab === "pending" ? "Tidak ada dana tertunda saat ini" : "Belum ada riwayat dana yang diteruskan"}
+                        {tab === "ditahan"
+                            ? "Tidak ada dana yang sedang ditahan"
+                            : tab === "pending"
+                                ? "Tidak ada dana tertunda saat ini"
+                                : "Belum ada riwayat dana yang diteruskan"}
                     </h3>
                     <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500 leading-relaxed">
-                        {tab === "pending"
-                            ? "Semua kewajiban pencairan dana ke pemasok telah diselesaikan dengan baik."
-                            : "Catatan transfer yang sudah ditandai selesai akan muncul di sini."}
+                        {tab === "ditahan"
+                            ? "Semua pesanan yang sudah dibayar juga sudah dikonfirmasi diterima UMKM."
+                            : tab === "pending"
+                                ? "Semua kewajiban pencairan dana ke pemasok telah diselesaikan dengan baik."
+                                : "Catatan transfer yang sudah ditandai selesai akan muncul di sini."}
                     </p>
                 </div>
             ) : (
@@ -321,6 +369,63 @@ export default function PayoutsPage() {
                                 </button>
                             )}
 
+                            {/* Rincian kenapa dana pemasok ini belum bisa cair */}
+                            {tab === "ditahan" && (
+                                <div className="mt-5 space-y-2.5">
+                                    {(p.pesananDitahan ?? []).map((d) => {
+                                        const gaya = GAYA_FULFILLMENT[d.fulfillmentStatus];
+                                        const sisa = sisaWaktuKonfirmasi(d.sisaJam);
+
+                                        return (
+                                            <div
+                                                key={d.itemId}
+                                                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ring-inset ${gaya.className}`}
+                                                        >
+                                                            {d.fulfillmentStatus === "menunggu" && <Wallet size={11} />}
+                                                            {d.fulfillmentStatus === "dikirim" && <Truck size={11} />}
+                                                            {d.fulfillmentStatus === "diterima" && <PackageCheck size={11} />}
+                                                            {d.fulfillmentStatus === "komplain" && <MessageCircleWarning size={11} />}
+                                                            {gaya.label}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-slate-900">
+                                                            {d.umkm}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className="mt-1.5 text-[11px] font-semibold text-slate-500 leading-relaxed">
+                                                        {d.produk} {d.jumlah} {d.satuan} · {formatRupiah(d.nilai)}
+                                                        {d.fulfillmentStatus === "menunggu" &&
+                                                            " · pemasok belum menandai barang dikirim"}
+                                                        {d.fulfillmentStatus === "dikirim" &&
+                                                            (sisa
+                                                                ? ` · konfirmasi otomatis ${sisa}`
+                                                                : " · menunggu konfirmasi UMKM")}
+                                                        {d.fulfillmentStatus === "komplain" &&
+                                                            ` · komplain: ${d.complaintNote ?? "tanpa keterangan"}`}
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => setLepasSasaran(d)}
+                                                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-[11px] font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
+                                                >
+                                                    <Unlock size={13} /> Lepas Paksa
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+
+                                    <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-400">
+                                        <Lock size={14} /> Penerusan dana terkunci untuk pemasok ini
+                                    </div>
+                                </div>
+                            )}
+
                             {tab === "paid" && p.buktiTransaksiId && (
                                 <div className="mt-5 pt-4 border-t border-slate-100">
                                     <TombolLihatBukti
@@ -373,6 +478,140 @@ export default function PayoutsPage() {
                     }}
                 />
             )}
+
+            {lepasSasaran && (
+                <ModalLepasPaksa
+                    pesanan={lepasSasaran}
+                    onTutup={() => setLepasSasaran(null)}
+                    onSelesai={async () => {
+                        setLepasSasaran(null);
+                        await load();
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+/**
+ * Jalan keluar untuk kasus buntu — UMKM tak bisa dihubungi, atau
+ * komplainnya sudah diselesaikan di luar sistem.
+ *
+ * Sengaja dibuat lebih berat daripada tombol payout biasa: alasan wajib
+ * diisi, tersimpan bersama identitas admin yang menekannya, dan bisa
+ * ditelusuri belakangan. Jalan pintas boleh ada, asal meninggalkan jejak.
+ */
+function ModalLepasPaksa({
+    pesanan,
+    onTutup,
+    onSelesai,
+}: {
+    pesanan: RingkasanDitahan;
+    onTutup: () => void;
+    onSelesai: () => void;
+}) {
+    const [alasan, setAlasan] = useState("");
+    const [sibuk, setSibuk] = useState(false);
+    const [galat, setGalat] = useState<string | null>(null);
+
+    async function kirim() {
+        if (alasan.trim().length < 10) {
+            setGalat("Alasan wajib diisi minimal 10 karakter.");
+            return;
+        }
+
+        setSibuk(true);
+        setGalat(null);
+        try {
+            await lepasPaksaEscrow(pesanan.itemId, alasan.trim());
+            onSelesai();
+        } catch (err) {
+            setGalat(getApiErrorMessage(err));
+        } finally {
+            setSibuk(false);
+        }
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+            onClick={onTutup}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Lepas dana secara paksa"
+                className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">
+                            Penyelesaian Sengketa
+                        </div>
+                        <h3 className="font-display text-lg font-extrabold text-slate-900 mt-0.5">
+                            Lepas Dana Tanpa Konfirmasi UMKM
+                        </h3>
+                    </div>
+                    <button
+                        onClick={onTutup}
+                        aria-label="Tutup"
+                        className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="text-sm font-bold text-slate-900">{pesanan.umkm}</div>
+                    <div className="mt-0.5 text-xs font-semibold text-slate-500">
+                        {pesanan.produk} {pesanan.jumlah} {pesanan.satuan}
+                    </div>
+                    <div className="mt-1.5 font-display text-2xl font-extrabold text-amber-600">
+                        {formatRupiah(pesanan.nilai)}
+                    </div>
+                    {pesanan.complaintNote && (
+                        <p className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3 text-[11px] font-semibold text-red-700 leading-relaxed">
+                            Komplain UMKM: &ldquo;{pesanan.complaintNote}&rdquo;
+                        </p>
+                    )}
+                </div>
+
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900 leading-relaxed">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                    <span>
+                        Tindakan ini melewati konfirmasi UMKM. Alasanmu tersimpan permanen bersama identitas akun admin ini dan dapat diperiksa kembali sewaktu-waktu.
+                    </span>
+                </div>
+
+                <textarea
+                    value={alasan}
+                    onChange={(e) => setAlasan(e.target.value)}
+                    rows={3}
+                    placeholder="Contoh: UMKM tidak bisa dihubungi selama 2 minggu, barang dipastikan sampai lewat bukti foto pemasok."
+                    className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-800 outline-none transition focus:border-[var(--warna-peran)] focus:bg-white focus:ring-1 focus:ring-[var(--warna-peran)]"
+                />
+
+                {galat && (
+                    <p className="mt-3 rounded-2xl bg-red-50 p-4 text-xs font-bold text-red-600">{galat}</p>
+                )}
+
+                <div className="mt-6 flex gap-3 pt-4 border-t border-slate-100">
+                    <button
+                        onClick={onTutup}
+                        className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={kirim}
+                        disabled={sibuk}
+                        className="flex-1 rounded-2xl bg-amber-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-amber-700 disabled:opacity-60"
+                    >
+                        {sibuk ? "Memproses..." : "Lepas Dana"}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

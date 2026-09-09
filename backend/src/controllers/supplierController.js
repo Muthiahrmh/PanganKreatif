@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { resolveUnitPrice } = require('../utils/pricing');
+const { sisaJamKonfirmasi, LABEL_FULFILLMENT } = require('../utils/escrow');
 
 // ---------- helper ----------
 
@@ -94,6 +95,10 @@ async function listMyOrders(req, res) {
                 ...it,
                 quantity: num(it.quantity),
                 subtotal: num(it.quantity) * price,
+                // Serah terima barang: dipakai tombol "Tandai Dikirim" dan
+                // keterangan kenapa dana belum cair.
+                statusBarang: LABEL_FULFILLMENT[it.fulfillmentStatus],
+                sisaJamKonfirmasi: sisaJamKonfirmasi(it.autoConfirmAt),
                 transactions: it.transactions.map((t) => ({ ...t, amount: num(t.amount) })),
             }));
 

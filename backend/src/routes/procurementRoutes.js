@@ -15,6 +15,11 @@ const {
   listTransactionsByItem,
   listMyTransactions,
 } = require('../controllers/transactionController');
+const {
+  tandaiDikirim,
+  konfirmasiDiterima,
+  ajukanKomplain,
+} = require('../controllers/fulfillmentController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -35,6 +40,12 @@ router.post('/orders/:id/join', authenticate, authorize('umkm'), joinOrder);
 
 // Items (kontribusi UMKM)
 router.get('/items/mine', authenticate, authorize('umkm'), listMyItems);
+
+// Serah terima barang — penentu boleh tidaknya dana diteruskan ke pemasok.
+// Pemasok yang menyatakan barang berangkat, UMKM yang menyatakan sampai.
+router.post('/items/:itemId/kirim', authenticate, authorize('supplier'), tandaiDikirim);
+router.post('/items/:itemId/terima', authenticate, authorize('umkm'), konfirmasiDiterima);
+router.post('/items/:itemId/komplain', authenticate, authorize('umkm'), ajukanKomplain);
 
 // Transactions
 // PENTING: /transactions/mine harus di atas rute lain yang pakai :id

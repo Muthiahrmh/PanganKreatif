@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { Users, Clock, Package, TrendingDown, ShoppingBag, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter, XCircle } from "lucide-react";
+import { Users, Clock, Package, TrendingDown, ShoppingBag, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter, XCircle, Truck, PackageCheck, ShieldCheck, MessageCircleWarning } from "lucide-react";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { temaPeran } from "@/components/dashboard/roleTheme";
@@ -10,6 +10,11 @@ import { Button } from "@/components/ui/Button";
 import { TombolBayarMidtrans } from "@/components/dashboard/TombolBayarDaring";
 import { batalkanPembayaran } from "@/lib/payment";
 import { DialogKonfirmasi } from "@/components/dashboard/DialogKonfirmasi";
+import {
+    ajukanKomplain,
+    konfirmasiDiterima,
+    sisaWaktuKonfirmasi,
+} from "@/lib/fulfillment";
 import type { BulkPricing, ProcurementOrder, ProcurementOrderItem } from "@/types/dashboard";
 
 const statusLabel: Record<string, string> = {
@@ -620,9 +625,7 @@ export default function ProcurementPage() {
 
                 <div className="mt-6 pt-4 border-t border-slate-100 space-y-3">
                     {isLunas ? (
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-center text-xs font-bold text-emerald-800 shadow-sm">
-                            ✓ Pembayaran Telah Lunas
-                        </div>
+                        <PanelPenerimaan item={item} onSelesai={loadData} />
                     ) : pendingTx ? (
                         <div className="space-y-2">
                             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-2.5 text-center text-xs font-bold text-amber-800">
@@ -690,6 +693,203 @@ export default function ProcurementPage() {
             </div>
         );
     }
+}
+
+/**
+ * Panel serah terima barang, muncul setelah pesanan lunas.
+ *
+ * Di sinilah letak perubahan alur pembayaran: uang yang sudah dibayar
+ * UMKM ditahan platform, dan tombol di panel inilah yang melepaskannya
+ * ke pemasok. Selama UMKM belum menekannya, admin tidak punya cara
+ * meneruskan dana lewat halaman payout.
+ */
+function PanelPenerimaan({
+    item,
+    onSelesai,
+}: {
+    item: ProcurementOrderItem;
+    onSelesai: () => void | Promise<void>;
+}) {
+    const [sibuk, setSibuk] = useState(false);
+    const [galat, setGalat] = useState<string | null>(null);
+    const [formKomplain, setFormKomplain] = useState(false);
+    const [alasan, setAlasan] = useState("");
+    const [konfirmasi, setKonfirmasi] = useState(false);
+
+    const status = item.fulfillmentStatus ?? "menunggu";
+    const sisa = sisaWaktuKonfirmasi(item.sisaJamKonfirmasi);
+
+    async function terima() {
+        setSibuk(true);
+        setGalat(null);
+        try {
+            await konfirmasiDiterima(item.id);
+            await onSelesai();
+        } catch (err) {
+            setGalat(getApiErrorMessage(err));
+        } finally {
+            setSibuk(false);
+            setKonfirmasi(false);
+        }
+    }
+
+    async function komplain() {
+        if (alasan.trim().length < 10) {
+            setGalat("Ceritakan masalahnya minimal 10 karakter supaya bisa ditindaklanjuti.");
+            return;
+        }
+        setSibuk(true);
+        setGalat(null);
+        try {
+            await ajukanKomplain(item.id, alasan.trim());
+            setFormKomplain(false);
+            setAlasan("");
+            await onSelesai();
+        } catch (err) {
+            setGalat(getApiErrorMessage(err));
+        } finally {
+            setSibuk(false);
+        }
+    }
+
+    // Sudah selesai sepenuhnya — tidak ada lagi yang perlu ditekan
+    if (status === "diterima") {
+        return (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-800">
+                    <PackageCheck size={16} className="text-emerald-600" />
+                    Pesanan Selesai
+                </div>
+                <p className="mt-1 text-[11px] font-semibold text-emerald-700 leading-relaxed">
+                    Barang sudah kamu konfirmasi diterima. Dana pemasok dilepas dari rekening penampungan platform.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {/* Ikhtisar: uang aman di platform, belum berpindah ke pemasok */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800">
+                    <ShieldCheck size={16} className="text-emerald-600" />
+                    Dana Ditahan Platform
+                </div>
+                <p className="mt-1 text-[11px] font-semibold text-slate-600 leading-relaxed">
+                    Pembayaranmu sudah lunas dan disimpan PanganKreatif. Uang baru diteruskan ke pemasok setelah kamu menyatakan barangnya diterima.
+                </p>
+            </div>
+
+            {status === "menunggu" && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-center text-xs font-bold text-amber-800">
+                    Menunggu pemasok mengirim barang
+                </div>
+            )}
+
+            {status === "komplain" && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-red-800">
+                        <MessageCircleWarning size={16} className="text-red-600" />
+                        Komplain Sedang Diproses
+                    </div>
+                    {item.complaintNote && (
+                        <p className="mt-1 text-[11px] font-semibold text-red-700 leading-relaxed">
+                            &ldquo;{item.complaintNote}&rdquo;
+                        </p>
+                    )}
+                    <p className="mt-1.5 text-[11px] font-medium text-red-600 leading-relaxed">
+                        Dana tetap ditahan sampai masalahnya selesai. Kalau sudah beres, kamu tetap bisa menekan tombol di bawah.
+                    </p>
+                </div>
+            )}
+
+            {status === "dikirim" && (
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-blue-800">
+                        <Truck size={16} className="text-blue-600" />
+                        Barang Dalam Pengiriman
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold text-blue-700 leading-relaxed">
+                        Periksa barangnya dulu, baru konfirmasi.
+                        {sisa && (
+                            <>
+                                {" "}Kalau tidak ada tanggapan, pesanan otomatis dianggap diterima{" "}
+                                <strong className="text-blue-900">{sisa}</strong>.
+                            </>
+                        )}
+                    </p>
+                </div>
+            )}
+
+            {(status === "dikirim" || status === "komplain") && (
+                <>
+                    <button
+                        onClick={() => setKonfirmasi(true)}
+                        disabled={sibuk}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                        <PackageCheck size={17} />
+                        {sibuk ? "Memproses..." : "Barang Sudah Diterima"}
+                    </button>
+
+                    {status === "dikirim" && !formKomplain && (
+                        <button
+                            onClick={() => setFormKomplain(true)}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        >
+                            <MessageCircleWarning size={14} /> Barang Bermasalah? Ajukan Komplain
+                        </button>
+                    )}
+
+                    {formKomplain && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50/60 p-4 space-y-2.5">
+                            <textarea
+                                value={alasan}
+                                onChange={(e) => setAlasan(e.target.value)}
+                                rows={3}
+                                placeholder="Contoh: cabai yang sampai 8 kg dari 12 kg yang dipesan, sebagian sudah busuk."
+                                className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-800 outline-none transition focus:border-red-400 focus:ring-1 focus:ring-red-300"
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        setFormKomplain(false);
+                                        setAlasan("");
+                                        setGalat(null);
+                                    }}
+                                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={komplain}
+                                    disabled={sibuk}
+                                    className="flex-1 rounded-xl bg-red-600 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
+                                >
+                                    {sibuk ? "Mengirim..." : "Kirim Komplain"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {galat && (
+                <p className="rounded-2xl bg-red-50 p-3 text-xs font-bold text-red-600">{galat}</p>
+            )}
+
+            <DialogKonfirmasi
+                terbuka={konfirmasi}
+                sibuk={sibuk}
+                judul="Konfirmasi barang sudah diterima?"
+                pesan="Dana yang selama ini ditahan platform akan langsung dilepas dan bisa diteruskan ke pemasok."
+                keterangan="Pastikan jumlah dan kondisi barang sudah sesuai — konfirmasi ini tidak bisa dibatalkan."
+                labelYa="Ya, Barang Diterima"
+                onBatal={() => setKonfirmasi(false)}
+                onYa={terima}
+            />
+        </div>
+    );
 }
 
 /**

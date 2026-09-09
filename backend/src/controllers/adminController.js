@@ -1,6 +1,7 @@
 const prisma = require('../utils/prisma');
 const { COMMISSION_RATE, COST_PER_TRANSACTION, toNum, round2 } = require('../utils/pricing');
 const storage = require('../utils/supabaseStorage');
+const escrow = require('../utils/escrow');
 
 const monthKey = (d) => {
     const dt = new Date(d);
@@ -236,21 +237,42 @@ async function listAllTransactions(req, res) {
 
 
 /**
- * GET /api/admin/payouts
+ * GET /api/admin/payouts?status=ditahan|pending|paid
  *
- * Rekap kewajiban platform kepada pemasok.
+ * Rekap kewajiban platform kepada pemasok, dalam tiga keranjang:
  *
- * Uang dari UMKM masuk lebih dulu ke rekening platform. Komisi
- * tinggal di platform, sisanya (supplierPayout) menjadi utang yang
- * harus diteruskan. Halaman ini yang mencatat mana yang sudah dan
- * belum diteruskan.
+ *   ditahan — uangnya sudah masuk, tapi UMKM belum menyatakan barangnya
+ *             diterima. Admin bisa melihatnya, tidak bisa mencairkannya.
+ *   pending — barang sudah dikonfirmasi diterima, dana siap diteruskan.
+ *   paid    — sudah diteruskan ke rekening pemasok.
+ *
+ * Pemisahan inilah inti perubahan sistem pembayaran: sebelumnya
+ * "ditahan" dan "pending" adalah satu keranjang yang sama, sehingga
+ * admin bisa mengirim uang untuk barang yang belum tentu sampai.
  */
 async function getPayouts(req, res) {
-    const status = req.query.status === 'paid' ? 'paid' : 'pending';
+    const diminta = String(req.query.status || 'pending');
+    const status = ['ditahan', 'pending', 'paid'].includes(diminta) ? diminta : 'pending';
+
+    // Lepaskan dulu yang batas konfirmasinya sudah lewat, supaya angka
+    // di layar admin selalu mencerminkan keadaan terkini walau penjadwal
+    // latar sempat mati.
+    if (status !== 'paid') {
+        await escrow.jalankanAutoKonfirmasi();
+    }
+
+    // Satu-satunya pembeda ketiga keranjang: sudah/belum dilepas escrow,
+    // dan sudah/belum diteruskan ke pemasok.
+    const saringan =
+        status === 'paid'
+            ? { payoutStatus: 'paid' }
+            : status === 'ditahan'
+                ? { payoutStatus: 'pending', escrowReleasedAt: null }
+                : { payoutStatus: 'pending', escrowReleasedAt: { not: null } };
 
     // Hanya ambil kolom yang perlu — jumlah transaksi bisa ribuan
     const transaksi = await prisma.transaction.findMany({
-        where: { status: 'success', payoutStatus: status },
+        where: { status: 'success', ...saringan },
         select: {
             id: true,
             amount: true,
@@ -262,9 +284,17 @@ async function getPayouts(req, res) {
             payoutProofUrl: true,
             payoutProofPath: true,
             payoutNote: true,
+            escrowReleasedAt: true,
+            escrowReleaseReason: true,
             orderItem: {
                 select: {
+                    id: true,
                     quantity: true,
+                    fulfillmentStatus: true,
+                    shippedAt: true,
+                    autoConfirmAt: true,
+                    complaintNote: true,
+                    umkm: { select: { businessName: true } },
                     order: {
                         select: {
                             product: {
@@ -326,7 +356,28 @@ async function getPayouts(req, res) {
             transaksiTerakhir: null,
             buktiTransaksiId: null,
             catatan: null,
+            // Rincian barang, hanya terisi pada keranjang "ditahan" —
+            // supaya admin tahu apa yang sebenarnya sedang ditunggu.
+            pesananDitahan: [],
         };
+
+        if (status === 'ditahan') {
+            const it = t.orderItem;
+            entri.pesananDitahan.push({
+                itemId: it.id,
+                umkm: it.umkm?.businessName ?? '—',
+                produk: t.orderItem?.order?.product?.name ?? '—',
+                jumlah: toNum(it.quantity),
+                satuan: t.orderItem?.order?.product?.unit ?? '',
+                nilai: round2(toNum(t.supplierPayout)),
+                fulfillmentStatus: it.fulfillmentStatus,
+                statusLabel: escrow.LABEL_FULFILLMENT[it.fulfillmentStatus],
+                shippedAt: it.shippedAt,
+                autoConfirmAt: it.autoConfirmAt,
+                sisaJam: escrow.sisaJamKonfirmasi(it.autoConfirmAt),
+                complaintNote: it.complaintNote,
+            });
+        }
 
         entri.jumlahTransaksi += 1;
         entri.totalNilai = round2(entri.totalNilai + toNum(t.amount));
@@ -351,8 +402,18 @@ async function getPayouts(req, res) {
 
     const daftar = [...perPemasok.values()].sort((a, b) => b.totalDiteruskan - a.totalDiteruskan);
 
+    // Berapa banyak dana yang sedang ditahan secara keseluruhan. Selalu
+    // dihitung, termasuk saat admin sedang membuka keranjang lain, supaya
+    // tab "Ditahan" bisa menampilkan lencana jumlahnya.
+    const ditahanAgg = await prisma.transaction.aggregate({
+        where: { status: 'success', payoutStatus: 'pending', escrowReleasedAt: null },
+        _sum: { supplierPayout: true },
+        _count: { _all: true },
+    });
+
     res.json({
         status,
+        batasKonfirmasiHari: escrow.HARI_AUTO_KONFIRMASI,
         ringkasan: {
             jumlahPemasok: daftar.length,
             jumlahTransaksi: transaksi.length,
@@ -362,6 +423,10 @@ async function getPayouts(req, res) {
             totalDiteruskan: round2(daftar.reduce((s, d) => s + d.totalDiteruskan, 0)),
             tanpaRekening: daftar.filter((d) => !d.rekening && !d.dompetDigital).length,
         },
+        escrow: {
+            jumlahTransaksiDitahan: ditahanAgg._count._all,
+            totalDitahan: round2(toNum(ditahanAgg._sum.supplierPayout)),
+        },
         pemasok: daftar,
     });
 }
@@ -369,6 +434,10 @@ async function getPayouts(req, res) {
 /**
  * POST /api/admin/payouts/:supplierId
  * Tandai seluruh dana tertunda milik satu pemasok sudah diteruskan.
+ *
+ * Pengaman utama ada di sini, bukan cuma di tombolnya: transaksi yang
+ * escrow-nya belum dilepas tidak akan pernah ikut terbawa, walaupun
+ * permintaannya dikirim langsung ke API tanpa lewat antarmuka.
  */
 async function tandaiPayout(req, res) {
     const catatan = typeof req.body?.catatan === 'string' ? req.body.catatan.slice(0, 300) : null;
@@ -389,16 +458,39 @@ async function tandaiPayout(req, res) {
         return res.status(503).json({ error: 'Penyimpanan bukti belum dikonfigurasi di server' });
     }
 
+    // Barangkali ada yang batas konfirmasinya baru saja lewat — dijalankan
+    // di sini supaya dana yang memang sudah boleh cair tidak ikut tertolak.
+    await escrow.jalankanAutoKonfirmasi();
+
     const sasaran = await prisma.transaction.findMany({
         where: {
             status: 'success',
             payoutStatus: 'pending',
+            // Kunci: hanya yang barangnya sudah dinyatakan diterima
+            escrowReleasedAt: { not: null },
             orderItem: { order: { product: { supplierId: req.params.supplierId } } },
         },
         select: { id: true, supplierPayout: true },
     });
 
     if (sasaran.length === 0) {
+        // Bedakan "memang tidak ada" dari "ada tapi masih ditahan",
+        // supaya admin tahu yang harus ditunggu, bukan cuma ditolak.
+        const ditahan = await prisma.transaction.count({
+            where: {
+                status: 'success',
+                payoutStatus: 'pending',
+                escrowReleasedAt: null,
+                orderItem: { order: { product: { supplierId: req.params.supplierId } } },
+            },
+        });
+
+        if (ditahan > 0) {
+            return res.status(409).json({
+                error: `Dana pemasok ini masih ditahan. ${ditahan} pesanan menunggu UMKM menekan "Barang Sudah Diterima" (atau lewat ${escrow.HARI_AUTO_KONFIRMASI} hari sejak dikirim).`,
+            });
+        }
+
         return res.status(400).json({ error: 'Tidak ada dana tertunda untuk pemasok ini' });
     }
 

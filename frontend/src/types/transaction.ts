@@ -1,7 +1,9 @@
+import type { JejakFulfillment } from "@/types/fulfillment";
+
 export type TxStatus = "pending" | "success" | "failed";
 
 /** Riwayat pembayaran dari sisi UMKM */
-export interface UmkmTransaction {
+export interface UmkmTransaction extends JejakFulfillment {
     id: string;
     amount: number;
     platformFee: number;
@@ -24,7 +26,7 @@ export interface UmkmTransaction {
 }
 
 /** Pembayaran masuk dari sisi supplier */
-export interface SupplierTransaction {
+export interface SupplierTransaction extends JejakFulfillment {
     id: string;
     amount: number;
     platformFee: number;
@@ -37,6 +39,10 @@ export interface SupplierTransaction {
     metode?: "gateway" | "transfer" | "cash";
     channel?: string | null;
     payoutStatus?: "pending" | "paid";
+    /** Sudah lolos rekening bersama? Kalau belum, payout belum mungkin. */
+    escrowDilepas?: boolean;
+    escrowReleasedAt?: string | null;
+    escrowReleaseReason?: "konfirmasi_umkm" | "otomatis" | "admin_sengketa" | "migrasi_data_lama" | null;
     payoutAt?: string | null;
     adaBuktiPayout?: boolean;
     payoutNote?: string | null;
